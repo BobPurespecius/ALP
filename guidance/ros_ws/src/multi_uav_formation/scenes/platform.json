@@ -1,0 +1,392 @@
+{
+    "number": 5,
+    "leaders": 1,
+    "head": 1,
+    "velocityVectorENU": [
+        0.2,
+        0.2,
+        0
+    ],
+    "formationTime": 55,
+    "mavrosLocalOffsetENU": [
+        [
+            0.0,
+            0.0,
+            0.0
+        ],
+        [
+            0.0,
+            0.0,
+            0.0
+        ],
+        [
+            -4.8,
+            0.0,
+            0.0
+        ],
+        [
+            0.0,
+            0.0,
+            0.0
+        ],
+        [
+            0.0,
+            0.0,
+            0.0
+        ]
+    ],
+    "takeoffPointENU": [
+        [
+            -4.8,
+            -4.8,
+            1.2
+        ],
+        [
+            -4.8,
+            -2.4,
+            1.2
+        ],
+        [
+            -4.8,
+            0.0,
+            1.2
+        ],
+        [
+            -4.8,
+            2.4,
+            1.2
+        ],
+        [
+            -4.8,
+            4.8,
+            1.2
+        ]
+    ],
+    "preparePointENU": [
+        [
+            -4.8,
+            -4.8,
+            1.2
+        ],
+        [
+            -4.8,
+            -2.4,
+            1.2
+        ],
+        [
+            -4.8,
+            0.0,
+            1.2
+        ],
+        [
+            -4.8,
+            2.4,
+            1.2
+        ],
+        [
+            -4.8,
+            4.8,
+            1.2
+        ]
+    ],
+    "obstacleData": {
+        "0": {
+            "centerENU": [
+                -3.4,
+                -3.8
+            ],
+            "radius": 0.55
+        },
+        "1": {
+            "centerENU": [
+                -2.7,
+                -1.2
+            ],
+            "radius": 0.6
+        },
+        "2": {
+            "centerENU": [
+                -2.0,
+                2.4
+            ],
+            "radius": 0.5
+        },
+        "3": {
+            "centerENU": [
+                1.2,
+                -0.2
+            ],
+            "radius": 0.45
+        },
+        "4": {
+            "centerENU": [
+                0.2,
+                3.5
+            ],
+            "radius": 0.5
+        },
+        "5": {
+            "centerENU": [
+                1.0,
+                -4.2
+            ],
+            "radius": 0.5
+        },
+        "6": {
+            "centerENU": [
+                2.3,
+                1.7
+            ],
+            "radius": 0.55
+        },
+        "7": {
+            "centerENU": [
+                3.0,
+                4.0
+            ],
+            "radius": 0.45
+        },
+        "8": {
+            "centerENU": [
+                3.8,
+                -3.2
+            ],
+            "radius": 0.65
+        },
+        "9": {
+            "centerENU": [
+                5.1,
+                -1.2
+            ],
+            "radius": 0.7
+        },
+        "10": {
+            "centerENU": [
+                5.9,
+                -4.1
+            ],
+            "radius": 0.5
+        },
+        "11": {
+            "centerENU": [
+                7.2,
+                1.9
+            ],
+            "radius": 0.6
+        },
+        "12": {
+            "centerENU": [
+                7.5,
+                3.8
+            ],
+            "radius": 0.5
+        },
+        "13": {
+            "centerENU": [
+                -0.8,
+                0.9
+            ],
+            "radius": 0.45
+        },
+        "14": {
+            "centerENU": [
+                2.0,
+                -2.7
+            ],
+            "radius": 0.5
+        },
+        "15": {
+            "centerENU": [
+                4.6,
+                2.7
+            ],
+            "radius": 0.48
+        },
+        "16": {
+            "centerENU": [
+                6.8,
+                -0.3
+            ],
+            "radius": 0.52
+        }
+    },
+    "egoPlanner": {
+        "enabled": true,
+        "mapSizeENU": [
+            30.0,
+            18.0,
+            4.5
+        ],
+        "goalsENU": [
+            [
+                10.0,
+                -4.8,
+                1.25
+            ],
+            [
+                10.0,
+                -2.4,
+                1.25
+            ],
+            [
+                10.0,
+                0.0,
+                1.25
+            ],
+            [
+                10.0,
+                2.4,
+                1.25
+            ],
+            [
+                10.0,
+                4.8,
+                1.25
+            ]
+        ],
+        "maxVel": 0.9,
+        "maxAcc": 1.3,
+        "planningHorizon": 6.0,
+        "cloudResolution": 0.18,
+        "cloudPublishPeriod": 0.5,
+        "verticalVelocityLimit": 0.7,
+        "velocityFilterAlpha": 0.5,
+        "commandAccelLimit": 0.9,
+        "commandVerticalAccelLimit": 0.6,
+        "commandJerkLimit": 0.0,
+        "goalZTolerance": 0.1,
+        "goalSpeedTolerance": 0.16,
+        "goalSettleTime": 3.0,
+        "noCommandFallbackDelay": 2.0,
+        "finalConvergenceTime": 30.0,
+        "progressFallbackGraceTime": 18.0,
+        "progressFallbackTime": 7.0,
+        "progressMinImprovement": 0.4,
+        "staleCommandTime": 3.0,
+        "staleCommandPositionTolerance": 0.12,
+        "staleCommandVelocityTolerance": 0.08,
+        "staleCommandGoalDistance": 1.5,
+        "safetyRecoveryVerticalLimit": 0.42,
+        "safetyWarningVerticalLimit": 0.18,
+        "holdZGain": 2.4,
+        "holdVelocityLimit": 0.75,
+        "holdNearDistance": 0.7,
+        "holdNearVelocityLimit": 0.2,
+        "holdNearVerticalVelocityLimit": 0.42,
+        "obstacleClearance": 0.65,
+        "obstacleCheckHorizon": 2.2,
+        "obstacleVerticalMargin": 0.35,
+        "earlyAvoidanceEnabled": false,
+        "movingObstacleTimeAwareCostEnabled": true,
+        "movingObstacleTimeAwareClearance": 1.1,
+        "movingObstaclePredictionEnabled": true,
+        "movingObstaclePredictionHorizon": 3.0,
+        "movingObstaclePredictionDt": 0.5,
+        "movingObstaclePredictionRadiusGrowth": 0.04,
+        "movingObstaclePredictionMaxExtraRadius": 0.18,
+        "movingObstaclePredictionPathMargin": 0.8,
+        "movingObstaclePredictionNearDistance": 2.5,
+        "movingObstaclePredictionMaxCloudsPerObstacle": 1,
+        "obstacleEscapeTriggerMargin": 0.2,
+        "obstacleEscapeVelocityTriggerMargin": 0.0,
+        "obstacleEscapeVerticalSpeed": 0.1,
+        "obstacleEscapeCooldown": 0.8,
+        "obstacleEscapeRampTime": 0.4,
+        "obstacleEscapeReleaseBlendTime": 0.0,
+        "obstacleEscapeSwitchMinTime": 1.5,
+        "obstacleEscapeSwitchCooldown": 0.8,
+        "obstacleEscapeSwitchMargin": 0.18,
+        "movingObstacleTimeAwareLambda": 0.5,
+        "movingObstacleTimeAwarePredictionHorizon": 2.0,
+        "movingObstacleTimeAwareDecayTau": 1.8,
+        "movingObstacleTimeAwareMaxGrad": 3.0
+    },
+    "movingObstacleData": {
+        "0": {
+            "modelName": "platform_moving_obstacle_0",
+            "centerENU": [
+                0.8,
+                -2.5
+            ],
+            "radius": 0.28,
+            "axisENU": [
+                1.0,
+                0.0
+            ],
+            "amplitude": 0.25,
+            "period": 6.0,
+            "phase": 0.0
+        },
+        "1": {
+            "modelName": "platform_moving_obstacle_1",
+            "centerENU": [
+                3.2,
+                1.2
+            ],
+            "radius": 0.28,
+            "axisENU": [
+                0.0,
+                1.0
+            ],
+            "amplitude": 0.22,
+            "period": 7.0,
+            "phase": 1.57
+        },
+        "2": {
+            "modelName": "platform_moving_obstacle_2",
+            "centerENU": [
+                6.2,
+                3.5
+            ],
+            "radius": 0.3,
+            "axisENU": [
+                0.0,
+                -1.0
+            ],
+            "amplitude": 0.25,
+            "period": 7.0,
+            "phase": 3.14
+        },
+        "3": {
+            "modelName": "platform_moving_obstacle_3",
+            "centerENU": [
+                -1.2,
+                3.0
+            ],
+            "radius": 0.28,
+            "axisENU": [
+                0.0,
+                1.0
+            ],
+            "amplitude": 0.22,
+            "period": 6.0,
+            "phase": 0.78
+        },
+        "4": {
+            "modelName": "platform_moving_obstacle_4",
+            "centerENU": [
+                7.8,
+                -2.4
+            ],
+            "radius": 0.3,
+            "axisENU": [
+                1.0,
+                0.0
+            ],
+            "amplitude": 0.24,
+            "period": 7.0,
+            "phase": 2.35
+        }
+    },
+    "nMovingObstacle": 5,
+    "platformData": {
+        "modelName": "goal_platform",
+        "sizeENU": [
+            3.2,
+            11.2,
+            1.05
+        ],
+        "topZ": 1.05,
+        "safetyHeightMargin": 1.0
+    }
+}

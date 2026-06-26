@@ -1,0 +1,108 @@
+{
+    "number": 5,
+    "leaders": 1,
+    "head": 1,
+    "velocityVectorENU": [0.2, 0.2, 0],
+    "formationTime": 40,
+    "mavrosLocalOffsetENU": [
+        [0.0, 0.0, 0.0],
+        [0.0, 0.0, 0.0],
+        [-4.8, 0.0, 0.0],
+        [0.0, 0.0, 0.0],
+        [0.0, 0.0, 0.0]
+    ],
+    "takeoffPointENU": [
+        [-4.8, -4.8, 1.2],
+        [-4.8, -2.4, 1.2],
+        [-4.8, 0.0, 1.2],
+        [-4.8, 2.4, 1.2],
+        [-4.8, 4.8, 1.2]
+    ],
+    "preparePointENU": [
+        [-4.8, -4.8, 1.2],
+        [-4.8, -2.4, 1.2],
+        [-4.8, 0.0, 1.2],
+        [-4.8, 2.4, 1.2],
+        [-4.8, 4.8, 1.2]
+    ],
+    "obstacleData": {
+        "0": {
+            "centerENU": [-2.5, -3.0],
+            "radius": 0.7
+        },
+        "1": {
+            "centerENU": [0.0, 0.0],
+            "radius": 0.5
+        },
+        "2": {
+            "centerENU": [1.8, -2.2],
+            "radius": 0.55
+        },
+        "3": {
+            "centerENU": [-1.2, -1.2],
+            "radius": 0.45
+        },
+        "4": {
+            "centerENU": [2.4, 1.2],
+            "radius": 0.6
+        },
+        "5": {
+            "centerENU": [-3.6, 2.0],
+            "radius": 0.5
+        },
+        "6": {
+            "centerENU": [0.8, -4.0],
+            "radius": 0.4
+        },
+        "7": {
+            "centerENU": [3.8, -0.8],
+            "radius": 0.45
+        },
+        "8": {
+            "centerENU": [4.8, 3.2],
+            "radius": 0.5
+        },
+        "9": {
+            "centerENU": [5.8, -3.4],
+            "radius": 0.55
+        },
+        "10": {
+            "centerENU": [6.8, 0.8],
+            "radius": 0.45
+        },
+        "11": {
+            "centerENU": [7.4, -1.8],
+            "radius": 0.5
+        }
+    },
+    "egoPlanner": {
+        "enabled": true,
+        "mapSizeENU": [30.0, 18.0, 4.0],
+        "goalsENU": [
+            [10.0, -4.8, 1.2],
+            [10.0, -2.4, 1.2],
+            [10.0, 0.0, 1.2],
+            [10.0, 2.4, 1.2],
+            [10.0, 4.8, 1.2]
+        ],
+        "maxVel": 1.0,
+        "maxAcc": 1.5,
+        "planningHorizon": 5.0,
+        "cloudResolution": 0.2,
+        "cloudPublishPeriod": 0.5,
+        "obstacleHeight": 3.0,
+        "commandTimeout": 1.0,
+        "triggerDelay": 1.0,
+        "positionGain": 0.8,
+        "velocityGain": 0.1,
+        "goalTolerance": 0.45,
+        "goalXYTolerance": 0.45,
+        "goalZTolerance": 0.12,
+        "goalSpeedTolerance": 0.18,
+        "holdXYGain": 0.8,
+        "holdZGain": 1.4,
+        "holdVelocityLimit": 0.8,
+        "obstacleClearance": 0.25,
+        "obstacleRepulsionGain": 0.25
+    }
+}

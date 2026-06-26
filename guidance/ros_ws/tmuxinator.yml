@@ -1,0 +1,46 @@
+name: px4-noetic-gazebo-multi-uav-formation
+root: .
+
+tmux_options: -f .tmux.conf
+windows:
+  - main:
+      layout: main-horizontal
+      panes:
+
+        - . get_params.sh <%= @settings["scene"] %>;
+          sleep 20;
+          ./multi_uav_formation.sh <%= @settings["scene"] %> $UAV_NUM $LEADERS_NUM <%= @settings["run_prefix"] %>
+
+
+        - export DISABLE_ROS1_EOL_WARNINGS=1;
+          roscore
+
+        - . get_params.sh <%= @settings["scene"] %>;
+          . ./setup_runtime_env.sh;
+          until rostopic list >/dev/null 2>&1; do
+            sleep 0.5;
+          done;
+          PACKAGE_DIR="$(rospack find multi_uav_formation)";
+          WORLD_FILE="$PACKAGE_DIR/worlds/<%= @settings["scene"] %>.world";
+          SCENE_FILE="$PACKAGE_DIR/scenes/<%= @settings["scene"] %>.json";
+          if [ -f "$SCENE_FILE" ]; then
+            python3 "$PACKAGE_DIR/scripts/generate_world_from_scene.py" --scene-file "$SCENE_FILE" --world-out "$WORLD_FILE";
+          fi;
+          if [ -f "$WORLD_FILE" ]; then
+            roslaunch --wait multi_uav_formation multi_uav_mavros_sitl.launch world:="$WORLD_FILE" scene_file:="$SCENE_FILE" enable_moving_obstacles:="false";
+          else
+            roslaunch --wait multi_uav_formation multi_uav_mavros_sitl.launch;
+          fi
+
+        - export DISABLE_ROS1_EOL_WARNINGS=1;
+          sleep 3;
+          until rostopic list >/dev/null 2>&1; do
+            sleep 0.5;
+          done;
+          rviz -d visualize_obstacles.rviz
+
+  # - add_permission:
+  #     panes:
+  #       - |
+  #         chmod +x src/multi_uav_formation/multi_uav_formation/SingleRun.py;
+  #         chmod +x *.sh

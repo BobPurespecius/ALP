@@ -48,7 +48,6 @@ Dockerfile                      Root Docker image definition
 image/image.png                 README preview image
 ```
 
-Generated data, analysis outputs, build products, and local notes are not meant to be committed.
 
 ## Docker Setup
 

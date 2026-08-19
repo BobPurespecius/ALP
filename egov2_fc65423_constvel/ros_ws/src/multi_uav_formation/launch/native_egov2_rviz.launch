@@ -1,0 +1,122 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="scene_file" default="$(env NATIVE_EGOV2_EXPERIMENT_DIR)/ros_ws/src/multi_uav_formation/scenes/long_cylinder_forest.json"/>
+    <arg name="rviz" default="true"/>
+    <arg name="visibility_csv" default="$(env NATIVE_EGOV2_VISIBILITY_CSV)"/>
+    <arg name="trajectory_csv" default="$(env NATIVE_EGOV2_TRAJECTORY_CSV)"/>
+    <arg name="map_size_x" default="82.0"/>
+    <arg name="map_size_y" default="28.0"/>
+    <arg name="map_size_z" default="5.0"/>
+    <arg name="target_height" default="1.5"/>
+    <arg name="target_speed" default="0.928"/>
+    <arg name="early_avoidance_enabled" default="false"/>
+    <arg name="moving_obstacle_time_aware_cost_enabled" default="false"/>
+    <arg name="moving_obj_num" default="10"/>
+    <arg name="moving_obj_clearance" default="1.1"/>
+    <arg name="moving_obj_lambda" default="0.5"/>
+    <arg name="moving_obj_prediction_horizon" default="2.0"/>
+    <arg name="moving_obj_time_decay_tau" default="1.8"/>
+    <arg name="moving_obj_max_grad" default="3.0"/>
+    <arg name="target_waypoints" default="-33.00,0.00;-29.25,0.25;-25.50,0.50;-25.25,0.75;-25.00,1.00;-23.75,1.75;-23.00,2.00;-20.50,3.25;-20.00,3.50;-19.75,3.75;-19.00,4.00;-16.75,4.50;-16.50,4.25;-14.50,4.00;-14.25,3.75;-14.00,3.50;-13.75,3.25;-13.50,3.00;-11.38,2.88;-9.25,2.75;-9.00,2.50;-8.75,2.25;-8.50,2.00;-8.25,1.75;-8.00,1.50;-7.75,1.25;-7.50,1.00;-7.25,0.75;-7.00,0.50;-4.00,0.25;-0.25,0.25;0.00,0.50;1.25,0.75;4.00,0.92;6.75,1.08;9.50,1.25;12.88,1.88;16.25,2.50;18.75,3.25;22.75,3.75;23.25,3.75;23.50,3.50;23.75,3.25;24.00,3.00;25.75,2.50;26.00,2.25;26.25,2.00;26.50,1.75;26.75,1.50;27.00,1.25;29.75,1.17;32.50,1.08;35.25,1.00;35.75,0.75;36.00,0.25"/>
+
+    <!-- This is the communication bridge used by EGOv2's original
+         multi_tracking.launch. -->
+    <include file="$(find swarm_bridge)/launch/bridge_udp.launch">
+        <arg name="drone_id" value="999"/>
+        <arg name="broadcast_ip" value="127.0.0.255"/>
+    </include>
+
+    <node pkg="multi_uav_formation" type="native_egov2_constvel_scene.py"
+          name="native_egov2_rviz_scene" output="log"
+          args="--scene-file $(arg scene_file) --count 3 --resolution 0.18 --visibility-csv $(arg visibility_csv) --trajectory-csv $(arg trajectory_csv) --early-avoidance-enabled $(arg early_avoidance_enabled) --moving-obstacle-time-aware-cost-enabled $(arg moving_obstacle_time_aware_cost_enabled)"/>
+
+    <node pkg="multi_uav_formation" type="target_state_constvel_coordinator.py"
+          name="native_target_state_coordinator" output="log">
+        <param name="rate" value="30.0"/>
+        <param name="frame_id" value="world"/>
+        <param name="target_mode" value="waypoints"/>
+        <param name="target_speed" value="$(arg target_speed)"/>
+        <param name="align_yaw_to_velocity" value="false" type="bool"/>
+        <param name="target_height" value="$(arg target_height)"/>
+        <param name="target_waypoints" value="$(arg target_waypoints)"/>
+        <param name="target_waypoints_use_z" value="false" type="bool"/>
+        <param name="dynamic_obstacle_scene_file" value="$(arg scene_file)"/>
+        <param name="dynamic_obstacle_avoidance_enabled" value="true" type="bool"/>
+        <param name="target_radius" value="0.25"/>
+        <param name="target_obstacle_clearance" value="0.05"/>
+        <param name="target_speed_scale_min" value="0.35"/>
+        <param name="target_speed_scale_max" value="1.5"/>
+        <param name="startup_settle_time" value="2.0"/>
+        <rosparam param="required_uavs">[uav1, uav2, uav3]</rosparam>
+        <param name="ground_truth_topic" value="/target_tracking/ground_truth"/>
+        <param name="shared_topic" value="/object_odom"/>
+        <param name="start_time_topic" value="/target_tracking/target_start_time"/>
+    </node>
+
+    <!-- Keep the original EGOv2 fake-drone simulator and local-sensing chain. -->
+    <include file="$(find ego_planner)/launch/run_in_sim.launch">
+        <arg name="drone_id" value="0"/>
+        <arg name="init_x" value="-35.2"/>
+        <arg name="init_y" value="-1.0"/>
+        <arg name="init_z" value="1.5"/>
+        <arg name="relative_tracking_x" value="-1.5"/>
+        <arg name="relative_tracking_y" value="-0.85"/>
+        <arg name="relative_tracking_z" value="0.0"/>
+        <arg name="map_size_x" value="$(arg map_size_x)"/>
+        <arg name="map_size_y" value="$(arg map_size_y)"/>
+        <arg name="map_size_z" value="$(arg map_size_z)"/>
+        <arg name="odom_topic" value="visual_slam/odom"/>
+        <arg name="obj_num" value="$(arg moving_obj_num)"/>
+        <arg name="use_time_aware_moving_obj_cost" value="$(arg moving_obstacle_time_aware_cost_enabled)"/>
+        <arg name="moving_obj_clearance" value="$(arg moving_obj_clearance)"/>
+        <arg name="moving_obj_lambda" value="$(arg moving_obj_lambda)"/>
+        <arg name="moving_obj_prediction_horizon" value="$(arg moving_obj_prediction_horizon)"/>
+        <arg name="moving_obj_time_decay_tau" value="$(arg moving_obj_time_decay_tau)"/>
+        <arg name="moving_obj_max_grad" value="$(arg moving_obj_max_grad)"/>
+    </include>
+
+    <include file="$(find ego_planner)/launch/run_in_sim.launch">
+        <arg name="drone_id" value="1"/>
+        <arg name="init_x" value="-35.2"/>
+        <arg name="init_y" value="0.0"/>
+        <arg name="init_z" value="1.5"/>
+        <arg name="relative_tracking_x" value="-1.7"/>
+        <arg name="relative_tracking_y" value="0.0"/>
+        <arg name="relative_tracking_z" value="0.0"/>
+        <arg name="map_size_x" value="$(arg map_size_x)"/>
+        <arg name="map_size_y" value="$(arg map_size_y)"/>
+        <arg name="map_size_z" value="$(arg map_size_z)"/>
+        <arg name="odom_topic" value="visual_slam/odom"/>
+        <arg name="obj_num" value="$(arg moving_obj_num)"/>
+        <arg name="use_time_aware_moving_obj_cost" value="$(arg moving_obstacle_time_aware_cost_enabled)"/>
+        <arg name="moving_obj_clearance" value="$(arg moving_obj_clearance)"/>
+        <arg name="moving_obj_lambda" value="$(arg moving_obj_lambda)"/>
+        <arg name="moving_obj_prediction_horizon" value="$(arg moving_obj_prediction_horizon)"/>
+        <arg name="moving_obj_time_decay_tau" value="$(arg moving_obj_time_decay_tau)"/>
+        <arg name="moving_obj_max_grad" value="$(arg moving_obj_max_grad)"/>
+    </include>
+
+    <include file="$(find ego_planner)/launch/run_in_sim.launch">
+        <arg name="drone_id" value="2"/>
+        <arg name="init_x" value="-35.2"/>
+        <arg name="init_y" value="1.0"/>
+        <arg name="init_z" value="1.5"/>
+        <arg name="relative_tracking_x" value="-1.5"/>
+        <arg name="relative_tracking_y" value="0.85"/>
+        <arg name="relative_tracking_z" value="0.0"/>
+        <arg name="map_size_x" value="$(arg map_size_x)"/>
+        <arg name="map_size_y" value="$(arg map_size_y)"/>
+        <arg name="map_size_z" value="$(arg map_size_z)"/>
+        <arg name="odom_topic" value="visual_slam/odom"/>
+        <arg name="obj_num" value="$(arg moving_obj_num)"/>
+        <arg name="use_time_aware_moving_obj_cost" value="$(arg moving_obstacle_time_aware_cost_enabled)"/>
+        <arg name="moving_obj_clearance" value="$(arg moving_obj_clearance)"/>
+        <arg name="moving_obj_lambda" value="$(arg moving_obj_lambda)"/>
+        <arg name="moving_obj_prediction_horizon" value="$(arg moving_obj_prediction_horizon)"/>
+        <arg name="moving_obj_time_decay_tau" value="$(arg moving_obj_time_decay_tau)"/>
+        <arg name="moving_obj_max_grad" value="$(arg moving_obj_max_grad)"/>
+    </include>
+
+    <node if="$(arg rviz)" pkg="rviz" type="rviz" name="rviz" required="true"
+          args="-d $(env NATIVE_EGOV2_EXPERIMENT_DIR)/ros_ws/src/multi_uav_formation/config/native_egov2.rviz"/>
+</launch>

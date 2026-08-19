@@ -1,0 +1,124 @@
+Panels:
+  - Class: rviz/Displays
+    Name: Displays
+  - Class: rviz/Views
+    Name: Views
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Class: rviz/Grid
+      Name: Grid
+      Enabled: true
+      Value: true
+      Cell Size: 1
+      Plane Cell Count: 100
+      Color: 90; 90; 90
+    - Class: rviz/PointCloud2
+      Name: Cylinder forest
+      Enabled: false
+      Value: false
+      Topic: /map_generator/global_cloud
+      Queue Size: 2
+      Style: Points
+      Size (Pixels): 3
+      Color Transformer: FlatColor
+      Color: 65; 150; 80
+      Position Transformer: XYZ
+      Use Fixed Frame: true
+    - Class: rviz/MarkerArray
+      Name: Cylinder obstacles
+      Enabled: true
+      Value: true
+      Marker Topic: /native_egov2/obstacles
+      Queue Size: 2
+    - Class: rviz/Marker
+      Name: Tracking target
+      Enabled: true
+      Value: true
+      Marker Topic: /target_tracking/target_marker
+      Queue Size: 10
+    - Class: rviz/MarkerArray
+      Name: UAV 1
+      Enabled: true
+      Value: true
+      Marker Topic: /native_egov2/uav1_marker
+      Queue Size: 10
+    - Class: rviz/MarkerArray
+      Name: UAV 2
+      Enabled: true
+      Value: true
+      Marker Topic: /native_egov2/uav2_marker
+      Queue Size: 10
+    - Class: rviz/MarkerArray
+      Name: UAV 3
+      Enabled: true
+      Value: true
+      Marker Topic: /native_egov2/uav3_marker
+      Queue Size: 10
+    - Class: rviz/Marker
+      Name: UAV 1 trajectory
+      Enabled: true
+      Value: true
+      Marker Topic: /drone_0_ego_planner_node/optimal_list
+      Queue Size: 20
+    - Class: rviz/Marker
+      Name: UAV 2 trajectory
+      Enabled: true
+      Value: true
+      Marker Topic: /drone_1_ego_planner_node/optimal_list
+      Queue Size: 20
+    - Class: rviz/Marker
+      Name: UAV 3 trajectory
+      Enabled: true
+      Value: true
+      Marker Topic: /drone_2_ego_planner_node/optimal_list
+      Queue Size: 20
+    - Class: rviz/Path
+      Name: UAV 1 path
+      Enabled: true
+      Value: true
+      Topic: /drone_0_odom_visualization/path
+      Color: 50; 130; 255
+      Line Style: Lines
+      Line Width: 0.05
+    - Class: rviz/Path
+      Name: UAV 2 path
+      Enabled: true
+      Value: true
+      Topic: /drone_1_odom_visualization/path
+      Color: 255; 180; 40
+      Line Style: Lines
+      Line Width: 0.05
+    - Class: rviz/Path
+      Name: UAV 3 path
+      Enabled: true
+      Value: true
+      Topic: /drone_2_odom_visualization/path
+      Color: 60; 210; 210
+      Line Style: Lines
+      Line Width: 0.05
+  Global Options:
+    Background Color: 35; 38; 42
+    Fixed Frame: world
+    Frame Rate: 30
+  Name: root
+  Tools:
+    - Class: rviz/Interact
+    - Class: rviz/MoveCamera
+    - Class: rviz/Select
+    - Class: rviz/FocusCamera
+  Views:
+    Current:
+      Class: rviz/Orbit
+      Distance: 58
+      Focal Point:
+        X: 0
+        Y: 0
+        Z: 1
+      Pitch: 0.65
+      Yaw: 1.57
+      Target Frame: world
+    Saved: ~
+Window Geometry:
+  Height: 900
+  Width: 1500

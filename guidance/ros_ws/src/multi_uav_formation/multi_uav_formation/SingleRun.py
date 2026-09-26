@@ -45,6 +45,8 @@ class SingleRun:
 
         self.number = kwargs.get('number', '')
         self.sceneName = kwargs.get('scene')
+        self.plannerBackend = str(kwargs.get('planner_backend') or 'ego').lower()
+        self.rvizEnabled = bool(kwargs.get('enable_rviz', False))
         self.takeoff = kwargs.get('takeoff', False)
         
         self.config = json.load(open(os.path.join(utils_path, 'scenes', f'{self.sceneName}.json'), 'rb'))
@@ -53,6 +55,7 @@ class SingleRun:
         self.formationTime = self.config["formationTime"]
         
         self.obstacleData = self.config.get('obstacleData') or {}
+        self.boxObstacleData = self.config.get('boxObstacleData') or {}
         self.movingObstacleData = self.config.get('movingObstacleData') or {}
         self.platformData = self.config.get('platformData') or {}
         self.applyPlatformDefaults()
@@ -82,6 +85,22 @@ class SingleRun:
         self.safetyXMax = self.params['safety']['x_max']
         self.safetyYMin = self.params['safety']['y_min']
         self.safetyYMax = self.params['safety']['y_max']
+
+        sceneSafety = self.config.get('safety') or {}
+        safetyOverrides = {
+            'safetyDistanceBetween': ('distanceBetween', 'distance_between'),
+            'safetyMaxHeight': ('maxHeight', 'max_height'),
+            'safetyMinHeight': ('minHeight', 'min_height'),
+            'safetyXMin': ('xMin', 'x_min'),
+            'safetyXMax': ('xMax', 'x_max'),
+            'safetyYMin': ('yMin', 'y_min'),
+            'safetyYMax': ('yMax', 'y_max'),
+        }
+        for attribute, keys in safetyOverrides.items():
+            for key in keys:
+                if key in sceneSafety:
+                    setattr(self, attribute, float(sceneSafety[key]))
+                    break
 
         self.tStep = self.params['execution']['time_step']
 
@@ -113,8 +132,12 @@ class SingleRun:
         self.logSaved = False
         self.lastElapsedPrintTime = 0.0
         self.gazeboPositionENU = None
+        self.gazeboVelocityENU = None
         self.gazeboQuaternionENU = None
         self.gazeboPoseTime = None
+        self.gazeboOdomTime = None
+        self.gazeboOdomState = None
+        self.gazeboAppliedOdomState = None
         self.endControlFlag = 0
         self.message = ''
 
@@ -133,6 +156,9 @@ class SingleRun:
         self.normalizePlatformGoals()
         platformReferenceZ = self.platformHoverReferenceZ()
         if self.platformData and platformReferenceZ is not None:
+            configuredSafetyMinHeight = self.platformData.get('safetyMinHeight')
+            if configuredSafetyMinHeight is not None:
+                self.safetyMinHeight = float(configuredSafetyMinHeight)
             safetyHeightMargin = float(self.platformData.get('safetyHeightMargin', 0.8))
             configuredSafetyMaxHeight = self.platformData.get('safetyMaxHeight')
             if configuredSafetyMaxHeight is not None:
@@ -143,6 +169,7 @@ class SingleRun:
                     float(self.takeoffPointENU[2]) + 0.5,
                     float(self.safetyMinHeight) + 0.8
                 )
+            self.params['safety']['min_height'] = self.safetyMinHeight
             self.params['safety']['max_height'] = self.safetyMaxHeight
         self.egoPlannerConfig = self.config.get('egoPlanner', {})
         self.egoPlannerEnabled = bool(self.egoPlannerConfig.get('enabled', False))
@@ -166,9 +193,30 @@ class SingleRun:
         self.egoMovingObstacleTimeBuffer = float(self.egoPlannerConfig.get('movingObstacleTimeBuffer', 0.8))
         self.egoMovingObstacleClosingPenalty = float(self.egoPlannerConfig.get('movingObstacleClosingPenalty', 1.5))
         self.egoMovingObstacleAwayBias = float(self.egoPlannerConfig.get('movingObstacleAwayBias', 0.25))
-        self.egoMovingObstaclePredictionEnabled = bool(self.egoPlannerConfig.get(
+        self.egoMovingObstacleTimeAwareCostEnabled = bool(self.egoPlannerConfig.get(
+            'movingObstacleTimeAwareCostEnabled',
+            False
+        ))
+        configuredMovingObstaclePrediction = bool(self.egoPlannerConfig.get(
             'earlyAvoidanceEnabled',
             self.egoPlannerConfig.get('movingObstaclePredictionEnabled', False)
+        ))
+        if self.egoMovingObstacleTimeAwareCostEnabled and configuredMovingObstaclePrediction:
+            print(
+                'Both earlyAvoidanceEnabled and movingObstacleTimeAwareCostEnabled are true; '
+                'using README time-aware cost/gradient mode and disabling future point-cloud prediction.'
+            )
+            configuredMovingObstaclePrediction = False
+        self.egoMovingObstaclePredictionEnabled = configuredMovingObstaclePrediction
+        if self.egoMovingObstacleTimeAwareCostEnabled:
+            self.egoMovingObstacleAvoidanceMode = 'time_aware_cost_gradient'
+        elif self.egoMovingObstaclePredictionEnabled:
+            self.egoMovingObstacleAvoidanceMode = 'point_cloud_augmentation'
+        else:
+            self.egoMovingObstacleAvoidanceMode = 'no_early_avoidance'
+        self.egoMovingObstaclePointCloudEnabled = bool(self.egoPlannerConfig.get(
+            'movingObstaclePointCloudEnabled',
+            True
         ))
         self.egoMovingObstaclePredictionHorizon = float(self.egoPlannerConfig.get(
             'movingObstaclePredictionHorizon',
@@ -198,8 +246,11 @@ class SingleRun:
             'movingObstaclePredictionMaxCloudsPerObstacle',
             1
         ))
-        # Planner-external obstacle avoidance is disabled: EGO-Planner owns obstacle avoidance.
-        self.egoLocalObstacleGuardEnabled = False
+        defaultExternalAvoidance = False
+        self.egoLocalObstacleGuardEnabled = bool(self.egoPlannerConfig.get(
+            'localObstacleGuard',
+            defaultExternalAvoidance
+        ))
         self.egoInterUavRepulsionGain = float(self.egoPlannerConfig.get('interUavRepulsionGain', 1.2))
         self.egoInterUavRecoverySpeed = float(self.egoPlannerConfig.get('interUavRecoverySpeed', 0.55))
         self.egoMaxControlSpeed = float(self.egoPlannerConfig.get('controlVelocityLimit', self.egoPlannerConfig.get('maxVel', 0.9)))
@@ -229,11 +280,24 @@ class SingleRun:
         ))
         self.egoCommandLookahead = float(self.egoPlannerConfig.get('commandLookahead', 1.5))
         self.egoCommandSmoothingEnabled = bool(self.egoPlannerConfig.get('commandSmoothingEnabled', True))
-        self.egoVelocityFilterAlpha = float(self.egoPlannerConfig.get('velocityFilterAlpha', 0.45))
-        self.egoCommandAccelLimit = float(self.egoPlannerConfig.get('commandAccelLimit', 0.8))
+        velocityFilterKey = 'egov2VelocityFilterAlpha' if self.plannerBackend == 'egov2' else 'velocityFilterAlpha'
+        commandAccelKey = 'egov2CommandAccelLimit' if self.plannerBackend == 'egov2' else 'commandAccelLimit'
+        commandVerticalAccelKey = (
+            'egov2CommandVerticalAccelLimit'
+            if self.plannerBackend == 'egov2'
+            else 'commandVerticalAccelLimit'
+        )
+        self.egoVelocityFilterAlpha = float(self.egoPlannerConfig.get(
+            velocityFilterKey,
+            self.egoPlannerConfig.get('velocityFilterAlpha', 0.45)
+        ))
+        self.egoCommandAccelLimit = float(self.egoPlannerConfig.get(
+            commandAccelKey,
+            self.egoPlannerConfig.get('commandAccelLimit', 0.8)
+        ))
         self.egoCommandVerticalAccelLimit = float(self.egoPlannerConfig.get(
-            'commandVerticalAccelLimit',
-            self.egoCommandAccelLimit
+            commandVerticalAccelKey,
+            self.egoPlannerConfig.get('commandVerticalAccelLimit', self.egoCommandAccelLimit)
         ))
         self.egoCommandJerkLimit = float(self.egoPlannerConfig.get('commandJerkLimit', 0.0))
         self.lastSmoothedVelocityENU = None
@@ -247,6 +311,8 @@ class SingleRun:
         self.egoEndDelay = float(self.egoPlannerConfig.get('endDelay', 2.0))
         self.egoLastCommand = None
         self.egoLastCommandTime = None
+        self.egoV2VelocityFrameCorrectionENU = np.zeros(3)
+        self.egoV2MavrosVelocityCommandENU = np.zeros(3)
         self.egoLastNoCommandFallbackPrintTime = 0.0
         self.egoNoCommandFallbackDelay = float(self.egoPlannerConfig.get('noCommandFallbackDelay', 4.0))
         self.egoOffboardRecoveryPeriod = float(self.egoPlannerConfig.get('offboardRecoveryPeriod', 0.5))
@@ -259,6 +325,10 @@ class SingleRun:
         self.egoStaleCommandPositionTolerance = float(self.egoPlannerConfig.get('staleCommandPositionTolerance', 0.15))
         self.egoStaleCommandVelocityTolerance = float(self.egoPlannerConfig.get('staleCommandVelocityTolerance', 0.08))
         self.egoStaleCommandGoalDistance = float(self.egoPlannerConfig.get('staleCommandGoalDistance', 1.5))
+        self.egoProgressFallbackEnabled = bool(self.egoPlannerConfig.get(
+            'progressFallbackEnabled',
+            defaultExternalAvoidance
+        ))
         self.egoStaleCommandSince = None
         self.egoStaleCommandLastPositionENU = None
         self.egoFinalConvergenceDistance = float(self.egoPlannerConfig.get(
@@ -269,8 +339,10 @@ class SingleRun:
         self.egoBestGoalDistanceTime = None
         self.egoFinalConvergenceForced = False
         self.egoLastProgressFallbackPrintTime = 0.0
-        # Planner-external tangent escape is disabled: EGO-Planner owns obstacle avoidance.
-        self.egoObstacleEscapeEnabled = False
+        self.egoObstacleEscapeEnabled = bool(self.egoPlannerConfig.get(
+            'obstacleEscapeEnabled',
+            self.egoLocalObstacleGuardEnabled
+        ))
         self.egoObstacleEscapeTriggerMargin = float(self.egoPlannerConfig.get('obstacleEscapeTriggerMargin', 0.0))
         self.egoObstacleEscapeVelocityTriggerMargin = float(self.egoPlannerConfig.get(
             'obstacleEscapeVelocityTriggerMargin',
@@ -332,9 +404,17 @@ class SingleRun:
         self.lastLandCommandTime = 0.0
         self.egoGoalPointENU = None
         self.egoCloudPoints = []
+        self.egoLastCloudPointCount = 0
+        self.egoLastCloudMovingObstacleCount = 0
+        self.egoCurrentCloudMovingObstacleIncludedCount = 0
+        self.egoLastCloudMovingObstacleIncludedCount = 0
+        self.egoLastCloudPublishWallTime = None
+        self.egoLastCloudPredictionEnabled = self.egoMovingObstaclePredictionEnabled
         self.visualizer = None
         self.visualizerPublishPeriod = float(self.egoPlannerConfig.get('obstacleVisualizerPeriod', 0.5))
         self.lastVisualizerPublishTime = 0.0
+        self.egoCloudStatusPrintPeriod = float(self.egoPlannerConfig.get('cloudStatusPrintPeriod', 2.0))
+        self.lastEgoCloudStatusPrintTime = 0.0
         self.lastOffboardRecoveryAttemptTime = 0.0
         self.statusPrintPeriod = float(self.egoPlannerConfig.get('statusPrintPeriod', 1.0))
         self.lastStatusPrintTime = 0.0
@@ -352,7 +432,7 @@ class SingleRun:
         self.spinThread = threading.Thread(target=lambda: rospy.spin())
         self.spinThread.start()
 
-        if not self.isLeader() and self.hasObstacles():
+        if self.rvizEnabled and not self.isLeader() and self.hasObstacles():
             from Visualizer import Visualizer
             self.visualizer = Visualizer()
             time.sleep(1)
@@ -580,12 +660,24 @@ class SingleRun:
         )
 
         self.egoCloudPoints = self.buildEgoObstacleCloud()
+        self.egoLastCloudPointCount = len(self.egoCloudPoints)
+        self.egoLastCloudMovingObstacleCount = self.nMovingObstacle
+        self.egoLastCloudMovingObstacleIncludedCount = self.egoCurrentCloudMovingObstacleIncludedCount
+        self.egoLastCloudPredictionEnabled = self.egoMovingObstaclePredictionEnabled
         self.egoPlannerAvailable = True
-        self.addMessage(f'EGO planner bridge enabled for drone_{droneId}')
+        self.addMessage(
+            f'EGO planner bridge enabled for drone_{droneId}; '
+            f'planner_backend={self.plannerBackend}; '
+            f'avoidance_mode={self.egoMovingObstacleAvoidanceMode}; '
+            f'moving_obstacle_prediction={int(bool(self.egoMovingObstaclePredictionEnabled))}; '
+            f'moving_obstacle_cloud={int(bool(self.egoMovingObstaclePointCloudEnabled))}; '
+            f'time_aware_cost={int(bool(self.egoMovingObstacleTimeAwareCostEnabled))}'
+        )
 
     def setupGazeboTruthSubscriber(self):
         try:
             from geometry_msgs.msg import PoseStamped
+            from nav_msgs.msg import Odometry
         except ImportError as exc:
             msg = f'Gazebo truth logging disabled: {exc}'
             print(msg)
@@ -593,20 +685,59 @@ class SingleRun:
             return
 
         def gazeboPoseCallback(msg):
-            self.gazeboPositionENU = np.array([
+            gazeboPositionENU = np.array([
                 msg.pose.position.x,
                 msg.pose.position.y,
                 msg.pose.position.z,
             ], dtype=float)
-            self.gazeboQuaternionENU = np.array([
+            gazeboQuaternionENU = np.array([
                 msg.pose.orientation.w,
                 msg.pose.orientation.x,
                 msg.pose.orientation.y,
                 msg.pose.orientation.z,
             ], dtype=float)
-            self.gazeboPoseTime = self.getTimeNow()
-            if self.useGazeboTruthForFeedback and hasattr(self, 'me'):
-                self.me.applyWorldPositionCorrectionENU(self.gazeboPositionENU)
+            now = self.getTimeNow()
+            self.gazeboPoseTime = now
+            odomState = self.gazeboOdomState
+            odomIsFresh = (
+                odomState is not None and
+                now - odomState[3] <= 0.5
+            )
+            if odomIsFresh:
+                return
+
+            self.gazeboPositionENU = gazeboPositionENU
+            self.gazeboQuaternionENU = gazeboQuaternionENU
+
+        def gazeboOdomCallback(msg):
+            gazeboPositionENU = np.array([
+                msg.pose.pose.position.x,
+                msg.pose.pose.position.y,
+                msg.pose.pose.position.z,
+            ], dtype=float)
+            gazeboVelocityENU = np.array([
+                msg.twist.twist.linear.x,
+                msg.twist.twist.linear.y,
+                msg.twist.twist.linear.z,
+            ], dtype=float)
+            gazeboQuaternionENU = np.array([
+                msg.pose.pose.orientation.w,
+                msg.pose.pose.orientation.x,
+                msg.pose.pose.orientation.y,
+                msg.pose.pose.orientation.z,
+            ], dtype=float)
+            now = self.getTimeNow()
+            self.gazeboOdomState = (
+                gazeboPositionENU,
+                gazeboVelocityENU,
+                gazeboQuaternionENU,
+                now,
+            )
+            self.gazeboPositionENU = gazeboPositionENU
+            self.gazeboVelocityENU = gazeboVelocityENU
+            self.gazeboQuaternionENU = gazeboQuaternionENU
+            self.gazeboPoseTime = now
+            self.gazeboOdomTime = now
 
         topic = f'/uav_{self.number}/gazebo_pose'
         self.gazeboPoseSub = rospy.Subscriber(
@@ -615,7 +746,22 @@ class SingleRun:
             gazeboPoseCallback,
             queue_size=10
         )
-        self.addMessage(f'Gazebo truth logging enabled from {topic}')
+        odomTopic = f'/uav_{self.number}/gazebo_odom'
+        self.gazeboOdomSub = rospy.Subscriber(
+            odomTopic,
+            Odometry,
+            gazeboOdomCallback,
+            queue_size=10
+        )
+        feedbackLabel = (
+            'truth_velocity_feedback'
+            if self.plannerBackend == 'egov2'
+            else 'truth_odometry_feedback'
+        )
+        self.addMessage(
+            f'Gazebo truth logging enabled from {topic} and {odomTopic}; '
+            f'{feedbackLabel}={int(self.useGazeboTruthForFeedback)}'
+        )
 
     def setupSaveLogService(self):
         try:
@@ -645,6 +791,9 @@ class SingleRun:
                 'taskTime': self.taskTime,
                 'state': self.state.name,
                 'stateFinished': self.stateFinished,
+                'fcuConnected': self.me.isConnected(),
+                'mavrosMode': self.me.meState.mode,
+                'armed': self.me.isArmed(),
                 'logSaved': self.logSaved,
                 'egoGoalReached': self.egoGoalReached,
                 'platformFinalHoverActive': self.platformFinalHoverActive,
@@ -657,6 +806,9 @@ class SingleRun:
                 f"taskTime={self.taskTime:.3f} "
                 f"state={self.state.name} "
                 f"stateFinished={int(bool(self.stateFinished))} "
+                f"fcuConnected={int(bool(self.me.isConnected()))} "
+                f"mavrosMode={self.me.meState.mode or 'NONE'} "
+                f"armed={int(bool(self.me.isArmed()))} "
                 f"logSaved={int(bool(self.logSaved))} "
                 f"egoGoalReached={int(bool(self.egoGoalReached))} "
                 f"platformFinalHoverActive={int(bool(self.platformFinalHoverActive))} "
@@ -681,10 +833,64 @@ class SingleRun:
         )
         print(f'Save-log service ready: /single_run_{self.number}/save_log')
 
+    def applyGazeboTruthStateForFeedback(self):
+        odomState = self.gazeboOdomState
+        truthStateAvailable = (
+            self.useGazeboTruthForFeedback and
+            odomState is not None and
+            self.getTimeNow() - odomState[3] <= 0.5
+        )
+
+        if self.plannerBackend == 'egov2':
+            # Keep position/velocity atomic on Gazebo truth while retaining the
+            # latest MAVROS attitude. Otherwise asynchronous MAVROS callbacks
+            # can overwrite only half of the planner feedback state.
+            self.me.setExternalWorldStateEnabled(truthStateAvailable)
+            if not truthStateAvailable:
+                return
+
+            gazeboPositionENU, gazeboVelocityENU, _gazeboQuaternionENU, _ = odomState
+            self.me.applyWorldPositionCorrectionENU(gazeboPositionENU)
+            self.me.meVelocityENU = np.array(gazeboVelocityENU, dtype=float)
+            self.me.meSpeed = np.linalg.norm(self.me.meVelocityENU)
+            self.me.applyRawMavrosAttitudeENU()
+            self.gazeboAppliedOdomState = odomState
+            return
+
+        self.me.setExternalWorldStateEnabled(truthStateAvailable)
+        if not truthStateAvailable:
+            return
+
+        gazeboPositionENU, gazeboVelocityENU, gazeboQuaternionENU, _ = odomState
+        self.me.applyWorldStateCorrectionENU(
+            gazeboPositionENU,
+            gazeboVelocityENU,
+            gazeboQuaternionENU
+        )
+        self.gazeboAppliedOdomState = odomState
+
     def egoPositionCommandCallback(self, msg):
         self.updateEgoStaleCommandTracker(msg)
         self.egoLastCommand = msg
         self.egoLastCommandTime = self.getTimeNow()
+
+    def egoV2MavrosVelocityENU(self, worldVelocityENU):
+        worldVelocityENU = np.asarray(worldVelocityENU, dtype=float)
+        rawVelocityENU = np.asarray(self.me.rawVelocityENU, dtype=float)
+        measuredWorldVelocityENU = np.asarray(self.me.meVelocityENU, dtype=float)
+        if not (
+            np.all(np.isfinite(worldVelocityENU)) and
+            np.all(np.isfinite(rawVelocityENU)) and
+            np.all(np.isfinite(measuredWorldVelocityENU))
+        ):
+            self.egoV2VelocityFrameCorrectionENU = np.zeros(3)
+            return worldVelocityENU
+
+        # The position target is translated by a time-varying Gazebo-to-MAVROS
+        # offset. Apply the offset derivative to velocity so PX4 receives a
+        # self-consistent position/velocity trajectory in its local frame.
+        self.egoV2VelocityFrameCorrectionENU = rawVelocityENU - measuredWorldVelocityENU
+        return worldVelocityENU + self.egoV2VelocityFrameCorrectionENU
 
     def updateEgoStaleCommandTracker(self, msg):
         posENU = point2Array(msg.position)
@@ -721,7 +927,12 @@ class SingleRun:
         return self.getTimeNow() - self.egoStaleCommandSince >= self.egoStaleCommandTime
 
     def hasObstacles(self):
-        return bool(self.obstacleData or self.movingObstacleData)
+        return bool(
+            self.obstacleData or
+            self.boxObstacleData or
+            self.movingObstacleData or
+            self.platformData
+        )
 
     def obstacleTime(self):
         try:
@@ -814,6 +1025,7 @@ class SingleRun:
         resolution = float(self.egoPlannerConfig.get('cloudResolution', 0.2))
         defaultHeight = float(self.egoPlannerConfig.get('obstacleHeight', 3.0))
         points = []
+        includedMovingObstacleCount = 0
 
         def appendObstacleCloud(obstacle, radiusExtra=0.0):
             center = obstacle.get('centerENU', [0.0, 0.0])
@@ -831,6 +1043,94 @@ class SingleRun:
                     if (x - cx) ** 2 + (y - cy) ** 2 > radius ** 2:
                         continue
                     for z in zs:
+                        points.append([float(x), float(y), float(z)])
+
+        def appendBoxObstacleCloud(obstacle):
+            center = obstacle.get('centerENU')
+            size = obstacle.get('sizeENU')
+            if center is None or len(center) < 2 or size is None or len(size) < 3:
+                return
+
+            halfX = 0.5 * float(size[0])
+            halfY = 0.5 * float(size[1])
+            height = float(size[2])
+            if halfX <= 0.0 or halfY <= 0.0 or height <= 0.0:
+                return
+
+            centerX, centerY = float(center[0]), float(center[1])
+            minX, maxX = centerX - halfX, centerX + halfX
+            minY, maxY = centerY - halfY, centerY + halfY
+            minZ = float(obstacle.get('zMin', 0.0))
+            maxZ = minZ + height
+
+            def samples(start, stop):
+                intervals = max(int(math.ceil((stop - start) / resolution)), 1)
+                return np.linspace(start, stop, intervals + 1)
+
+            xSamples = samples(minX, maxX)
+            ySamples = samples(minY, maxY)
+            zSamples = samples(minZ, maxZ)
+            for x in xSamples:
+                for y in ySamples:
+                    points.append([float(x), float(y), minZ])
+                    points.append([float(x), float(y), maxZ])
+            for x in (minX, maxX):
+                for y in ySamples:
+                    for z in zSamples:
+                        points.append([float(x), float(y), float(z)])
+            for y in (minY, maxY):
+                for x in xSamples:
+                    for z in zSamples:
+                        points.append([float(x), float(y), float(z)])
+
+        def appendPlatformCloud():
+            if not self.platformData:
+                return
+
+            center = self.platformData.get('centerENU')
+            size = self.platformData.get('sizeENU')
+            topZ = self.platformTopReferenceZ()
+            if center is None or len(center) < 2 or size is None or len(size) < 3 or topZ is None:
+                return
+
+            halfX = 0.5 * float(size[0])
+            halfY = 0.5 * float(size[1])
+            height = float(size[2])
+            if halfX <= 0.0 or halfY <= 0.0 or height <= 0.0:
+                return
+
+            mapResolution = float(self.egoPlannerConfig.get('mapResolution', 0.1))
+            obstacleInflation = float(self.egoPlannerConfig.get('obstacleInflation', 0.35))
+            inflateSteps = int(math.ceil(max(obstacleInflation, 0.0) / max(mapResolution, 1e-3)))
+            verticalInflation = inflateSteps * mapResolution
+
+            centerX, centerY = float(center[0]), float(center[1])
+            minX, maxX = centerX - halfX, centerX + halfX
+            minY, maxY = centerY - halfY, centerY + halfY
+            minZ = float(topZ) - height
+            cloudTopZ = max(minZ, float(topZ) - verticalInflation)
+
+            def samples(start, stop):
+                intervals = max(int(math.ceil((stop - start) / resolution)), 1)
+                return np.linspace(start, stop, intervals + 1)
+
+            xSamples = samples(minX, maxX)
+            ySamples = samples(minY, maxY)
+            zSamples = samples(minZ, cloudTopZ)
+
+            # The grid inflates these samples back to the physical deck height.
+            # This preserves the Gazebo box boundary while keeping hover goals
+            # above the deck reachable by both planner backends.
+            for x in xSamples:
+                for y in ySamples:
+                    points.append([float(x), float(y), float(cloudTopZ)])
+            for x in (minX, maxX):
+                for y in ySamples:
+                    for z in zSamples:
+                        points.append([float(x), float(y), float(z)])
+            for y in (minY, maxY):
+                for x in xSamples:
+                    for z in zSamples:
                         points.append([float(x), float(y), float(z)])
 
         def pointSegmentDistanceXY(pointXY, startXY, endXY):
@@ -860,7 +1160,16 @@ class SingleRun:
             return None
 
         for obstacle in self.currentObstacleStates():
+            if obstacle.get('type') == 'moving':
+                if not self.egoMovingObstaclePointCloudEnabled:
+                    continue
+                includedMovingObstacleCount += 1
             appendObstacleCloud(obstacle)
+
+        for _name, obstacle in self.sortedObstacleItems(self.boxObstacleData):
+            appendBoxObstacleCloud(obstacle)
+
+        appendPlatformCloud()
 
         if self.egoMovingObstaclePredictionEnabled and self.movingObstacleData:
             baseTime = self.obstacleTime()
@@ -891,6 +1200,7 @@ class SingleRun:
                         predicted['centerENU'] = predictedCenter
                         appendObstacleCloud(predicted, radiusExtra=radiusExtra)
 
+        self.egoCurrentCloudMovingObstacleIncludedCount = includedMovingObstacleCount
         return points
 
     def publishEgoPlannerInputs(self):
@@ -918,8 +1228,20 @@ class SingleRun:
         nowSec = self.getTimeNow()
         if self.hasObstacles() and nowSec - self.egoLastCloudPublishTime >= self.egoCloudPublishPeriod:
             self.egoCloudPoints = self.buildEgoObstacleCloud()
+            self.egoLastCloudPointCount = len(self.egoCloudPoints)
+            self.egoLastCloudMovingObstacleCount = self.nMovingObstacle
+            self.egoLastCloudMovingObstacleIncludedCount = self.egoCurrentCloudMovingObstacleIncludedCount
+            self.egoLastCloudPredictionEnabled = self.egoMovingObstaclePredictionEnabled
             if not self.egoCloudPoints:
                 self.egoLastCloudPublishTime = nowSec
+                if nowSec - self.lastEgoCloudStatusPrintTime >= self.egoCloudStatusPrintPeriod:
+                    print(
+                        f'EGO obstacle cloud empty: planner={self.plannerBackend}, '
+                        f'moving={self.nMovingObstacle}, '
+                        f'moving_in_cloud={self.egoLastCloudMovingObstacleIncludedCount}, '
+                        f'prediction={int(bool(self.egoMovingObstaclePredictionEnabled))}'
+                    )
+                    self.lastEgoCloudStatusPrintTime = nowSec
                 return
             header = self.egoHeaderType()
             header.stamp = now
@@ -927,6 +1249,17 @@ class SingleRun:
             cloud = self.egoPointCloud2.create_cloud_xyz32(header, self.egoCloudPoints)
             self.egoCloudPub.publish(cloud)
             self.egoLastCloudPublishTime = nowSec
+            self.egoLastCloudPublishWallTime = nowSec
+            if nowSec - self.lastEgoCloudStatusPrintTime >= self.egoCloudStatusPrintPeriod:
+                print(
+                    f'EGO obstacle cloud published: planner={self.plannerBackend}, '
+                    f'topic=/drone_{self.number - 1}_pcl_render_node/cloud, '
+                    f'points={self.egoLastCloudPointCount}, '
+                    f'moving={self.egoLastCloudMovingObstacleCount}, '
+                    f'moving_in_cloud={self.egoLastCloudMovingObstacleIncludedCount}, '
+                    f'prediction={int(bool(self.egoMovingObstaclePredictionEnabled))}'
+                )
+                self.lastEgoCloudStatusPrintTime = nowSec
 
     def publishEgoStartTrigger(self):
         if not (self.egoPlannerEnabled and self.egoPlannerAvailable):
@@ -1148,9 +1481,8 @@ class SingleRun:
 
     def sendBoundedVelocityENUControl(self, velENU, yawRadENU, useObstacleGuard=False, smooth=True):
         boundedVelENU = self.clipVelocityENU(velENU)
-        # Obstacle velocity filtering is intentionally disabled here. In EGO mode,
-        # obstacle avoidance should come from the planner's PositionCommand only.
-        useObstacleGuard = False
+        if useObstacleGuard and self.egoLocalObstacleGuardEnabled:
+            boundedVelENU = self.projectVelocityAwayFromObstacles(boundedVelENU)
 
         if smooth:
             boundedVelENU = self.smoothVelocityCommandENU(boundedVelENU)
@@ -1301,10 +1633,11 @@ class SingleRun:
         print(f'Safety recovery active ({reason}), vel cmd = {arrayString(recoveryVelENU)}')
 
     def guidanceHardSafetyViolation(self):
-        for uav_name, info in self.communicator.othersInfo.items():
-            if self.me.nearPositionENU(point2Array(info['position']), tol=self.safetyDistanceBetween):
-                print(f'Safety module: too close to {uav_name}, quit...')
-                return f'too close to {uav_name}'
+        if self.plannerBackend != 'egov2':
+            for uav_name, info in self.communicator.othersInfo.items():
+                if self.me.nearPositionENU(point2Array(info['position']), tol=self.safetyDistanceBetween):
+                    print(f'Safety module: too close to {uav_name}, quit...')
+                    return f'too close to {uav_name}'
         if self.me.mePositionENU[0] < self.safetyXMin or self.me.mePositionENU[0] > self.safetyXMax:
             print(f'Safety module: x ({self.me.mePositionENU[0]:.2f}) is out of range ({self.safetyXMin:.2f}, {self.safetyXMax:.2f}), quit...')
             return 'x outside safety range'
@@ -1318,18 +1651,28 @@ class SingleRun:
             print('Rejected EGO command: non-finite position or velocity')
             return False
 
-        if (
+        commandOutsideSafetyBox = (
             posENU[0] < self.safetyXMin or posENU[0] > self.safetyXMax or
             posENU[1] < self.safetyYMin or posENU[1] > self.safetyYMax
-        ):
+        )
+        if self.plannerBackend == 'egov2':
+            commandOutsideSafetyBox = commandOutsideSafetyBox or (
+                posENU[2] < self.safetyMinHeight or posENU[2] > self.safetyMaxHeight
+            )
+        if commandOutsideSafetyBox:
             print(f'Rejected EGO command outside safety box: target = {arrayString(posENU)}')
             return False
 
         predictedENU = self.me.mePositionENU + self.clipVelocityENU(velENU) * self.egoCommandLookahead
-        if (
+        predictedBoundaryViolation = (
             predictedENU[0] < self.safetyXMin or predictedENU[0] > self.safetyXMax or
             predictedENU[1] < self.safetyYMin or predictedENU[1] > self.safetyYMax
-        ):
+        )
+        if self.plannerBackend == 'egov2':
+            predictedBoundaryViolation = predictedBoundaryViolation or (
+                predictedENU[2] < self.safetyMinHeight or predictedENU[2] > self.safetyMaxHeight
+            )
+        if predictedBoundaryViolation:
             print(f'Rejected EGO command: predicted boundary violation at {arrayString(predictedENU)}')
             return False
 
@@ -1454,14 +1797,6 @@ class SingleRun:
         return minMargin, closestObstacle
 
     def updateObstacleRiskStatus(self, velENU=None):
-        # Planner-external obstacle risk tracking is disabled; keep neutral values
-        # for logs without feeding any local avoidance state machine.
-        self.egoLastObstaclePointMargin = np.inf
-        self.egoLastObstacleVelocityMargin = np.inf
-        self.egoLastObstacleName = ''
-        self.egoLastObstacleType = ''
-        return np.inf, None, np.inf, np.inf
-
         if velENU is None:
             velENU = self.u
 
@@ -1637,9 +1972,6 @@ class SingleRun:
         print(f'Obstacle tangent avoidance released: {reason}; EGO planner will be retriggered')
 
     def maybeStartObstacleEscape(self, candidateVelENU=None, reason='predicted unsafe'):
-        # Planner-external tangent escape is disabled; EGO-Planner owns obstacle avoidance.
-        return False
-
         if not self.egoObstacleEscapeEnabled or self.egoObstacleEscapeActive:
             return False
         if not self.hasObstacles():
@@ -1663,9 +1995,6 @@ class SingleRun:
         return self.startObstacleEscape(obstacle, startReason, margin)
 
     def stepObstacleEscape(self):
-        # Planner-external tangent escape is disabled; EGO-Planner owns obstacle avoidance.
-        return False
-
         if not self.egoObstacleEscapeActive:
             return False
 
@@ -1934,11 +2263,8 @@ class SingleRun:
         return score
 
     def projectVelocityAwayFromObstacles(self, velENU):
-        # Planner-external obstacle velocity projection is disabled; use EGO output as-is.
-        return np.array(velENU, dtype=float)
-
         if not self.hasObstacles():
-            return velENU
+            return np.array(velENU, dtype=float)
 
         safeVelENU = np.array(velENU, dtype=float)
         margin, closestObstacle = self.obstacleSafetyMarginForVelocity(safeVelENU)
@@ -1984,7 +2310,7 @@ class SingleRun:
 
     def guardedVelocityToPointENUControl(self, pointENU, yawRadENU):
         velENU = self.me.kp * (pointENU - self.me.mePositionENU)
-        self.sendBoundedVelocityENUControl(velENU, yawRadENU, useObstacleGuard=False)
+        self.sendBoundedVelocityENUControl(velENU, yawRadENU, useObstacleGuard=True)
 
     def platformFinalHoverPointENU(self):
         if self.platformLandOnTop:
@@ -2384,6 +2710,7 @@ class SingleRun:
                 self.me.mePositionENU[1],
                 self.takeoffPointENU[2]
             ])
+
         self.velocityToPointENUControl(self.takeoffVerticalPointENU, self.yawRadENU)
 
         if self.me.nearPositionENU(self.takeoffVerticalPointENU) and self.me.nearSpeed(0.0):
@@ -2536,7 +2863,10 @@ class SingleRun:
             return
 
         boundaryViolation = self.safetyBoundaryViolation(margin=0.0)
-        if boundaryViolation and not self.safetyBoundaryIsHeight(boundaryViolation):
+        if boundaryViolation and (
+            self.plannerBackend == 'egov2' or
+            not self.safetyBoundaryIsHeight(boundaryViolation)
+        ):
             self.recoverFromSafetyBoundary(boundaryViolation)
             return
 
@@ -2545,15 +2875,13 @@ class SingleRun:
             self.recoverFromGuidanceSafety()
             return
 
-        # Planner-external obstacle escape/risk checks are disabled. EGO-Planner
-        # is the only obstacle avoidance source during GUIDANCE.
-        # if self.stepObstacleEscape():
-        #     return
-        #
-        # self.updateObstacleRiskStatus(self.u)
-        # if self.maybeStartObstacleEscape(self.u, reason='current obstacle risk'):
-        #     self.stepObstacleEscape()
-        #     return
+        if self.stepObstacleEscape():
+            return
+
+        self.updateObstacleRiskStatus(self.u)
+        if self.maybeStartObstacleEscape(self.u, reason='current obstacle risk'):
+            self.stepObstacleEscape()
+            return
 
         self.publishEgoStartTrigger()
 
@@ -2590,9 +2918,12 @@ class SingleRun:
             self.egoGoalPointENU is not None and
             self.stateTime > self.egoTriggerDelay + self.egoNoCommandFallbackDelay
         )
-        # Planner-external progress/stale-command fallbacks are disabled. While EGO
-        # publishes fresh commands, follow them instead of locally driving around obstacles.
-        forceFinalConvergence = False
+        finalConvergenceTimedOut = self.stateTime >= self.egoFinalConvergenceTime
+        progressStalled = self.egoProgressFallbackEnabled and self.egoGoalProgressStalled(goalDistance)
+        staleCommand = self.egoProgressFallbackEnabled and self.egoLastCommandIsStaleFarFromGoal()
+        forceFinalConvergence = self.egoProgressFallbackEnabled and (
+            nearFinalTarget or finalConvergenceTimedOut or progressStalled or staleCommand
+        )
 
         if not self.platformFinalHoverActive:
             if forceFinalConvergence:
@@ -2600,24 +2931,47 @@ class SingleRun:
                 now = self.getTimeNow()
                 if now - self.egoLastProgressFallbackPrintTime >= 1.0:
                     if nearFinalTarget:
+                        print('Near final target; converging final target instead of following EGO local command')
+                    elif finalConvergenceTimedOut:
                         print('Final convergence time elapsed; converging final target instead of following EGO local command')
+                    elif progressStalled:
+                        print('EGO goal progress stalled; converging final target instead of following EGO local command')
+                    elif staleCommand:
+                        print('EGO command stale far from goal; converging final target instead of following EGO local command')
                     else:
                         print('EGO final convergence forced; converging final target instead of following EGO local command')
                     self.egoLastProgressFallbackPrintTime = now
-                self.convergeToEgoGoalPoint(useObstacleGuard=False)
+                self.convergeToEgoGoalPoint(useObstacleGuard=not nearFinalTarget)
             elif commandFresh:
                 cmd = self.egoLastCommand
                 posENU = point2Array(cmd.position)
                 velENU = point2Array(cmd.velocity)
+                accENU = point2Array(cmd.acceleration)
                 if self.egoCommandIsUsable(posENU, velENU):
-                    controlVelENU = self.egoCommandVelocity(posENU, velENU)
-                    yawRadENU = yawRadNED2ENU(cmd.yaw)
-                    controlVelENU = self.sendBoundedVelocityENUControl(
-                        controlVelENU,
-                        yawRadENU,
-                        useObstacleGuard=False
-                    )
-                    print(f'EGO target pos = {arrayString(posENU)}, vel cmd = {arrayString(controlVelENU)}')
+                    if self.plannerBackend == 'egov2' and np.all(np.isfinite(accENU)):
+                        yawRadENU = float(cmd.yaw) if np.isfinite(cmd.yaw) else self.yawRadENU
+                        self.u = np.array(velENU, dtype=float)
+                        mavrosVelENU = self.egoV2MavrosVelocityENU(velENU)
+                        self.egoV2MavrosVelocityCommandENU = np.array(mavrosVelENU, dtype=float)
+                        self.me.trajectoryENUControl(posENU, mavrosVelENU, accENU, yawRadENU)
+                        print(
+                            f'EGOv2 trajectory pos = {arrayString(posENU)}, '
+                            f'vel = {arrayString(velENU)}, '
+                            f'px4_vel = {arrayString(mavrosVelENU)}, '
+                            f'acc = {arrayString(accENU)}'
+                        )
+                    elif self.plannerBackend != 'egov2':
+                        controlVelENU = self.egoCommandVelocity(posENU, velENU)
+                        yawRadENU = yawRadNED2ENU(cmd.yaw)
+                        controlVelENU = self.sendBoundedVelocityENUControl(
+                            controlVelENU,
+                            yawRadENU,
+                            useObstacleGuard=True
+                        )
+                        print(f'EGO target pos = {arrayString(posENU)}, vel cmd = {arrayString(controlVelENU)}')
+                    else:
+                        print('Rejected EGOv2 command: non-finite acceleration')
+                        self.holdCurrentPosition('rejected EGOv2 command')
                 else:
                     print('Rejected EGO command; holding current position and waiting for replanning')
                     self.holdCurrentPosition('rejected EGO command')
@@ -2626,7 +2980,16 @@ class SingleRun:
                 if now - self.egoLastNoCommandFallbackPrintTime >= 1.0:
                     print('No fresh EGO PositionCommand; holding and waiting for replanning')
                     self.egoLastNoCommandFallbackPrintTime = now
-                self.guardedVelocityToPointENUControl(self.me.mePositionENU, self.yawRadENU)
+                if self.plannerBackend == 'egov2':
+                    holdPointENU = (
+                        point2Array(self.egoLastCommand.position)
+                        if self.egoLastCommand is not None
+                        else np.array(self.preparePointENU, dtype=float)
+                    )
+                    self.u = np.zeros(3)
+                    self.me.positionENUControl(holdPointENU, self.yawRadENU)
+                else:
+                    self.guardedVelocityToPointENUControl(self.me.mePositionENU, self.yawRadENU)
             else:
                 print('Waiting for EGO planner PositionCommand; hovering at prepare point')
                 self.guardedVelocityToPointENUControl(self.preparePointENU, self.yawRadENU)
@@ -2902,6 +3265,7 @@ class SingleRun:
         while self.state != State.END and not rospy.is_shutdown():
             tic = time.time()
 
+            self.applyGazeboTruthStateForFeedback()
             self.updateFrequency()
 
             self.taskTime = time.time() - self.taskStartTime
@@ -2969,25 +3333,65 @@ class SingleRun:
         currentData['mavrosPositionENU'] = copy.copy(self.me.configuredMavrosPositionENU())
         currentData['configuredLocalOffsetENU'] = copy.copy(self.me.configuredLocalOffsetENU)
         currentData['activeLocalOffsetENU'] = copy.copy(self.me.localOffsetENU)
-        if self.gazeboPositionENU is not None:
-            currentData['gazeboPositionENU'] = copy.copy(self.gazeboPositionENU)
+        loggedGazeboPositionENU = self.gazeboPositionENU
+        loggedGazeboVelocityENU = self.gazeboVelocityENU
+        loggedGazeboQuaternionENU = self.gazeboQuaternionENU
+        loggedGazeboOdomTime = self.gazeboOdomTime
+        if self.me.externalWorldStateEnabled and self.gazeboAppliedOdomState is not None:
+            (
+                loggedGazeboPositionENU,
+                loggedGazeboVelocityENU,
+                loggedGazeboQuaternionENU,
+                loggedGazeboOdomTime,
+            ) = self.gazeboAppliedOdomState
+        if loggedGazeboPositionENU is not None:
+            currentData['gazeboPositionENU'] = copy.copy(loggedGazeboPositionENU)
             currentData['gazeboMePositionErrorENU'] = copy.copy(
-                self.gazeboPositionENU - self.me.mePositionENU
+                loggedGazeboPositionENU - self.me.mePositionENU
             )
             currentData['gazeboMavrosPositionErrorENU'] = copy.copy(
-                self.gazeboPositionENU - self.me.configuredMavrosPositionENU()
+                loggedGazeboPositionENU - self.me.configuredMavrosPositionENU()
             )
             if self.gazeboPoseTime is not None:
                 currentData['gazeboPoseAge'] = self.getTimeNow() - self.gazeboPoseTime
-        if self.gazeboQuaternionENU is not None:
-            currentData['gazeboQuaternionENU'] = copy.copy(self.gazeboQuaternionENU)
+        if loggedGazeboQuaternionENU is not None:
+            currentData['gazeboQuaternionENU'] = copy.copy(loggedGazeboQuaternionENU)
+        if loggedGazeboVelocityENU is not None:
+            currentData['gazeboVelocityENU'] = copy.copy(loggedGazeboVelocityENU)
+            if loggedGazeboOdomTime is not None:
+                currentData['gazeboOdomAge'] = self.getTimeNow() - loggedGazeboOdomTime
         currentData['meVelocity'] = copy.copy(self.me.meVelocityENU)
         currentData['meVelocityNorm'] = copy.copy(np.linalg.norm(self.me.meVelocityENU))
         currentData['meAccelerationENU'] = copy.copy(self.me.meAccelerationENU)
         currentData['safetyViolation'] = self.safetyBoundaryViolation(margin=0.0)
         currentData['safetyWarning'] = self.safetyBoundaryViolation(margin=self.egoSafetyMargin)
         if self.egoPlannerEnabled:
+            currentData['plannerBackend'] = copy.copy(self.plannerBackend)
+            currentData['rvizEnabled'] = self.rvizEnabled
+            currentData['egoMovingObstacleAvoidanceMode'] = copy.copy(self.egoMovingObstacleAvoidanceMode)
             currentData['egoGoalReached'] = copy.copy(self.egoGoalReached)
+            currentData['egoCloudPointCount'] = copy.copy(self.egoLastCloudPointCount)
+            currentData['egoCloudMovingObstacleCount'] = copy.copy(self.egoLastCloudMovingObstacleCount)
+            currentData['egoCloudMovingObstacleIncludedCount'] = copy.copy(
+                self.egoLastCloudMovingObstacleIncludedCount
+            )
+            currentData['egoMovingObstaclePredictionEnabled'] = copy.copy(self.egoLastCloudPredictionEnabled)
+            currentData['egoMovingObstaclePointCloudEnabled'] = copy.copy(
+                self.egoMovingObstaclePointCloudEnabled
+            )
+            currentData['egoMovingObstacleTimeAwareCostEnabled'] = copy.copy(
+                self.egoMovingObstacleTimeAwareCostEnabled
+            )
+            if self.plannerBackend == 'egov2':
+                currentData['mavrosRawVelocityENU'] = copy.copy(self.me.rawVelocityENU)
+                currentData['egoV2VelocityFrameCorrectionENU'] = copy.copy(
+                    self.egoV2VelocityFrameCorrectionENU
+                )
+                currentData['egoV2MavrosVelocityCommandENU'] = copy.copy(
+                    self.egoV2MavrosVelocityCommandENU
+                )
+            if self.egoLastCloudPublishWallTime is not None:
+                currentData['egoLastCloudPublishAge'] = self.getTimeNow() - self.egoLastCloudPublishWallTime
             currentData['platformFinalHoverActive'] = copy.copy(self.platformFinalHoverActive)
             currentData['egoObstacleEscapeActive'] = copy.copy(self.egoObstacleEscapeActive)
             currentData['egoObstacleEscapeReason'] = copy.copy(self.egoObstacleEscapeReason)
@@ -3032,6 +3436,8 @@ def main():
     parser.add_argument('--number', type=int, default=0, help='UAV number')
     parser.add_argument('--scene', type=str, default='scene1', help='Scene name')
     parser.add_argument('--prefix', type=str, default=None, help='Run output directory prefix')
+    parser.add_argument('--planner-backend', default='ego', choices=['ego', 'egov2'], help='Planner backend')
+    parser.add_argument('--enable-rviz', action='store_true', help='Publish SingleRun RViz visualization markers')
     parser.add_argument('--takeoff', help='really takeoff or not', action='store_true')
     args = parser.parse_args()
     sr = SingleRun(**vars(args))

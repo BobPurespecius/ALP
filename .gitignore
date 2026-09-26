@@ -198,3 +198,6 @@ guidance/ros_ws/.catkin_workspace
 *.swp
 *~
 .vscode.zip
+# Dated local summaries and issue notes
+guidance/ros_ws/changes_zh_*.txt
+guidance/ros_ws/issues_zh_*.txt

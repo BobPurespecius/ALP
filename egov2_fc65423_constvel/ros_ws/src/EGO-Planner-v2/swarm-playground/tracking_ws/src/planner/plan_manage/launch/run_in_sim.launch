@@ -10,6 +10,9 @@
     <arg name="relative_tracking_x"/>
     <arg name="relative_tracking_y"/>
     <arg name="relative_tracking_z"/>
+    <arg name="enable_cooperative_viewpoint_reference" default="false"/>
+    <arg name="cooperative_viewpoint_reference_timeout" default="0.5"/>
+    <arg name="enable_target_facing_yaw" default="true" />
     <!-- topic of your odometry such as VIO or LIO -->
     <arg name="odom_topic"/>
     <!-- number of moving objects -->
@@ -20,6 +23,54 @@
     <arg name="moving_obj_prediction_horizon" default="2.0"/>
     <arg name="moving_obj_time_decay_tau" default="1.8"/>
     <arg name="moving_obj_max_grad" default="3.0"/>
+    <arg name="max_jer" default="20.0"/>
+    <arg name="directional_visibility_deep_risk_kappa" default="1.0"/>
+    <arg name="directional_visibility_deep_risk_beta" default="2.0"/>
+    <arg name="candidate_preserve_weight" default="2.0"/>
+    <arg name="enable_candidate_region_constraint" default="true"/>
+    <arg name="candidate_region_weight" default="2.0"/>
+    <arg name="candidate_region_type" default="quadratic"/>
+    <arg name="enable_risk_triggered_candidates" default="false"/>
+    <arg name="risk_sample_dt" default="0.10"/>
+    <arg name="candidate_trigger_margin" default="0.15"/>
+    <arg name="team_visibility_preferred_separation_deg" default="25.0"/>
+    <arg name="encirclement_spread_saturation_angle_deg" default="60.0"/>
+    <arg name="encirclement_base_angular_slack_deg" default="20.0"/>
+    <arg name="enable_encirclement_tracking" default="false"/>
+    <arg name="temporal_swarm_trigger_margin" default="0.08"/>
+    <arg name="temporal_swarm_sample_dt" default="0.05"/>
+    <arg name="temporal_swarm_conflict_half_window" default="0.60"/>
+    <arg name="temporal_swarm_time_trust_ratio" default="0.15"/>
+    <arg name="temporal_swarm_guard_margin" default="0.01"/>
+    <arg name="temporal_swarm_owner_hold_sec" default="0.50"/>
+    <arg name="enable_joint_topology_coordination" default="false"/>
+    <arg name="topology_coordination_timeout" default="0.12"/>
+    <arg name="team_coordination_timeout" default="0.35"/>
+    <arg name="topology_result_max_age" default="0.30"/>
+    <arg name="topology_min_active_remaining" default="0.35"/>
+    <arg name="enable_team_visibility_optimizer" default="false"/>
+    <arg name="team_solution_max_age" default="0.30"/>
+    <arg name="team_solution_min_activation_lead" default="0.015"/>
+    <arg name="team_min_execution_time" default="0.12"/>
+    <arg name="visibility_sample_dt" default="0.10"/>
+    <arg name="visibility_min_target_distance" default="0.20"/>
+    <arg name="visibility_max_target_distance" default="8.0"/>
+    <arg name="visibility_occlusion_margin" default="0.08"/>
+    <arg name="k3_local_escalation_enabled" default="false"/>
+    <arg name="weight_visibility" default="20.0"/>
+    <arg name="enable_candidate_hard_corridor_scp" default="false"/>
+    <arg name="candidate_hard_corridor_scp_radius" default="0.5"/>
+    <arg name="candidate_hard_corridor_scp_trust_region" default="0.25"/>
+    <arg name="candidate_hard_corridor_scp_time_trust_region" default="0.15"/>
+    <arg name="candidate_hard_corridor_scp_max_iterations" default="8"/>
+    <arg name="candidate_hard_corridor_scp_samples" default="25"/>
+    <arg name="enable_team_spatiotemporal_scp" default="true"/>
+    <arg name="team_scp_p_trust" default="0.30"/>
+    <arg name="team_scp_t_trust_ratio" default="0.15"/>
+    <arg name="team_scp_max_iterations" default="6"/>
+    <arg name="team_scp_soft_weight" default="10.0"/>
+    <arg name="team_scp_t_gain_ratio" default="0.80"/>
+    <arg name="static_los_scene_file" default=""/>
     <!-- main algorithm params -->
     <include file="$(find ego_planner)/launch/advanced_param.xml">
         <arg name="drone_id" value="$(arg drone_id)"/>
@@ -34,6 +85,53 @@
         <arg name="moving_obj_prediction_horizon" value="$(arg moving_obj_prediction_horizon)"/>
         <arg name="moving_obj_time_decay_tau" value="$(arg moving_obj_time_decay_tau)"/>
         <arg name="moving_obj_max_grad" value="$(arg moving_obj_max_grad)"/>
+        <arg name="encirclement_base_angular_slack_deg" value="$(arg encirclement_base_angular_slack_deg)"/>
+        <arg name="enable_encirclement_tracking" value="$(arg enable_encirclement_tracking)"/>
+        <arg name="directional_visibility_deep_risk_kappa" value="$(arg directional_visibility_deep_risk_kappa)"/>
+        <arg name="directional_visibility_deep_risk_beta" value="$(arg directional_visibility_deep_risk_beta)"/>
+        <arg name="candidate_preserve_weight" value="$(arg candidate_preserve_weight)"/>
+        <arg name="enable_candidate_region_constraint" value="$(arg enable_candidate_region_constraint)"/>
+        <arg name="candidate_region_weight" value="$(arg candidate_region_weight)"/>
+        <arg name="candidate_region_type" value="$(arg candidate_region_type)"/>
+        <arg name="enable_risk_triggered_candidates" value="$(arg enable_risk_triggered_candidates)"/>
+        <arg name="risk_sample_dt" value="$(arg risk_sample_dt)"/>
+        <arg name="candidate_trigger_margin" value="$(arg candidate_trigger_margin)"/>
+        <arg name="team_visibility_preferred_separation_deg" value="$(arg team_visibility_preferred_separation_deg)"/>
+        <arg name="encirclement_spread_saturation_angle_deg" value="$(arg encirclement_spread_saturation_angle_deg)"/>
+        <arg name="temporal_swarm_trigger_margin" value="$(arg temporal_swarm_trigger_margin)"/>
+        <arg name="temporal_swarm_sample_dt" value="$(arg temporal_swarm_sample_dt)"/>
+        <arg name="temporal_swarm_conflict_half_window" value="$(arg temporal_swarm_conflict_half_window)"/>
+        <arg name="temporal_swarm_time_trust_ratio" value="$(arg temporal_swarm_time_trust_ratio)"/>
+        <arg name="temporal_swarm_guard_margin" value="$(arg temporal_swarm_guard_margin)"/>
+        <arg name="temporal_swarm_owner_hold_sec" value="$(arg temporal_swarm_owner_hold_sec)"/>
+        <arg name="enable_joint_topology_coordination" value="$(arg enable_joint_topology_coordination)"/>
+        <arg name="topology_coordination_timeout" value="$(arg topology_coordination_timeout)"/>
+        <arg name="team_coordination_timeout" value="$(arg team_coordination_timeout)"/>
+        <arg name="topology_result_max_age" value="$(arg topology_result_max_age)"/>
+        <arg name="topology_min_active_remaining" value="$(arg topology_min_active_remaining)"/>
+        <arg name="enable_team_visibility_optimizer" value="$(arg enable_team_visibility_optimizer)"/>
+        <arg name="team_solution_max_age" value="$(arg team_solution_max_age)"/>
+        <arg name="team_solution_min_activation_lead" value="$(arg team_solution_min_activation_lead)"/>
+        <arg name="team_min_execution_time" value="$(arg team_min_execution_time)"/>
+        <arg name="visibility_sample_dt" value="$(arg visibility_sample_dt)"/>
+        <arg name="visibility_min_target_distance" value="$(arg visibility_min_target_distance)"/>
+        <arg name="visibility_max_target_distance" value="$(arg visibility_max_target_distance)"/>
+        <arg name="visibility_occlusion_margin" value="$(arg visibility_occlusion_margin)"/>
+        <arg name="k3_local_escalation_enabled" value="$(arg k3_local_escalation_enabled)"/>
+        <arg name="weight_visibility" value="$(arg weight_visibility)"/>
+        <arg name="enable_candidate_hard_corridor_scp" value="$(arg enable_candidate_hard_corridor_scp)"/>
+        <arg name="candidate_hard_corridor_scp_radius" value="$(arg candidate_hard_corridor_scp_radius)"/>
+        <arg name="candidate_hard_corridor_scp_trust_region" value="$(arg candidate_hard_corridor_scp_trust_region)"/>
+        <arg name="candidate_hard_corridor_scp_time_trust_region" value="$(arg candidate_hard_corridor_scp_time_trust_region)"/>
+        <arg name="candidate_hard_corridor_scp_max_iterations" value="$(arg candidate_hard_corridor_scp_max_iterations)"/>
+        <arg name="candidate_hard_corridor_scp_samples" value="$(arg candidate_hard_corridor_scp_samples)"/>
+        <arg name="enable_team_spatiotemporal_scp" value="$(arg enable_team_spatiotemporal_scp)"/>
+        <arg name="team_scp_p_trust" value="$(arg team_scp_p_trust)"/>
+        <arg name="team_scp_t_trust_ratio" value="$(arg team_scp_t_trust_ratio)"/>
+        <arg name="team_scp_max_iterations" value="$(arg team_scp_max_iterations)"/>
+        <arg name="team_scp_soft_weight" value="$(arg team_scp_soft_weight)"/>
+        <arg name="team_scp_t_gain_ratio" value="$(arg team_scp_t_gain_ratio)"/>
+        <arg name="static_los_scene_file" value="$(arg static_los_scene_file)"/>
         <!-- camera pose: transform of camera frame in the world frame -->
         <!-- depth topic: depth image, 640x480 by default -->
         <!-- don't set cloud_topic if you already set these ones! -->
@@ -50,7 +148,7 @@
         <!-- maximum velocity, acceleration and jerk the drone will reach -->
         <arg name="max_vel" value="3.0" />
         <arg name="max_acc" value="6.0" />
-        <arg name="max_jer" value="20.0" />
+        <arg name="max_jer" value="$(arg max_jer)" />
         <!--always set to 1.5 times grater than sensing horizen-->
         <arg name="planning_horizon" value="7.5" />
         <arg name="use_distinctive_trajs" value="false" />
@@ -79,12 +177,17 @@
         <arg name="relative_tracking_x" value="$(arg relative_tracking_x)" />
         <arg name="relative_tracking_y" value="$(arg relative_tracking_y)" />
         <arg name="relative_tracking_z" value="$(arg relative_tracking_z)" />
+        <arg name="enable_cooperative_viewpoint_reference" value="$(arg enable_cooperative_viewpoint_reference)" />
+        <arg name="cooperative_viewpoint_reference_timeout" value="$(arg cooperative_viewpoint_reference_timeout)" />
     </include>
     <!-- trajectory server -->
     <node pkg="ego_planner" name="drone_$(arg drone_id)_traj_server" type="traj_server" output="screen">
         <remap from="position_cmd" to="drone_$(arg drone_id)_planning/pos_cmd"/>
         <remap from="~planning/trajectory" to="drone_$(arg drone_id)_planning/trajectory"/>
+        <remap from="~odom" to="drone_$(arg drone_id)_visual_slam/odom"/>
+        <remap from="~tracking_ready" to="/target_tracking/tracking_ready/uav$(arg drone_id)"/>
         <param name="traj_server/time_forward" value="1.0" type="double"/>
+        <param name="traj_server/enable_target_facing_yaw" value="$(arg enable_target_facing_yaw)" type="bool"/>
     </node>
     <!-- use simulator -->
     <include file="$(find ego_planner)/launch/simulator.xml">

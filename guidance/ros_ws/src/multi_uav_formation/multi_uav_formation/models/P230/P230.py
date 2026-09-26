@@ -6,7 +6,7 @@ import time
 import rospy
 from geometry_msgs.msg import PoseStamped, TwistStamped
 from sensor_msgs.msg import Imu
-from mavros_msgs.msg import State, PositionTarget, AttitudeTarget
+from mavros_msgs.msg import State, PositionTarget, AttitudeTarget, StatusText
 from mavros_msgs.srv import CommandBool, CommandBoolRequest, SetMode, SetModeRequest, CommandTOL, CommandTOLRequest
 from geographic_msgs.msg import GeoPointStamped
 
@@ -22,6 +22,7 @@ YAW_RATE_IGNORE = PositionTarget.IGNORE_YAW_RATE
 POSITION_YAW = VELOCITY_IGNORE + ACCELERATION_IGNORE + YAW_RATE_IGNORE
 VELOCITY_YAW = POSITION_IGNORE + ACCELERATION_IGNORE + YAW_RATE_IGNORE
 ACCELERATION_YAW = POSITION_IGNORE + VELOCITY_IGNORE + YAW_RATE_IGNORE
+TRAJECTORY_YAW = YAW_RATE_IGNORE
 
 POSITION_YAW_RATE = VELOCITY_IGNORE + ACCELERATION_IGNORE + YAW_IGNORE
 VELOCITY_YAW_RATE = POSITION_IGNORE + ACCELERATION_IGNORE + YAW_IGNORE
@@ -49,17 +50,20 @@ class P230():
         self.meState = State()
 
         self.rawPositionENU = np.zeros(3)
+        self.rawVelocityENU = np.zeros(3)
         self.mePositionENU = np.zeros(3)
         self.meVelocityENU = np.zeros(3)
         self.meSpeed = 0
         self.meAccelerationFLU = np.zeros(3)
         self.meAccelerationENU = np.zeros(3)
         self.meQuaternionENU = np.array([0, 0, 0, 1])
+        self.rawQuaternionENU = np.array([0, 0, 0, 1])
         self.meRPYRadENU = np.zeros(3)
         self.meRPYRadNED = np.zeros(3)
         self.meRPYDegENU = np.zeros(3)
 
         self.stateSub = rospy.Subscriber(f'/{name}/mavros/state', State, self.state_cb)
+        self.statusTextSub = rospy.Subscriber(f'/{name}/mavros/statustext/recv', StatusText, self.status_text_cb)
         self.localPosSub = rospy.Subscriber(f'/{name}/mavros/local_position/pose', PoseStamped, self.local_pos_cb)
         self.velSub = rospy.Subscriber(f'/{name}/mavros/local_position/velocity_local', TwistStamped, self.vel_cb)
         self.imuSub = rospy.Subscriber(f'/{name}/mavros/imu/data', Imu, self.imu_cb)
@@ -103,6 +107,14 @@ class P230():
         self.pitchOffsetRad = 0.0
         self.lastControlPrintTime = 0.0
         self.controlPrintPeriod = 1.0
+        self.lastOffboardRequestTime = 0.0
+        self.lastArmRequestTime = 0.0
+        self.lastFcuNotReadyPrintTime = 0.0
+        self.fcuNotReadyPrintPeriod = 1.0
+        self.lastStatusText = ''
+        self.lastStatusTextSeverity = None
+        self.lastStatusTextTime = 0.0
+        self.externalWorldStateEnabled = False
 
         self.fcu_url = None
         while not self.fcu_url:
@@ -131,11 +143,48 @@ class P230():
     def state_cb(self, msg):
         self.meState = msg
 
+    def status_text_cb(self, msg):
+        text = str(msg.text).strip()
+        self.lastStatusText = text
+        self.lastStatusTextSeverity = msg.severity
+        self.lastStatusTextTime = time.time()
+        lowerText = text.lower()
+        if any(keyword in lowerText for keyword in ('arm', 'preflight', 'reject', 'denied', 'fail')):
+            print(f'PX4 status text ({self.name}): severity={msg.severity}, text={text}')
+
+    def isConnected(self):
+        return bool(self.meState.connected)
+
+    def hasMode(self):
+        return bool(self.meState.mode)
+
+    def fcuReadyForControl(self):
+        return self.isConnected() and self.hasMode()
+
+    def printFcuNotReady(self, action):
+        now = time.time()
+        if now - self.lastFcuNotReadyPrintTime < self.fcuNotReadyPrintPeriod:
+            return
+        self.lastFcuNotReadyPrintTime = now
+        print(
+            f'Waiting for FCU before {action}: '
+            f'connected={self.meState.connected}, mode={self.meState.mode or "<empty>"}'
+        )
+
     def local_pos_cb(self, msg):
         rawPositionENU = np.array([msg.pose.position.x, msg.pose.position.y, msg.pose.position.z])
         self.rawPositionENU = rawPositionENU
+        self.rawQuaternionENU = np.array([
+            msg.pose.orientation.w,
+            msg.pose.orientation.x,
+            msg.pose.orientation.y,
+            msg.pose.orientation.z,
+        ])
+        if self.externalWorldStateEnabled:
+            return
+
         self.mePositionENU = rawPositionENU + self.localOffsetENU
-        self.meQuaternionENU = np.array([msg.pose.orientation.w, msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z])
+        self.meQuaternionENU = np.array(self.rawQuaternionENU, dtype=float)
         self.meRPYRadENU = quaternion2euler(self.meQuaternionENU)
         self.meRPYRadNED = rpyENU2NED(self.meRPYRadENU)
         self.meRPYDegENU = np.rad2deg(self.meRPYRadENU)
@@ -150,12 +199,50 @@ class P230():
         self.localOffsetENU = worldPositionENU - self.rawPositionENU
         self.mePositionENU = np.array(worldPositionENU, dtype=float)
 
+    def setExternalWorldStateEnabled(self, enabled):
+        self.externalWorldStateEnabled = bool(enabled)
+
+    def applyWorldStateCorrectionENU(self, worldPositionENU, worldVelocityENU, worldQuaternionENU):
+        self.applyWorldPositionCorrectionENU(worldPositionENU)
+
+        worldVelocityENU = np.asarray(worldVelocityENU, dtype=float)
+        if np.all(np.isfinite(worldVelocityENU)):
+            self.meVelocityENU = np.array(worldVelocityENU, dtype=float)
+            self.meSpeed = np.linalg.norm(self.meVelocityENU)
+
+        worldQuaternionENU = np.asarray(worldQuaternionENU, dtype=float)
+        if worldQuaternionENU.shape == (4,) and np.all(np.isfinite(worldQuaternionENU)):
+            quaternionNorm = np.linalg.norm(worldQuaternionENU)
+            if quaternionNorm > 1e-6:
+                self.meQuaternionENU = worldQuaternionENU / quaternionNorm
+                self.meRPYRadENU = quaternion2euler(self.meQuaternionENU)
+                self.meRPYRadNED = rpyENU2NED(self.meRPYRadENU)
+                self.meRPYDegENU = np.rad2deg(self.meRPYRadENU)
+
+    def applyRawMavrosAttitudeENU(self):
+        rawQuaternionENU = np.asarray(self.rawQuaternionENU, dtype=float)
+        if rawQuaternionENU.shape != (4,) or not np.all(np.isfinite(rawQuaternionENU)):
+            return
+
+        quaternionNorm = np.linalg.norm(rawQuaternionENU)
+        if quaternionNorm <= 1e-6:
+            return
+
+        self.meQuaternionENU = rawQuaternionENU / quaternionNorm
+        self.meRPYRadENU = quaternion2euler(self.meQuaternionENU)
+        self.meRPYRadNED = rpyENU2NED(self.meRPYRadENU)
+        self.meRPYDegENU = np.rad2deg(self.meRPYRadENU)
+
     def vel_cb(self, msg):
-        self.meVelocityENU = np.array([
+        self.rawVelocityENU = np.array([
             msg.twist.linear.x,
             msg.twist.linear.y,
             msg.twist.linear.z
         ])
+        if self.externalWorldStateEnabled:
+            return
+
+        self.meVelocityENU = np.array(self.rawVelocityENU, dtype=float)
         self.meSpeed = np.linalg.norm(self.meVelocityENU)
 
     def imu_cb(self, msg):
@@ -171,15 +258,39 @@ class P230():
             offboardSetMode.custom_mode = 'OFFBOARD'
             response = self.setModeService.call(offboardSetMode)
 
-            if not response:
-                rospy.logerr("into offboard mode failed!")
+            if self.meState.mode == 'OFFBOARD':
+                return True
+
+            if not response.mode_sent:
+                rospy.logerr("into offboard mode failed: mode_sent=%s" % response.mode_sent)
+                print(f'OFFBOARD request rejected: mode_sent={response.mode_sent}, current_mode={self.meState.mode}')
                 return False
 
-            rospy.loginfo("into offboard mode successful!")
-            return True
+            statusText = ''
+            if self.lastStatusText:
+                age = time.time() - self.lastStatusTextTime
+                statusText = (
+                    f', last_status_text_age={age:.1f}s, '
+                    f'last_status_text_severity={self.lastStatusTextSeverity}, '
+                    f'last_status_text="{self.lastStatusText}"'
+                )
+            print(f'OFFBOARD request sent; waiting for state update, current_mode={self.meState.mode}{statusText}')
+            return False
         except rospy.ServiceException as e:
             rospy.logerr("Service call failed: %s" % e)
             return False
+
+    def requestOffboardIfNeeded(self, period=0.5):
+        if self.meState.mode == 'OFFBOARD':
+            return True
+        if not self.fcuReadyForControl():
+            self.printFcuNotReady('OFFBOARD request')
+            return False
+        now = time.time()
+        if now - self.lastOffboardRequestTime < period:
+            return False
+        self.lastOffboardRequestTime = now
+        return self.intoOffboardMode()
 
     def arm(self):
         try:
@@ -187,8 +298,20 @@ class P230():
             armCmd.value = True
             response = self.armService.call(armCmd)
 
-            if not response:
-                rospy.logerr("arm failed!")
+            if not response.success and not self.meState.armed:
+                rospy.logerr("arm failed: success=%s result=%s" % (response.success, response.result))
+                statusText = ''
+                if self.lastStatusText:
+                    age = time.time() - self.lastStatusTextTime
+                    statusText = (
+                        f', last_status_text_age={age:.1f}s, '
+                        f'last_status_text_severity={self.lastStatusTextSeverity}, '
+                        f'last_status_text="{self.lastStatusText}"'
+                    )
+                print(
+                    f'ARM request rejected: success={response.success}, '
+                    f'result={response.result}, mode={self.meState.mode}{statusText}'
+                )
                 return False
 
             rospy.loginfo("arm successful!")
@@ -197,14 +320,27 @@ class P230():
             rospy.logerr("Service call failed: %s" % e)
             return False
 
+    def armIfNeeded(self, period=1.0):
+        if self.isArmed():
+            return True
+        if not self.fcuReadyForControl():
+            self.printFcuNotReady('ARM request')
+            return False
+        now = time.time()
+        if now - self.lastArmRequestTime < period:
+            return False
+        self.lastArmRequestTime = now
+        return self.arm()
+
     def disarm(self):
         try:
             armCmd = CommandBoolRequest()
             armCmd.value = False
             response = self.armService.call(armCmd)
 
-            if not response.result:
-                rospy.logerr("disarm failed!")
+            if not response.success and self.meState.armed:
+                rospy.logerr("disarm failed: success=%s result=%s" % (response.success, response.result))
+                print(f'DISARM request rejected: success={response.success}, result={response.result}, mode={self.meState.mode}')
                 return False
 
             rospy.loginfo("disarm successful!")
@@ -229,6 +365,9 @@ class P230():
         return self.meState.mode
 
     def sendHeartbeat(self):
+        nowStamp = rospy.Time.now()
+        self.setpoint.header.stamp = nowStamp
+        self.attitudeSetpoint.header.stamp = nowStamp
         if self.attitudeSetpoint.type_mask == ANGLE_RATE_IGNORE:
             self.attitudeSetpointPub.publish(self.attitudeSetpoint)
         else:
@@ -248,6 +387,10 @@ class P230():
 
     def setAccelerationControlMode(self):
         self.setpoint.type_mask = ACCELERATION_YAW
+        self.attitudeSetpoint.type_mask = ATTITUDE_SETPOINT_ALL_IGNORE
+
+    def setTrajectoryControlMode(self):
+        self.setpoint.type_mask = TRAJECTORY_YAW
         self.attitudeSetpoint.type_mask = ATTITUDE_SETPOINT_ALL_IGNORE
 
     def setAttitudeControlMode(self):
@@ -275,6 +418,12 @@ class P230():
             print('Acceleration & Yaw')
             print(f'Acceleration: {pointString(self.setpoint.acceleration_or_force)}')
             print(f'Yaw: {np.rad2deg(self.setpoint.yaw):.2f} deg')
+        elif self.setpoint.type_mask == TRAJECTORY_YAW:
+            print('Trajectory & Yaw')
+            print(f'Position: {pointString(self.setpoint.position)}')
+            print(f'Velocity: {pointString(self.setpoint.velocity)}')
+            print(f'Acceleration: {pointString(self.setpoint.acceleration_or_force)}')
+            print(f'Yaw: {np.rad2deg(self.setpoint.yaw):.2f} deg')
         elif self.setpoint.type_mask == POSITION_YAW_RATE:
             print('Position & Yaw Rate')
             print(f'Position: {pointString(self.setpoint.position)}')
@@ -292,6 +441,7 @@ class P230():
 
     def printMe(self):
         print('-' * 10 + 'Me' + '-' * 10)
+        print(f'FCU connected: {"YES" if self.meState.connected else "NO"}')
         print('Mode: ', self.meState.mode)
         print('Position ENU: ', arrayString(self.mePositionENU))
         print('Velocity ENU: ', arrayString(self.meVelocityENU))
@@ -348,6 +498,25 @@ class P230():
         self.setAccelerationControlMode()
         self.setpoint.coordinate_frame = PositionTarget.FRAME_LOCAL_NED
         accENU = self.saturateAccleration(accENU)
+        self.setpoint.acceleration_or_force.x = accENU[0]
+        self.setpoint.acceleration_or_force.y = accENU[1]
+        self.setpoint.acceleration_or_force.z = accENU[2]
+        self.setpoint.yaw = yawRadENU
+
+    def trajectoryENUControl(self, posENU, velENU, accENU, yawRadENU):
+        self.setTrajectoryControlMode()
+        self.setpoint.coordinate_frame = PositionTarget.FRAME_LOCAL_NED
+
+        localPosENU = np.asarray(posENU, dtype=float) - self.localOffsetENU
+        velENU = np.asarray(velENU, dtype=float)
+        accENU = np.asarray(accENU, dtype=float)
+
+        self.setpoint.position.x = localPosENU[0]
+        self.setpoint.position.y = localPosENU[1]
+        self.setpoint.position.z = localPosENU[2]
+        self.setpoint.velocity.x = velENU[0]
+        self.setpoint.velocity.y = velENU[1]
+        self.setpoint.velocity.z = velENU[2]
         self.setpoint.acceleration_or_force.x = accENU[0]
         self.setpoint.acceleration_or_force.y = accENU[1]
         self.setpoint.acceleration_or_force.z = accENU[2]

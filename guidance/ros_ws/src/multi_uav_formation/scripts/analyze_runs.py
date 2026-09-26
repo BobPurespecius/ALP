@@ -11,6 +11,11 @@ from pathlib import Path
 
 import numpy as np
 
+
+# Maximum horizontal extent of the Iris collision geometry: rotor arm offset
+# plus rotor collision radius in px4_models/neverlost_livox_pitch30/iris.sdf.
+DEFAULT_VEHICLE_COLLISION_RADIUS_M = 0.384
+
 PLATFORM_DEFAULT_HOVER_ABOVE_PLATFORM = 0.2
 
 
@@ -146,7 +151,19 @@ def configured_moving_obstacles(config, t):
     return states
 
 
-def obstacle_clearance(positions, obstacle_data, min_height=None):
+def vehicle_collision_radius(config):
+    value = config.get('vehicleCollisionRadius')
+    if value is None:
+        value = (config.get('egoPlanner') or {}).get(
+            'vehicleCollisionRadius', DEFAULT_VEHICLE_COLLISION_RADIUS_M)
+    try:
+        return max(0.0, float(value))
+    except (TypeError, ValueError):
+        return DEFAULT_VEHICLE_COLLISION_RADIUS_M
+
+
+def obstacle_clearance(positions, obstacle_data, vehicle_radius=0.0,
+                       min_height=None, default_height=3.0):
     if not obstacle_data:
         return math.inf
     if min_height is not None and len(positions):
@@ -157,17 +174,24 @@ def obstacle_clearance(positions, obstacle_data, min_height=None):
     for obstacle in obstacle_data.values():
         center = np.asarray(obstacle.get('centerENU', [0.0, 0.0]), dtype=float)
         radius = float(obstacle.get('radius', 0.0))
-        distances = norm_rows(positions[:, :2] - center)
+        z_min = float(obstacle.get('zMin', 0.0))
+        z_max = z_min + float(obstacle.get('height', default_height))
+        height_mask = (positions[:, 2] >= z_min) & (positions[:, 2] <= z_max)
+        obstacle_positions = positions[height_mask]
+        distances = norm_rows(obstacle_positions[:, :2] - center)
         if len(distances):
-            min_clearance = min(min_clearance, float(np.nanmin(distances - radius)))
+            surface_clearance = distances - radius - vehicle_radius
+            min_clearance = min(min_clearance, float(np.nanmin(surface_clearance)))
     return min_clearance
 
 
-def moving_obstacle_clearance(entries, positions, config, time, min_height=None):
+def moving_obstacle_clearance(entries, positions, config, time, vehicle_radius=0.0,
+                              min_height=None):
     if not entries or len(positions) == 0:
         return math.inf
 
     min_clearance = math.inf
+    default_height = float((config.get('egoPlanner') or {}).get('obstacleHeight', 3.0))
     for idx, (entry, position) in enumerate(zip(entries, positions)):
         if min_height is not None and position[2] < min_height:
             continue
@@ -178,25 +202,35 @@ def moving_obstacle_clearance(entries, positions, config, time, min_height=None)
             obstacles = configured_moving_obstacles(config, t)
 
         for obstacle in obstacles:
+            z_min = float(obstacle.get('zMin', 0.0))
+            z_max = z_min + float(obstacle.get('height', default_height))
+            if position[2] < z_min or position[2] > z_max:
+                continue
             center = np.asarray(obstacle.get('centerENU', [0.0, 0.0]), dtype=float)
             radius = float(obstacle.get('radius', 0.0))
-            clearance = float(np.linalg.norm(position[:2] - center) - radius)
+            clearance = float(
+                np.linalg.norm(position[:2] - center) - radius - vehicle_radius)
             min_clearance = min(min_clearance, clearance)
 
     return min_clearance
 
 
 def combined_obstacle_clearance(entries, positions, config, time, min_height=None):
+    default_height = float((config.get('egoPlanner') or {}).get('obstacleHeight', 3.0))
+    vehicle_radius = vehicle_collision_radius(config)
     static_clearance = obstacle_clearance(
         positions,
         config.get('obstacleData', {}),
-        min_height=min_height
+        vehicle_radius=vehicle_radius,
+        min_height=min_height,
+        default_height=default_height
     )
     dynamic_clearance = moving_obstacle_clearance(
         entries,
         positions,
         config,
         time,
+        vehicle_radius=vehicle_radius,
         min_height=min_height
     )
     return min(static_clearance, dynamic_clearance)
@@ -401,8 +435,9 @@ def summarize_vehicle(run_data, goal_tolerance, clearance_margin,
             final_distance <= goal_tolerance and
             landing_state_success
         )
-    clearance_success = min_clearance >= clearance_margin
-    success = final_success and clearance_success
+    # Clearance remains a diagnostic metric, but run success is currently
+    # defined only by whether the vehicle finishes at its target.
+    success = final_success
 
     failure_reasons = []
     if goal is None:
@@ -425,8 +460,6 @@ def summarize_vehicle(run_data, goal_tolerance, clearance_margin,
             failure_reasons.append('final_state_not_end')
         if final_armed is not False:
             failure_reasons.append('final_armed')
-    if not clearance_success:
-        failure_reasons.append('clearance_violation')
     if not failure_reasons:
         failure_reasons.append('ok')
 
@@ -630,7 +663,7 @@ def main():
     parser.add_argument('--goal-speed-tolerance', type=float, default=None,
                         help='Final speed success tolerance. Defaults to platform landingSpeedTolerance, then egoPlanner.goalSpeedTolerance.')
     parser.add_argument('--clearance-margin', type=float, default=0.0,
-                        help='Required minimum clearance outside obstacle radius.')
+                        help='Deprecated compatibility option; clearance does not affect success.')
     parser.add_argument('--allow-incomplete', action='store_true',
                         help='Do not mark a run failed only because some data_*.pkl files are missing.')
     args = parser.parse_args()

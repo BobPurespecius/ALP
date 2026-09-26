@@ -13,6 +13,24 @@ from rosgraph_msgs.msg import Clock
 from std_srvs.srv import Empty, Trigger
 
 
+def call_with_wall_timeout(fn, timeout):
+    result = {'done': False}
+
+    import threading
+
+    def wrapper():
+        try:
+            fn()
+        except Exception:
+            pass
+        result['done'] = True
+
+    thread = threading.Thread(target=wrapper, daemon=True)
+    thread.start()
+    thread.join(timeout)
+    return result['done']
+
+
 def finite_float(value):
     try:
         number = float(value)
@@ -81,11 +99,11 @@ def scene_goal_tolerances(scene_file):
 
 
 def pause_gazebo():
-    try:
-        rospy.wait_for_service('/gazebo/pause_physics', timeout=1.0)
+    def pause():
+        rospy.wait_for_service('/gazebo/pause_physics', timeout=0.5)
         rospy.ServiceProxy('/gazebo/pause_physics', Empty)()
-    except Exception:
-        pass
+
+    call_with_wall_timeout(pause, 1.0)
 
 
 def main():
@@ -115,7 +133,6 @@ def main():
         if sim_time - state['start_sim_time'] >= args.duration:
             elapsed = sim_time - state['start_sim_time']
             state['stop_reason'] = f'sim_time_duration:{elapsed:.3f}'
-            pause_gazebo()
 
     rospy.Subscriber('/clock', Clock, clock_callback, queue_size=10)
 
@@ -129,6 +146,7 @@ def main():
     while not rospy.is_shutdown():
         if state['stop_reason']:
             print(state['stop_reason'])
+            pause_gazebo()
             return 0
 
         now = time.time()
@@ -152,7 +170,6 @@ def main():
                     break
             if reached == args.expected_uavs:
                 state['stop_reason'] = 'all_goals_reached'
-                pause_gazebo()
                 continue
 
         rate.sleep()

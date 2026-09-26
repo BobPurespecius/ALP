@@ -8,6 +8,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -g")
 
 find_package(Eigen3 REQUIRED)
 find_package(PCL 1.7 REQUIRED)
+find_package(osqp REQUIRED CONFIG)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
@@ -23,13 +24,13 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
  INCLUDE_DIRS include
  LIBRARIES traj_opt
- CATKIN_DEPENDS plan_env 
-#  DEPENDS system_lib
+ CATKIN_DEPENDS plan_env
 )
 
 include_directories( 
     SYSTEM 
     include 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../multi_uav_formation/include
     ${catkin_INCLUDE_DIRS}
     ${Eigen3_INCLUDE_DIRS} 
     ${PCL_INCLUDE_DIRS}
@@ -37,7 +38,12 @@ include_directories(
 
 add_library( traj_opt 
     src/poly_traj_optimizer.cpp 
+    src/scp_optimizer.cpp
     )
 target_link_libraries( traj_opt
     ${catkin_LIBRARIES} 
+    osqp::osqp
     )  
+
+# Feedback126: the time-only dormant helpers were removed from production
+# (§9); their contract tests were orphaned and are retired with them.

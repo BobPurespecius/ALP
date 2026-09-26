@@ -19,6 +19,7 @@ namespace ego_planner
     nh.param("fsm/planning_horizon", planning_horizen_, -1.0);
     nh.param("fsm/planning_horizen_time", planning_horizen_time_, -1.0);
     nh.param("fsm/emergency_time", emergency_time_, 1.0);
+    nh.param("fsm/preset_start_delay_step", preset_start_delay_step_, 0.0);
     nh.param("fsm/realworld_experiment", flag_realworld_experiment_, false);
     nh.param("fsm/fail_safe", enable_fail_safe_, true);
     nh.param("fsm/sequential_start", sequential_start_, true);
@@ -462,6 +463,18 @@ namespace ego_planner
     {
       if (!have_target_ || !have_trigger_)
         goto force_return;
+      if (preset_start_ready_time_.isZero())
+        preset_start_ready_time_ = ros::Time::now();
+      const double start_delay = std::max(0.0, preset_start_delay_step_) *
+                                 std::max(0, planner_manager_->pp_.drone_id);
+      if (target_type_ == TARGET_TYPE::PRESET_TARGET && start_delay > 0.0 &&
+          (ros::Time::now() - preset_start_ready_time_).toSec() < start_delay)
+      {
+        ROS_INFO_THROTTLE(1.0, "EGO drone %d waits %.1fs before preset route start.",
+                          planner_manager_->pp_.drone_id,
+                          start_delay - (ros::Time::now() - preset_start_ready_time_).toSec());
+        goto force_return;
+      }
       // return;
       else
       {

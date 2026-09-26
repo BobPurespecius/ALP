@@ -107,6 +107,44 @@ def add_cylinder_model(lines, name, x, y, radius, height, z_min, static, color):
     ])
 
 
+def add_box_model(lines, name, x, y, size, z_min, yaw, static, color):
+    sx = float(size[0])
+    sy = float(size[1])
+    sz = float(size[2]) if len(size) >= 3 else 1.0
+    z = float(z_min) + sz / 2.0
+    lines.extend([
+        f'    <model name="{name}">',
+        f'      <static>{str(bool(static)).lower()}</static>',
+        f'      <pose>{float(x):.3f} {float(y):.3f} {z:.3f} 0 0 {float(yaw):.3f}</pose>',
+        '      <link name="link">',
+    ])
+
+    if not static:
+        lines.extend([
+            '        <gravity>false</gravity>',
+            '        <inertial>',
+            '          <mass>1.0</mass>',
+            '          <inertia>',
+            '            <ixx>0.1</ixx><ixy>0.0</ixy><ixz>0.0</ixz>',
+            '            <iyy>0.1</iyy><iyz>0.0</iyz>',
+            '            <izz>0.1</izz>',
+            '          </inertia>',
+            '        </inertial>',
+        ])
+
+    lines.extend([
+        '        <collision name="collision">',
+        f'          <geometry><box><size>{sx:.3f} {sy:.3f} {sz:.3f}</size></box></geometry>',
+        '        </collision>',
+        '        <visual name="visual">',
+        f'          <geometry><box><size>{sx:.3f} {sy:.3f} {sz:.3f}</size></box></geometry>',
+        f'          <material><ambient>{color}</ambient><diffuse>{color}</diffuse></material>',
+        '        </visual>',
+        '      </link>',
+        '    </model>',
+    ])
+
+
 def add_platform_model(lines, platform, scene):
     center = platform.get('centerENU', [0.0, 0.0])
     if platform.get('centerENU') is None:
@@ -174,6 +212,20 @@ def build_world(scene, world_name):
             obstacle.get('radius', 0.5),
             obstacle.get('height', default_height),
             obstacle.get('zMin', 0.0),
+            True,
+            rgba(obstacle.get('colorRGBA'), static_color),
+        )
+
+    for idx, (_key, obstacle) in enumerate(sorted_items(scene.get('boxObstacleData'))):
+        center = obstacle.get('centerENU', [0.0, 0.0])
+        add_box_model(
+            lines,
+            obstacle.get('modelName', f'{world_name}_box_obstacle_{idx}'),
+            center[0],
+            center[1],
+            obstacle.get('sizeENU', [1.0, 1.0, default_height]),
+            obstacle.get('zMin', 0.0),
+            obstacle.get('yaw', 0.0),
             True,
             rgba(obstacle.get('colorRGBA'), static_color),
         )

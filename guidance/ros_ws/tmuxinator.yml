@@ -9,7 +9,7 @@ windows:
 
         - . get_params.sh <%= @settings["scene"] %>;
           sleep 20;
-          ./multi_uav_formation.sh <%= @settings["scene"] %> $UAV_NUM $LEADERS_NUM <%= @settings["run_prefix"] %>
+          ./multi_uav_formation.sh <%= @settings["scene"] %> $UAV_NUM $LEADERS_NUM <%= @settings["run_prefix"] %> <%= @settings.fetch("planner", "ego") %> <%= @settings.fetch("enable_rviz", "false") %>
 
 
         - export DISABLE_ROS1_EOL_WARNINGS=1;
@@ -27,17 +27,19 @@ windows:
             python3 "$PACKAGE_DIR/scripts/generate_world_from_scene.py" --scene-file "$SCENE_FILE" --world-out "$WORLD_FILE";
           fi;
           if [ -f "$WORLD_FILE" ]; then
-            roslaunch --wait multi_uav_formation multi_uav_mavros_sitl.launch world:="$WORLD_FILE" scene_file:="$SCENE_FILE" enable_moving_obstacles:="false";
+            roslaunch --wait multi_uav_formation multi_uav_mavros_sitl.launch world:="$WORLD_FILE" scene_file:="$SCENE_FILE" enable_moving_obstacles:="false" uav_count:="$UAV_NUM" uav1_start_x:="$UAV1_START_X" uav1_start_y:="$UAV1_START_Y" uav2_start_x:="$UAV2_START_X" uav2_start_y:="$UAV2_START_Y" uav3_start_x:="$UAV3_START_X" uav3_start_y:="$UAV3_START_Y" uav4_start_x:="$UAV4_START_X" uav4_start_y:="$UAV4_START_Y" uav5_start_x:="$UAV5_START_X" uav5_start_y:="$UAV5_START_Y";
           else
             roslaunch --wait multi_uav_formation multi_uav_mavros_sitl.launch;
           fi
 
+<% if @settings.fetch("enable_rviz", "false").to_s.downcase == "true" %>
         - export DISABLE_ROS1_EOL_WARNINGS=1;
           sleep 3;
           until rostopic list >/dev/null 2>&1; do
             sleep 0.5;
           done;
           rviz -d visualize_obstacles.rviz
+<% end %>
 
   # - add_permission:
   #     panes:

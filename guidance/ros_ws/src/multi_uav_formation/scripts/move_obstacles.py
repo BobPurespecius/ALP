@@ -215,7 +215,7 @@ def main():
     parser.add_argument('--model-wait-timeout', type=float, default=20.0)
     parser.add_argument('--transport', choices=['service', 'topic', 'both'], default='both')
     parser.add_argument('--debug', action='store_true')
-    args = parser.parse_args()
+    args, _unknown_ros_args = parser.parse_known_args()
 
     rospy.init_node('move_obstacles', anonymous=False)
     scene_file = resolve_scene_file(args.scene_file, args.world_file)

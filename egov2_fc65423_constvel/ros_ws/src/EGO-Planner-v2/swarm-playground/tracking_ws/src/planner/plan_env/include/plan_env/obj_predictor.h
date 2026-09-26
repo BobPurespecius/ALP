@@ -2,6 +2,7 @@
 #define _OBJ_PREDICTOR_H_
 
 #include <Eigen/Eigen>
+#include <cstdint>
 #include <geometry_msgs/PoseStamped.h>
 #include <list>
 #include <memory>
@@ -23,12 +24,19 @@ private:
     Eigen::Vector3d velocity{Eigen::Vector3d::Zero()};
   };
   std::vector<Sample> samples_;
+  // Identity of the prediction producer/model, deliberately independent of
+  // the rolling window timestamps. Window freshness and overlap are carried
+  // separately by validFrom()/validTo().
+  uint64_t source_identity_{0};
 
 public:
   bool valid() const;
   void setPredictionPath(const nav_msgs::Path &path);
   Eigen::Vector3d evaluateConstVel(double time) const;
   Eigen::Vector3d evaluateConstVelVelocity(double time) const;
+  double validFrom() const;
+  double validTo() const;
+  uint64_t sourceIdentity() const;
 };
 
 class ObjHistory
@@ -78,9 +86,13 @@ public:
   void init();
   int getObjNums() const;
   bool hasPrediction(int obj_id) const;
+  bool hasObservedObject(int obj_id) const;
   Eigen::Vector3d evaluateConstVel(int obj_id, double time) const;
   Eigen::Vector3d evaluateConstVelVelocity(int obj_id, double time) const;
   Eigen::Vector3d getObjScale(int obj_id) const;
+  double commonPredictionValidFrom() const;
+  double commonPredictionValidTo() const;
+  uint64_t predictionIdentity() const;
 
   typedef std::shared_ptr<ObjPredictor> Ptr;
 };

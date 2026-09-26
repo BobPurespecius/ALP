@@ -60,12 +60,14 @@ namespace ego_planner
     int waypoint_num_, wp_id_;
     double planning_horizen_, planning_horizen_time_;
     double emergency_time_;
+    double preset_start_delay_step_{0.0};
     bool flag_realworld_experiment_;
     bool enable_fail_safe_;
     bool sequential_start_;
 
     /* planning data */
     bool have_trigger_, have_target_, have_odom_, have_new_target_, have_recv_pre_agent_;
+    ros::Time preset_start_ready_time_;
     FSM_EXEC_STATE exec_state_;
     int continously_called_times_{0};
 

@@ -2,6 +2,15 @@
 <launch>
     <arg name="scene_file" default="$(env NATIVE_EGOV2_EXPERIMENT_DIR)/ros_ws/src/multi_uav_formation/scenes/long_cylinder_forest.json"/>
     <arg name="rviz" default="true"/>
+    <arg name="ablation_mode" default=""/>
+    <arg name="team_k3_repair_enabled" default="false"/>
+    <param name="/alp/team_k3_repair_enabled" value="$(arg team_k3_repair_enabled)" type="bool"/>
+    <param name="/alp/k3_local_escalation_enabled" value="$(arg k3_local_escalation_enabled)" type="bool"/>
+    <group if="$(eval arg('ablation_mode') != '')">
+        <param name="/alp/ablation_mode" value="$(arg ablation_mode)"/>
+    </group>
+    <arg name="launch_scene" default="true"/>
+    <arg name="launch_experiment" default="true"/>
     <arg name="visibility_csv" default="$(env NATIVE_EGOV2_VISIBILITY_CSV)"/>
     <arg name="trajectory_csv" default="$(env NATIVE_EGOV2_TRAJECTORY_CSV)"/>
     <arg name="map_size_x" default="82.0"/>
@@ -9,28 +18,264 @@
     <arg name="map_size_z" default="5.0"/>
     <arg name="target_height" default="1.5"/>
     <arg name="target_speed" default="0.928"/>
-    <arg name="early_avoidance_enabled" default="false"/>
-    <arg name="moving_obstacle_time_aware_cost_enabled" default="false"/>
+    <arg name="uav0_init_x" default="-35.2"/>
+    <arg name="uav0_relative_tracking_x" default="-1.5"/>
+    <arg name="uav0_init_y" default="-1.0"/>
+    <arg name="uav1_init_x" default="-35.2"/>
+    <arg name="uav1_relative_tracking_x" default="-1.7"/>
+    <arg name="uav1_init_y" default="0.0"/>
+    <arg name="uav2_init_x" default="-35.2"/>
+    <arg name="uav2_relative_tracking_x" default="-1.5"/>
+    <arg name="uav2_init_y" default="1.0"/>
+    <arg name="uav0_relative_tracking_y" default="-0.85"/>
+    <arg name="uav1_relative_tracking_y" default="0.0"/>
+    <arg name="uav2_relative_tracking_y" default="0.85"/>
+    <arg name="max_jer" default="20.0"/>
+    <arg name="encirclement_bearing_recovery_weight" default="0.08"/>
+    <arg name="directional_visibility_deep_risk_kappa" default="1.0"/>
+    <arg name="directional_visibility_deep_risk_beta" default="2.0"/>
+    <arg name="enable_target_facing_yaw" default="true"/>
+    <arg name="moving_obstacle_time_aware_cost_enabled" default="true"/>
+    <arg name="enable_risk_triggered_candidates" default="true"/>
+    <arg name="risk_sample_dt" default="0.10"/>
+    <arg name="candidate_trigger_margin" default="0.15"/>
+    <arg name="team_visibility_preferred_separation_deg" default="25.0"/>
+    <arg name="encirclement_spread_saturation_angle_deg" default="60.0"/>
+    <arg name="encirclement_base_angular_slack_deg" default="20.0"/>
+    <arg name="temporal_swarm_trigger_margin" default="0.08"/>
+    <arg name="temporal_swarm_sample_dt" default="0.05"/>
+    <arg name="temporal_swarm_conflict_half_window" default="0.60"/>
+    <arg name="temporal_swarm_time_trust_ratio" default="0.15"/>
+    <arg name="temporal_swarm_guard_margin" default="0.01"/>
+    <arg name="temporal_swarm_owner_hold_sec" default="0.50"/>
+    <arg name="enable_joint_pt_optimization" default="false"/>
+    <arg name="enable_joint_topology_coordination" default="$(arg enable_joint_pt_optimization)"/>
+    <arg name="topology_coordination_timeout" default="0.20"/>
+    <arg name="team_coordination_timeout" default="0.35"/>
+    <arg name="topology_result_max_age" default="0.30"/>
+    <arg name="topology_min_active_remaining" default="0.35"/>
+    <arg name="topology_bundle_max_age" default="0.65"/>
+    <arg name="topology_max_epoch_skew" default="0.65"/>
+    <arg name="topology_max_start_skew" default="0.65"/>
+    <arg name="k2_near_best_tolerance" default="0.01"/>
+    <arg name="topology_result_publish_margin" default="0.02"/>
+    <!-- Stage-1 team continuous optimizer.  Every new capability is OFF by
+         default so the established topology selector remains the fallback. -->
+    <arg name="enable_team_visibility_optimizer" default="$(arg enable_joint_pt_optimization)"/>
+    <arg name="enable_predicted_attitude_fov" default="false"/>
+    <!-- Local geometry is one soft comparator tie-break and telemetry source. -->
+    <arg name="local_horizon" default="1.5"/>
+    <param name="/encirclement_geometry/local_horizon" value="$(arg local_horizon)"/>
+    <arg name="local_dt" default=".10"/>
+    <param name="/encirclement_geometry/local_dt" value="$(arg local_dt)"/>
+    <arg name="planning_budget_initial" default="1.10"/>
+    <param name="/trajectory_lifecycle/planning_budget_initial" value="$(arg planning_budget_initial)"/>
+    <arg name="planning_budget_min" default=".20"/>
+    <param name="/trajectory_lifecycle/planning_budget_min" value="$(arg planning_budget_min)"/>
+    <arg name="planning_budget_max" default="2.50"/>
+    <param name="/trajectory_lifecycle/planning_budget_max" value="$(arg planning_budget_max)"/>
+    <arg name="planning_budget_factor" default="1.35"/>
+    <param name="/trajectory_lifecycle/planning_budget_factor" value="$(arg planning_budget_factor)"/>
+    <arg name="planning_budget_half_life" default="60"/>
+    <param name="/trajectory_lifecycle/planning_budget_half_life" value="$(arg planning_budget_half_life)"/>
+    <arg name="execution_margin" default=".15"/>
+    <param name="/trajectory_lifecycle/execution_margin" value="$(arg execution_margin)"/>
+    <arg name="uninterruptible_budget" default=".05"/>
+    <param name="/trajectory_lifecycle/uninterruptible_budget" value="$(arg uninterruptible_budget)"/>
+    <!-- Shared generator/selector/joint/execution geometry contract. -->
+    <arg name="max_circular_gap_deg" default="170.0"/>
+    <arg name="min_angular_separation_deg" default="25.0"/>
+    <arg name="encirclement_ratio_min" default="0.8"/>
+    <arg name="encirclement_gap_weight" default="4.0"/>
+    <arg name="multiview_bad_sep_deg" default="25.0"/>
+    <arg name="multiview_good_sep_deg" default="60.0"/>
+    <param name="/encirclement_geometry/multiview_bad_sep_deg" value="$(arg multiview_bad_sep_deg)"/>
+    <param name="/encirclement_geometry/multiview_good_sep_deg" value="$(arg multiview_good_sep_deg)"/>
+    <arg name="encirclement_local_gap_weight" default="100.0"/>
+    <param name="/encirclement_geometry/local_gap_weight" value="$(arg encirclement_local_gap_weight)"/>
+    <param name="/encirclement_geometry/max_circular_gap_deg" value="$(arg max_circular_gap_deg)"/>
+    <param name="/encirclement_geometry/min_angular_separation_deg" value="$(arg min_angular_separation_deg)"/>
+    <param name="/encirclement_geometry/ratio_min" value="$(arg encirclement_ratio_min)"/>
+    <param name="/encirclement_geometry/joint_gap_weight" value="$(arg encirclement_gap_weight)"/>
+    <param name="/encirclement_geometry/executed_csv" value="$(arg visibility_csv).encirclement.csv"/>
+    <arg name="observation_radius_band" default="0.35"/>
+    <arg name="observation_height_band" default="0.20"/>
+    <!-- Active target-centred Team R/PHI/reference-phase optimizer. -->
+    <arg name="team_prediction_horizon" default="2.0"/>
+    <arg name="team_reference_sample_dt" default="0.10"/>
+    <arg name="team_reference_knot_count" default="4"/>
+    <arg name="team_top_k" default="3"/>
+    <arg name="team_target_centered_max_iterations" default="10"/>
+    <arg name="team_target_centered_timeout" default="0.045"/>
+    <arg name="team_reference_realization_timeout" default="0.25"/>
+    <arg name="team_radius_trust" default="0.30"/>
+    <arg name="team_bearing_trust" default="0.3490658503988659"/>
+    <arg name="team_phase_trust" default="0.45"/>
+    <arg name="predictive_relay_horizon" default="2.0"/>
+    <arg name="predictive_relay_sample_dt" default="0.10"/>
+    <arg name="predictive_relay_trigger_margin" default="0.30"/>
+    <arg name="predictive_relay_required_margin" default="0.20"/>
+    <arg name="predictive_relay_release_margin" default="0.45"/>
+    <arg name="predictive_relay_overlap" default="0.50"/>
+    <arg name="predictive_relay_stable_time" default="0.20"/>
+    <arg name="predictive_relay_contract_timeout" default="1.0"/>
+    <arg name="team_objective_k2_weight" default="8.0"/>
+    <arg name="team_objective_acc_weight" default="1.0"/>
+    <arg name="team_objective_comp_weight" default="1.5"/>
+    <arg name="team_objective_enc_weight" default="0.35"/>
+    <arg name="team_objective_reg_weight" default="0.20"/>
+    <arg name="team_activation_lead" default="0.24"/>
+    <arg name="team_ack_timeout" default="0.06"/>
+    <arg name="team_solution_max_age" default="0.30"/>
+    <arg name="team_solution_min_activation_lead" default="0.015"/>
+    <arg name="team_min_execution_time" default="0.12"/>
+    <arg name="visibility_sample_dt" default="0.10"/>
+    <arg name="visibility_min_target_distance" default="0.20"/>
+    <arg name="visibility_max_target_distance" default="8.0"/>
+    <arg name="visibility_occlusion_margin" default="0.08"/>
+    <arg name="k3_local_escalation_enabled" default="false"/>
+    <!-- Authoritative native tracking-camera contract.  This deliberately
+         remains the established 85-degree body-forward telemetry camera; the
+         unused Gazebo monocular_down sensor has a different 120-degree model. -->
+    <arg name="tracking_camera_hfov_deg" default="85.0"/>
+    <arg name="tracking_camera_image_width" default="1280"/>
+    <arg name="tracking_camera_image_height" default="720"/>
+    <arg name="tracking_camera_extrinsic_x" default="0.0"/>
+    <arg name="tracking_camera_extrinsic_y" default="0.0"/>
+    <arg name="tracking_camera_extrinsic_z" default="0.0"/>
+    <arg name="tracking_camera_extrinsic_roll" default="0.0"/>
+    <arg name="tracking_camera_extrinsic_pitch" default="0.0"/>
+    <arg name="tracking_camera_extrinsic_yaw" default="0.0"/>
+    <arg name="weight_visibility" default="20.0"/>
+    <!-- 2026-09-22 恢复:P/T 联合 hard SCP(默认关闭) -->
+    <arg name="enable_candidate_hard_corridor_scp" default="false"/>
+    <arg name="candidate_hard_corridor_scp_radius" default="0.5"/>
+    <arg name="candidate_hard_corridor_scp_trust_region" default="0.25"/>
+    <arg name="candidate_hard_corridor_scp_time_trust_region" default="0.15"/>
+    <arg name="candidate_hard_corridor_scp_max_iterations" default="8"/>
+    <arg name="candidate_hard_corridor_scp_samples" default="25"/>
+    <arg name="enable_team_spatiotemporal_scp" default="true"/>
+    <arg name="team_scp_p_trust" default="0.30"/>
+    <arg name="team_scp_t_trust_ratio" default="0.15"/>
+    <arg name="team_scp_max_iterations" default="6"/>
+    <arg name="team_scp_soft_weight" default="10.0"/>
+    <arg name="team_scp_t_gain_ratio" default="0.80"/>
+    <arg name="enable_cooperative_viewpoint_reference" default="true"/>
+    <arg name="enable_encirclement_tracking" default="true"/>
+    <arg name="visibility_bad_hold" default="0.5"/>
+    <arg name="viewpoint_trigger_tracking_error" default="0.5"/>
+    <arg name="theta_sep_min_deg" default="25.0"/>
+    <arg name="min_visibility_improvement" default="0.10"/>
+    <arg name="cooperative_viewpoint_omega_ref_max" default="0.25"/>
+    <arg name="viewpoint_arrive_distance" default="0.5"/>
+    <arg name="viewpoint_arrive_hold" default="0.5"/>
+    <arg name="cooperative_viewpoint_visibility_horizon" default="2.0"/>
+    <arg name="cooperative_viewpoint_reference_timeout" default="0.5"/>
+    <arg name="target_segment_speeds" default=""/>
+    <arg name="target_dynamic_obstacle_avoidance_enabled" default="true"/>
+    <arg name="sync_dynamic_motion_to_target_start" default="false"/>
     <arg name="moving_obj_num" default="10"/>
+    <arg name="swarm_clearance" default="0.5"/>
     <arg name="moving_obj_clearance" default="1.1"/>
+    <!-- 本轮修复（Local/Team physical hard clearance 语义统一）：物理硬余量的
+         机体半径部分，必须与 planner 侧 optimization/moving_obj_hard_body_radius
+         同值 (0.384)。moving_obj_clearance(1.1) 仅为"期望/排序"间距，
+         不再被 Team preflight 升级成物理碰撞硬门。 -->
+    <arg name="moving_obj_hard_body_radius" default="0.384"/>
+    <!-- 物理硬余量的障碍物半径分量。Local 的权威公式是
+         getMovingObjHardClearance() = body_radius + max_obj(0.5*max(scale_obj))。
+         本场景实测该值为 0.664 m（0.384 + 0.28）。planner 与 team 读取同一个
+         参数，Team preflight 不再使用 1.10 m 这个"期望间距"当物理碰撞硬门。 -->
+    <arg name="moving_obj_hard_obstacle_radius" default="0.28"/>
     <arg name="moving_obj_lambda" default="0.5"/>
     <arg name="moving_obj_prediction_horizon" default="2.0"/>
     <arg name="moving_obj_time_decay_tau" default="1.8"/>
     <arg name="moving_obj_max_grad" default="3.0"/>
-    <arg name="target_waypoints" default="-33.00,0.00;-29.25,0.25;-25.50,0.50;-25.25,0.75;-25.00,1.00;-23.75,1.75;-23.00,2.00;-20.50,3.25;-20.00,3.50;-19.75,3.75;-19.00,4.00;-16.75,4.50;-16.50,4.25;-14.50,4.00;-14.25,3.75;-14.00,3.50;-13.75,3.25;-13.50,3.00;-11.38,2.88;-9.25,2.75;-9.00,2.50;-8.75,2.25;-8.50,2.00;-8.25,1.75;-8.00,1.50;-7.75,1.25;-7.50,1.00;-7.25,0.75;-7.00,0.50;-4.00,0.25;-0.25,0.25;0.00,0.50;1.25,0.75;4.00,0.92;6.75,1.08;9.50,1.25;12.88,1.88;16.25,2.50;18.75,3.25;22.75,3.75;23.25,3.75;23.50,3.50;23.75,3.25;24.00,3.00;25.75,2.50;26.00,2.25;26.25,2.00;26.50,1.75;26.75,1.50;27.00,1.25;29.75,1.17;32.50,1.08;35.25,1.00;35.75,0.75;36.00,0.25"/>
+    <arg name="candidate_preserve_weight" default="2.0"/>
+    <arg name="enable_candidate_region_constraint" default="true"/>
+    <arg name="candidate_region_weight" default="2.0"/>
+    <arg name="candidate_region_type" default="quadratic"/>
+    <arg name="target_waypoints" default="-33.0,0.0;-29.0,1.2;-25.0,2.9;-21.0,3.5;-18.5,4.0;-16.0,3.7;-12.0,2.25;-11.0,2.25;-9.7,2.3;-8.2,1.5;-6.0,-1.0;-2.0,-0.25;-1.0,0.25;3.0,0.6;7.0,1.75;11.0,2.25;15.0,2.25;17.5,2.75;18.5,2.0;22.5,-1.0;24.5,-2.75;25.5,-3.0;29.5,-1.5;32.5,0.25;33.5,0.5;36.0,0.0"/>
 
     <!-- This is the communication bridge used by EGOv2's original
          multi_tracking.launch. -->
-    <include file="$(find swarm_bridge)/launch/bridge_udp.launch">
+    <include if="$(arg launch_experiment)" file="$(find swarm_bridge)/launch/bridge_udp.launch">
         <arg name="drone_id" value="999"/>
         <arg name="broadcast_ip" value="127.0.0.255"/>
     </include>
 
-    <node pkg="multi_uav_formation" type="native_egov2_constvel_scene.py"
-          name="native_egov2_rviz_scene" output="log"
-          args="--scene-file $(arg scene_file) --count 3 --resolution 0.18 --visibility-csv $(arg visibility_csv) --trajectory-csv $(arg trajectory_csv) --early-avoidance-enabled $(arg early_avoidance_enabled) --moving-obstacle-time-aware-cost-enabled $(arg moving_obstacle_time_aware_cost_enabled)"/>
+    <group if="$(arg launch_experiment)">
+        <node if="$(arg enable_joint_topology_coordination)"
+              pkg="multi_uav_formation" type="multi_uav_topology_coordinator"
+              name="multi_uav_topology_coordinator" output="screen">
+            <param name="swarm_clearance" value="$(arg swarm_clearance)" type="double"/>
+            <param name="near_margin" value="$(arg temporal_swarm_trigger_margin)" type="double"/>
+            <param name="sample_dt" value="$(arg temporal_swarm_sample_dt)" type="double"/>
+            <param name="max_bundle_age" value="$(arg topology_bundle_max_age)" type="double"/>
+            <param name="max_epoch_skew" value="$(arg topology_max_epoch_skew)" type="double"/>
+            <param name="max_start_skew" value="$(arg topology_max_start_skew)" type="double"/>
+            <param name="preferred_view_angle_deg" value="$(arg team_visibility_preferred_separation_deg)" type="double"/>
+            <param name="encirclement_spread_saturation_angle_deg" value="$(arg encirclement_spread_saturation_angle_deg)" type="double"/>
+            <param name="planner_acceptance_timeout" value="$(arg topology_coordination_timeout)" type="double"/>
+            <param name="result_publish_margin" value="$(arg topology_result_publish_margin)" type="double"/>
+            <param name="enable_team_visibility_optimizer" value="$(arg enable_team_visibility_optimizer)" type="bool"/>
+            <param name="enable_joint_pt_optimization" value="$(arg enable_joint_pt_optimization)" type="bool"/>
+            <param name="enable_predicted_attitude_fov" value="$(arg enable_predicted_attitude_fov)" type="bool"/>
+            <param name="team_prediction_horizon" value="$(arg team_prediction_horizon)" type="double"/>
+            <param name="team_reference_sample_dt" value="$(arg team_reference_sample_dt)" type="double"/>
+            <param name="team_reference_knot_count" value="$(arg team_reference_knot_count)" type="int"/>
+            <param name="team_top_k" value="$(arg team_top_k)" type="int"/>
+            <param name="team_target_centered_max_iterations" value="$(arg team_target_centered_max_iterations)" type="int"/>
+            <param name="team_target_centered_timeout" value="$(arg team_target_centered_timeout)" type="double"/>
+            <param name="team_reference_realization_timeout" value="$(arg team_reference_realization_timeout)" type="double"/>
+            <param name="team_radius_trust" value="$(arg team_radius_trust)" type="double"/>
+            <param name="team_bearing_trust" value="$(arg team_bearing_trust)" type="double"/>
+            <param name="team_phase_trust" value="$(arg team_phase_trust)" type="double"/>
+            <param name="predictive_relay_horizon" value="$(arg predictive_relay_horizon)" type="double"/>
+            <param name="predictive_relay_sample_dt" value="$(arg predictive_relay_sample_dt)" type="double"/>
+            <param name="predictive_relay_trigger_margin" value="$(arg predictive_relay_trigger_margin)" type="double"/>
+            <param name="predictive_relay_required_margin" value="$(arg predictive_relay_required_margin)" type="double"/>
+            <param name="predictive_relay_release_margin" value="$(arg predictive_relay_release_margin)" type="double"/>
+            <param name="predictive_relay_overlap" value="$(arg predictive_relay_overlap)" type="double"/>
+            <param name="predictive_relay_stable_time" value="$(arg predictive_relay_stable_time)" type="double"/>
+            <param name="predictive_relay_contract_timeout" value="$(arg predictive_relay_contract_timeout)" type="double"/>
+            <param name="team_objective_k2_weight" value="$(arg team_objective_k2_weight)" type="double"/>
+            <param name="team_objective_acc_weight" value="$(arg team_objective_acc_weight)" type="double"/>
+            <param name="team_objective_comp_weight" value="$(arg team_objective_comp_weight)" type="double"/>
+            <param name="team_objective_enc_weight" value="$(arg team_objective_enc_weight)" type="double"/>
+            <param name="team_objective_reg_weight" value="$(arg team_objective_reg_weight)" type="double"/>
+            <param name="team_activation_lead" value="$(arg team_activation_lead)" type="double"/>
+            <param name="team_ack_timeout" value="$(arg team_ack_timeout)" type="double"/>
+            <param name="team_solution_max_age" value="$(arg team_solution_max_age)" type="double"/>
+            <param name="scene_file" value="$(arg scene_file)"/>
+            <param name="prediction/obj_num" value="$(arg moving_obj_num)" type="int"/>
+            <param name="moving_obj_clearance" value="$(arg moving_obj_clearance)" type="double"/>
+            <param name="moving_obj_hard_body_radius" value="$(arg moving_obj_hard_body_radius)" type="double"/>
+            <param name="moving_obj_hard_obstacle_radius" value="$(arg moving_obj_hard_obstacle_radius)" type="double"/>
+            <param name="static_body_clearance" value="0.0" type="double"/>
+            <param name="max_velocity" value="3.0" type="double"/>
+            <param name="max_acceleration" value="6.0" type="double"/>
+            <param name="max_jerk" value="$(arg max_jer)" type="double"/>
+            <param name="visibility_min_target_distance" value="$(arg visibility_min_target_distance)" type="double"/>
+            <param name="visibility_max_target_distance" value="$(arg visibility_max_target_distance)" type="double"/>
+            <param name="visibility_occlusion_margin" value="$(arg visibility_occlusion_margin)" type="double"/>
+            <param name="tracking_camera_hfov_deg" value="$(arg tracking_camera_hfov_deg)" type="double"/>
+            <param name="tracking_camera_image_width" value="$(arg tracking_camera_image_width)" type="double"/>
+            <param name="tracking_camera_image_height" value="$(arg tracking_camera_image_height)" type="double"/>
+            <param name="tracking_camera_extrinsic_x" value="$(arg tracking_camera_extrinsic_x)" type="double"/>
+            <param name="tracking_camera_extrinsic_y" value="$(arg tracking_camera_extrinsic_y)" type="double"/>
+            <param name="tracking_camera_extrinsic_z" value="$(arg tracking_camera_extrinsic_z)" type="double"/>
+            <param name="tracking_camera_extrinsic_roll" value="$(arg tracking_camera_extrinsic_roll)" type="double"/>
+            <param name="tracking_camera_extrinsic_pitch" value="$(arg tracking_camera_extrinsic_pitch)" type="double"/>
+            <param name="tracking_camera_extrinsic_yaw" value="$(arg tracking_camera_extrinsic_yaw)" type="double"/>
+        </node>
+    </group>
 
-    <node pkg="multi_uav_formation" type="target_state_constvel_coordinator.py"
+    <node if="$(arg launch_scene)" pkg="multi_uav_formation" type="native_egov2_constvel_scene.py"
+          name="native_egov2_rviz_scene" output="log"
+          args="--scene-file $(arg scene_file) --count 3 --resolution 0.18 --visibility-csv $(arg visibility_csv) --trajectory-csv $(arg trajectory_csv) --moving-obstacle-time-aware-cost-enabled $(arg moving_obstacle_time_aware_cost_enabled) --visibility-occlusion-margin $(arg visibility_occlusion_margin) --sync-motion-to-target-start $(arg sync_dynamic_motion_to_target_start) --camera-hfov-deg $(arg tracking_camera_hfov_deg) --camera-image-width $(arg tracking_camera_image_width) --camera-image-height $(arg tracking_camera_image_height) --camera-extrinsic-x $(arg tracking_camera_extrinsic_x) --camera-extrinsic-y $(arg tracking_camera_extrinsic_y) --camera-extrinsic-z $(arg tracking_camera_extrinsic_z) --camera-extrinsic-roll $(arg tracking_camera_extrinsic_roll) --camera-extrinsic-pitch $(arg tracking_camera_extrinsic_pitch) --camera-extrinsic-yaw $(arg tracking_camera_extrinsic_yaw)"/>
+
+    <node if="$(arg launch_experiment)" pkg="multi_uav_formation" type="target_state_constvel_coordinator.py"
           name="native_target_state_coordinator" output="log">
         <param name="rate" value="30.0"/>
         <param name="frame_id" value="world"/>
@@ -39,84 +284,289 @@
         <param name="align_yaw_to_velocity" value="false" type="bool"/>
         <param name="target_height" value="$(arg target_height)"/>
         <param name="target_waypoints" value="$(arg target_waypoints)"/>
+        <param name="target_waypoints_scene_file" value="$(arg scene_file)"/>
+        <param name="target_segment_speeds" value="$(arg target_segment_speeds)"/>
         <param name="target_waypoints_use_z" value="false" type="bool"/>
         <param name="dynamic_obstacle_scene_file" value="$(arg scene_file)"/>
-        <param name="dynamic_obstacle_avoidance_enabled" value="true" type="bool"/>
+        <param name="dynamic_obstacle_avoidance_enabled" value="$(arg target_dynamic_obstacle_avoidance_enabled)" type="bool"/>
         <param name="target_radius" value="0.25"/>
         <param name="target_obstacle_clearance" value="0.05"/>
         <param name="target_speed_scale_min" value="0.35"/>
         <param name="target_speed_scale_max" value="1.5"/>
-        <param name="startup_settle_time" value="2.0"/>
-        <rosparam param="required_uavs">[uav1, uav2, uav3]</rosparam>
+        <param name="startup_settle_time" value="0.0"/>
+        <rosparam param="required_uavs">[uav0, uav1, uav2]</rosparam>
+        <param name="tracking_ready_topic_prefix" value="/target_tracking/tracking_ready"/>
         <param name="ground_truth_topic" value="/target_tracking/ground_truth"/>
         <param name="shared_topic" value="/object_odom"/>
         <param name="start_time_topic" value="/target_tracking/target_start_time"/>
     </node>
 
+    <node if="$(arg launch_experiment)" pkg="multi_uav_formation" type="cooperative_viewpoint_manager"
+          name="cooperative_viewpoint_manager" output="screen">
+        <param name="scene_file" value="$(arg scene_file)"/>
+        <param name="target_topic" value="/object_odom"/>
+        <param name="frame_id" value="world"/>
+        <param name="rate" value="10.0"/>
+        <param name="visibility_horizon" value="$(arg cooperative_viewpoint_visibility_horizon)"/>
+        <param name="visibility_sample_dt" value="$(arg visibility_sample_dt)"/>
+        <param name="min_target_distance" value="$(arg visibility_min_target_distance)"/>
+        <param name="max_target_distance" value="$(arg visibility_max_target_distance)"/>
+        <param name="static_los_margin" value="$(arg visibility_occlusion_margin)"/>
+        <param name="reference_static_clearance" value="0.10"/>
+        <param name="visibility_bad_hold" value="$(arg visibility_bad_hold)"/>
+        <param name="viewpoint_trigger_tracking_error" value="$(arg viewpoint_trigger_tracking_error)"/>
+        <param name="theta_sep_min_deg" value="$(arg theta_sep_min_deg)"/>
+        <param name="min_visibility_improvement" value="$(arg min_visibility_improvement)"/>
+        <param name="k2_near_best_tolerance" value="$(arg k2_near_best_tolerance)" type="double"/>
+        <param name="omega_ref_max" value="$(arg cooperative_viewpoint_omega_ref_max)"/>
+        <param name="viewpoint_arrive_distance" value="$(arg viewpoint_arrive_distance)"/>
+        <param name="viewpoint_arrive_hold" value="$(arg viewpoint_arrive_hold)"/>
+        <param name="target_timeout" value="$(arg cooperative_viewpoint_reference_timeout)"/>
+        <param name="odom_timeout" value="$(arg cooperative_viewpoint_reference_timeout)"/>
+        <param name="camera_hfov_deg" value="$(arg tracking_camera_hfov_deg)"/>
+        <param name="camera_image_width" value="$(arg tracking_camera_image_width)"/>
+        <param name="camera_image_height" value="$(arg tracking_camera_image_height)"/>
+        <param name="camera_extrinsic_x" value="$(arg tracking_camera_extrinsic_x)"/>
+        <param name="camera_extrinsic_y" value="$(arg tracking_camera_extrinsic_y)"/>
+        <param name="camera_extrinsic_z" value="$(arg tracking_camera_extrinsic_z)"/>
+        <param name="camera_extrinsic_roll" value="$(arg tracking_camera_extrinsic_roll)"/>
+        <param name="camera_extrinsic_pitch" value="$(arg tracking_camera_extrinsic_pitch)"/>
+        <param name="camera_extrinsic_yaw" value="$(arg tracking_camera_extrinsic_yaw)"/>
+        <param name="offset0_x" value="$(arg uav0_relative_tracking_x)"/><param name="offset0_y" value="$(arg uav0_relative_tracking_y)"/><param name="offset0_z" value="0.0"/>
+        <param name="offset1_x" value="$(arg uav1_relative_tracking_x)"/><param name="offset1_y" value="$(arg uav1_relative_tracking_y)"/><param name="offset1_z" value="0.0"/>
+        <param name="offset2_x" value="$(arg uav2_relative_tracking_x)"/><param name="offset2_y" value="$(arg uav2_relative_tracking_y)"/><param name="offset2_z" value="0.0"/>
+    </node>
+
     <!-- Keep the original EGOv2 fake-drone simulator and local-sensing chain. -->
-    <include file="$(find ego_planner)/launch/run_in_sim.launch">
+    <include if="$(arg launch_experiment)" file="$(find ego_planner)/launch/run_in_sim.launch">
+        <arg name="enable_target_facing_yaw" value="$(arg enable_target_facing_yaw)"/>
         <arg name="drone_id" value="0"/>
-        <arg name="init_x" value="-35.2"/>
-        <arg name="init_y" value="-1.0"/>
+        <arg name="init_x" value="$(arg uav0_init_x)"/>
+        <arg name="init_y" value="$(arg uav0_init_y)"/>
         <arg name="init_z" value="1.5"/>
-        <arg name="relative_tracking_x" value="-1.5"/>
-        <arg name="relative_tracking_y" value="-0.85"/>
+        <arg name="relative_tracking_x" value="$(arg uav0_relative_tracking_x)"/>
+        <arg name="relative_tracking_y" value="$(arg uav0_relative_tracking_y)"/>
         <arg name="relative_tracking_z" value="0.0"/>
+        <arg name="enable_cooperative_viewpoint_reference" value="$(arg enable_cooperative_viewpoint_reference)"/>
+        <arg name="cooperative_viewpoint_reference_timeout" value="$(arg cooperative_viewpoint_reference_timeout)"/>
         <arg name="map_size_x" value="$(arg map_size_x)"/>
         <arg name="map_size_y" value="$(arg map_size_y)"/>
         <arg name="map_size_z" value="$(arg map_size_z)"/>
         <arg name="odom_topic" value="visual_slam/odom"/>
         <arg name="obj_num" value="$(arg moving_obj_num)"/>
+        <arg name="max_jer" value="$(arg max_jer)"/>
+        <arg name="directional_visibility_deep_risk_kappa" value="$(arg directional_visibility_deep_risk_kappa)"/>
+        <arg name="directional_visibility_deep_risk_beta" value="$(arg directional_visibility_deep_risk_beta)"/>
         <arg name="use_time_aware_moving_obj_cost" value="$(arg moving_obstacle_time_aware_cost_enabled)"/>
         <arg name="moving_obj_clearance" value="$(arg moving_obj_clearance)"/>
         <arg name="moving_obj_lambda" value="$(arg moving_obj_lambda)"/>
         <arg name="moving_obj_prediction_horizon" value="$(arg moving_obj_prediction_horizon)"/>
         <arg name="moving_obj_time_decay_tau" value="$(arg moving_obj_time_decay_tau)"/>
         <arg name="moving_obj_max_grad" value="$(arg moving_obj_max_grad)"/>
+        <arg name="candidate_preserve_weight" value="$(arg candidate_preserve_weight)"/>
+        <arg name="enable_candidate_region_constraint" value="$(arg enable_candidate_region_constraint)"/>
+        <arg name="candidate_region_weight" value="$(arg candidate_region_weight)"/>
+        <arg name="candidate_region_type" value="$(arg candidate_region_type)"/>
+        <arg name="enable_risk_triggered_candidates" value="$(arg enable_risk_triggered_candidates)"/>
+        <arg name="risk_sample_dt" value="$(arg risk_sample_dt)"/>
+        <arg name="candidate_trigger_margin" value="$(arg candidate_trigger_margin)"/>
+        <arg name="team_visibility_preferred_separation_deg" value="$(arg team_visibility_preferred_separation_deg)"/>
+        <arg name="encirclement_spread_saturation_angle_deg" value="$(arg encirclement_spread_saturation_angle_deg)"/>
+        <arg name="temporal_swarm_trigger_margin" value="$(arg temporal_swarm_trigger_margin)"/>
+        <arg name="temporal_swarm_sample_dt" value="$(arg temporal_swarm_sample_dt)"/>
+        <arg name="temporal_swarm_conflict_half_window" value="$(arg temporal_swarm_conflict_half_window)"/>
+        <arg name="temporal_swarm_time_trust_ratio" value="$(arg temporal_swarm_time_trust_ratio)"/>
+        <arg name="temporal_swarm_guard_margin" value="$(arg temporal_swarm_guard_margin)"/>
+        <arg name="temporal_swarm_owner_hold_sec" value="$(arg temporal_swarm_owner_hold_sec)"/>
+        <arg name="enable_joint_topology_coordination" value="$(arg enable_joint_topology_coordination)"/>
+        <arg name="topology_coordination_timeout" value="$(arg topology_coordination_timeout)"/>
+        <arg name="team_coordination_timeout" value="$(arg team_coordination_timeout)"/>
+        <arg name="topology_result_max_age" value="$(arg topology_result_max_age)"/>
+        <arg name="topology_min_active_remaining" value="$(arg topology_min_active_remaining)"/>
+        <arg name="enable_team_visibility_optimizer" value="$(arg enable_team_visibility_optimizer)"/>
+        <arg name="team_solution_max_age" value="$(arg team_solution_max_age)"/>
+        <arg name="team_solution_min_activation_lead" value="$(arg team_solution_min_activation_lead)"/>
+        <arg name="team_min_execution_time" value="$(arg team_min_execution_time)"/>
+        <arg name="visibility_sample_dt" value="$(arg visibility_sample_dt)"/>
+        <arg name="visibility_min_target_distance" value="$(arg visibility_min_target_distance)"/>
+        <arg name="visibility_max_target_distance" value="$(arg visibility_max_target_distance)"/>
+        <arg name="visibility_occlusion_margin" value="$(arg visibility_occlusion_margin)"/>
+        <arg name="k3_local_escalation_enabled" value="$(arg k3_local_escalation_enabled)"/>
+        <arg name="encirclement_base_angular_slack_deg" value="$(arg encirclement_base_angular_slack_deg)"/>
+        <arg name="enable_encirclement_tracking" value="$(arg enable_encirclement_tracking)"/>
+        <arg name="weight_visibility" value="$(arg weight_visibility)"/>
+        <arg name="enable_candidate_hard_corridor_scp" value="$(arg enable_candidate_hard_corridor_scp)"/>
+        <arg name="candidate_hard_corridor_scp_radius" value="$(arg candidate_hard_corridor_scp_radius)"/>
+        <arg name="candidate_hard_corridor_scp_trust_region" value="$(arg candidate_hard_corridor_scp_trust_region)"/>
+        <arg name="candidate_hard_corridor_scp_time_trust_region" value="$(arg candidate_hard_corridor_scp_time_trust_region)"/>
+        <arg name="candidate_hard_corridor_scp_max_iterations" value="$(arg candidate_hard_corridor_scp_max_iterations)"/>
+        <arg name="candidate_hard_corridor_scp_samples" value="$(arg candidate_hard_corridor_scp_samples)"/>
+        <arg name="enable_team_spatiotemporal_scp" value="$(arg enable_team_spatiotemporal_scp)"/>
+        <arg name="team_scp_p_trust" value="$(arg team_scp_p_trust)"/>
+        <arg name="team_scp_t_trust_ratio" value="$(arg team_scp_t_trust_ratio)"/>
+        <arg name="team_scp_max_iterations" value="$(arg team_scp_max_iterations)"/>
+        <arg name="team_scp_soft_weight" value="$(arg team_scp_soft_weight)"/>
+        <arg name="team_scp_t_gain_ratio" value="$(arg team_scp_t_gain_ratio)"/>
+        <arg name="static_los_scene_file" value="$(arg scene_file)"/>
     </include>
 
-    <include file="$(find ego_planner)/launch/run_in_sim.launch">
+    <include if="$(arg launch_experiment)" file="$(find ego_planner)/launch/run_in_sim.launch">
+        <arg name="enable_target_facing_yaw" value="$(arg enable_target_facing_yaw)"/>
         <arg name="drone_id" value="1"/>
-        <arg name="init_x" value="-35.2"/>
-        <arg name="init_y" value="0.0"/>
+        <arg name="init_x" value="$(arg uav1_init_x)"/>
+        <arg name="init_y" value="$(arg uav1_init_y)"/>
         <arg name="init_z" value="1.5"/>
-        <arg name="relative_tracking_x" value="-1.7"/>
-        <arg name="relative_tracking_y" value="0.0"/>
+        <arg name="relative_tracking_x" value="$(arg uav1_relative_tracking_x)"/>
+        <arg name="relative_tracking_y" value="$(arg uav1_relative_tracking_y)"/>
         <arg name="relative_tracking_z" value="0.0"/>
+        <arg name="enable_cooperative_viewpoint_reference" value="$(arg enable_cooperative_viewpoint_reference)"/>
+        <arg name="cooperative_viewpoint_reference_timeout" value="$(arg cooperative_viewpoint_reference_timeout)"/>
         <arg name="map_size_x" value="$(arg map_size_x)"/>
         <arg name="map_size_y" value="$(arg map_size_y)"/>
         <arg name="map_size_z" value="$(arg map_size_z)"/>
         <arg name="odom_topic" value="visual_slam/odom"/>
         <arg name="obj_num" value="$(arg moving_obj_num)"/>
+        <arg name="max_jer" value="$(arg max_jer)"/>
+        <arg name="directional_visibility_deep_risk_kappa" value="$(arg directional_visibility_deep_risk_kappa)"/>
+        <arg name="directional_visibility_deep_risk_beta" value="$(arg directional_visibility_deep_risk_beta)"/>
         <arg name="use_time_aware_moving_obj_cost" value="$(arg moving_obstacle_time_aware_cost_enabled)"/>
         <arg name="moving_obj_clearance" value="$(arg moving_obj_clearance)"/>
         <arg name="moving_obj_lambda" value="$(arg moving_obj_lambda)"/>
         <arg name="moving_obj_prediction_horizon" value="$(arg moving_obj_prediction_horizon)"/>
         <arg name="moving_obj_time_decay_tau" value="$(arg moving_obj_time_decay_tau)"/>
         <arg name="moving_obj_max_grad" value="$(arg moving_obj_max_grad)"/>
+        <arg name="candidate_preserve_weight" value="$(arg candidate_preserve_weight)"/>
+        <arg name="enable_candidate_region_constraint" value="$(arg enable_candidate_region_constraint)"/>
+        <arg name="candidate_region_weight" value="$(arg candidate_region_weight)"/>
+        <arg name="candidate_region_type" value="$(arg candidate_region_type)"/>
+        <arg name="enable_risk_triggered_candidates" value="$(arg enable_risk_triggered_candidates)"/>
+        <arg name="risk_sample_dt" value="$(arg risk_sample_dt)"/>
+        <arg name="candidate_trigger_margin" value="$(arg candidate_trigger_margin)"/>
+        <arg name="team_visibility_preferred_separation_deg" value="$(arg team_visibility_preferred_separation_deg)"/>
+        <arg name="encirclement_spread_saturation_angle_deg" value="$(arg encirclement_spread_saturation_angle_deg)"/>
+        <arg name="temporal_swarm_trigger_margin" value="$(arg temporal_swarm_trigger_margin)"/>
+        <arg name="temporal_swarm_sample_dt" value="$(arg temporal_swarm_sample_dt)"/>
+        <arg name="temporal_swarm_conflict_half_window" value="$(arg temporal_swarm_conflict_half_window)"/>
+        <arg name="temporal_swarm_time_trust_ratio" value="$(arg temporal_swarm_time_trust_ratio)"/>
+        <arg name="temporal_swarm_guard_margin" value="$(arg temporal_swarm_guard_margin)"/>
+        <arg name="temporal_swarm_owner_hold_sec" value="$(arg temporal_swarm_owner_hold_sec)"/>
+        <arg name="enable_joint_topology_coordination" value="$(arg enable_joint_topology_coordination)"/>
+        <arg name="topology_coordination_timeout" value="$(arg topology_coordination_timeout)"/>
+        <arg name="team_coordination_timeout" value="$(arg team_coordination_timeout)"/>
+        <arg name="topology_result_max_age" value="$(arg topology_result_max_age)"/>
+        <arg name="topology_min_active_remaining" value="$(arg topology_min_active_remaining)"/>
+        <arg name="enable_team_visibility_optimizer" value="$(arg enable_team_visibility_optimizer)"/>
+        <arg name="team_solution_max_age" value="$(arg team_solution_max_age)"/>
+        <arg name="team_solution_min_activation_lead" value="$(arg team_solution_min_activation_lead)"/>
+        <arg name="team_min_execution_time" value="$(arg team_min_execution_time)"/>
+        <arg name="visibility_sample_dt" value="$(arg visibility_sample_dt)"/>
+        <arg name="visibility_min_target_distance" value="$(arg visibility_min_target_distance)"/>
+        <arg name="visibility_max_target_distance" value="$(arg visibility_max_target_distance)"/>
+        <arg name="visibility_occlusion_margin" value="$(arg visibility_occlusion_margin)"/>
+        <arg name="k3_local_escalation_enabled" value="$(arg k3_local_escalation_enabled)"/>
+        <arg name="encirclement_base_angular_slack_deg" value="$(arg encirclement_base_angular_slack_deg)"/>
+        <arg name="enable_encirclement_tracking" value="$(arg enable_encirclement_tracking)"/>
+        <arg name="weight_visibility" value="$(arg weight_visibility)"/>
+        <arg name="enable_candidate_hard_corridor_scp" value="$(arg enable_candidate_hard_corridor_scp)"/>
+        <arg name="candidate_hard_corridor_scp_radius" value="$(arg candidate_hard_corridor_scp_radius)"/>
+        <arg name="candidate_hard_corridor_scp_trust_region" value="$(arg candidate_hard_corridor_scp_trust_region)"/>
+        <arg name="candidate_hard_corridor_scp_time_trust_region" value="$(arg candidate_hard_corridor_scp_time_trust_region)"/>
+        <arg name="candidate_hard_corridor_scp_max_iterations" value="$(arg candidate_hard_corridor_scp_max_iterations)"/>
+        <arg name="candidate_hard_corridor_scp_samples" value="$(arg candidate_hard_corridor_scp_samples)"/>
+        <arg name="enable_team_spatiotemporal_scp" value="$(arg enable_team_spatiotemporal_scp)"/>
+        <arg name="team_scp_p_trust" value="$(arg team_scp_p_trust)"/>
+        <arg name="team_scp_t_trust_ratio" value="$(arg team_scp_t_trust_ratio)"/>
+        <arg name="team_scp_max_iterations" value="$(arg team_scp_max_iterations)"/>
+        <arg name="team_scp_soft_weight" value="$(arg team_scp_soft_weight)"/>
+        <arg name="team_scp_t_gain_ratio" value="$(arg team_scp_t_gain_ratio)"/>
+        <arg name="static_los_scene_file" value="$(arg scene_file)"/>
     </include>
 
-    <include file="$(find ego_planner)/launch/run_in_sim.launch">
+    <include if="$(arg launch_experiment)" file="$(find ego_planner)/launch/run_in_sim.launch">
+        <arg name="enable_target_facing_yaw" value="$(arg enable_target_facing_yaw)"/>
         <arg name="drone_id" value="2"/>
-        <arg name="init_x" value="-35.2"/>
-        <arg name="init_y" value="1.0"/>
+        <arg name="init_x" value="$(arg uav2_init_x)"/>
+        <arg name="init_y" value="$(arg uav2_init_y)"/>
         <arg name="init_z" value="1.5"/>
-        <arg name="relative_tracking_x" value="-1.5"/>
-        <arg name="relative_tracking_y" value="0.85"/>
+        <arg name="relative_tracking_x" value="$(arg uav2_relative_tracking_x)"/>
+        <arg name="relative_tracking_y" value="$(arg uav2_relative_tracking_y)"/>
         <arg name="relative_tracking_z" value="0.0"/>
+        <arg name="enable_cooperative_viewpoint_reference" value="$(arg enable_cooperative_viewpoint_reference)"/>
+        <arg name="cooperative_viewpoint_reference_timeout" value="$(arg cooperative_viewpoint_reference_timeout)"/>
         <arg name="map_size_x" value="$(arg map_size_x)"/>
         <arg name="map_size_y" value="$(arg map_size_y)"/>
         <arg name="map_size_z" value="$(arg map_size_z)"/>
         <arg name="odom_topic" value="visual_slam/odom"/>
         <arg name="obj_num" value="$(arg moving_obj_num)"/>
+        <arg name="max_jer" value="$(arg max_jer)"/>
+        <arg name="directional_visibility_deep_risk_kappa" value="$(arg directional_visibility_deep_risk_kappa)"/>
+        <arg name="directional_visibility_deep_risk_beta" value="$(arg directional_visibility_deep_risk_beta)"/>
         <arg name="use_time_aware_moving_obj_cost" value="$(arg moving_obstacle_time_aware_cost_enabled)"/>
         <arg name="moving_obj_clearance" value="$(arg moving_obj_clearance)"/>
         <arg name="moving_obj_lambda" value="$(arg moving_obj_lambda)"/>
         <arg name="moving_obj_prediction_horizon" value="$(arg moving_obj_prediction_horizon)"/>
         <arg name="moving_obj_time_decay_tau" value="$(arg moving_obj_time_decay_tau)"/>
         <arg name="moving_obj_max_grad" value="$(arg moving_obj_max_grad)"/>
+        <arg name="candidate_preserve_weight" value="$(arg candidate_preserve_weight)"/>
+        <arg name="enable_candidate_region_constraint" value="$(arg enable_candidate_region_constraint)"/>
+        <arg name="candidate_region_weight" value="$(arg candidate_region_weight)"/>
+        <arg name="candidate_region_type" value="$(arg candidate_region_type)"/>
+        <arg name="enable_risk_triggered_candidates" value="$(arg enable_risk_triggered_candidates)"/>
+        <arg name="risk_sample_dt" value="$(arg risk_sample_dt)"/>
+        <arg name="candidate_trigger_margin" value="$(arg candidate_trigger_margin)"/>
+        <arg name="team_visibility_preferred_separation_deg" value="$(arg team_visibility_preferred_separation_deg)"/>
+        <arg name="encirclement_spread_saturation_angle_deg" value="$(arg encirclement_spread_saturation_angle_deg)"/>
+        <arg name="temporal_swarm_trigger_margin" value="$(arg temporal_swarm_trigger_margin)"/>
+        <arg name="temporal_swarm_sample_dt" value="$(arg temporal_swarm_sample_dt)"/>
+        <arg name="temporal_swarm_conflict_half_window" value="$(arg temporal_swarm_conflict_half_window)"/>
+        <arg name="temporal_swarm_time_trust_ratio" value="$(arg temporal_swarm_time_trust_ratio)"/>
+        <arg name="temporal_swarm_guard_margin" value="$(arg temporal_swarm_guard_margin)"/>
+        <arg name="temporal_swarm_owner_hold_sec" value="$(arg temporal_swarm_owner_hold_sec)"/>
+        <arg name="enable_joint_topology_coordination" value="$(arg enable_joint_topology_coordination)"/>
+        <arg name="topology_coordination_timeout" value="$(arg topology_coordination_timeout)"/>
+        <arg name="team_coordination_timeout" value="$(arg team_coordination_timeout)"/>
+        <arg name="topology_result_max_age" value="$(arg topology_result_max_age)"/>
+        <arg name="topology_min_active_remaining" value="$(arg topology_min_active_remaining)"/>
+        <arg name="enable_team_visibility_optimizer" value="$(arg enable_team_visibility_optimizer)"/>
+        <arg name="team_solution_max_age" value="$(arg team_solution_max_age)"/>
+        <arg name="team_solution_min_activation_lead" value="$(arg team_solution_min_activation_lead)"/>
+        <arg name="team_min_execution_time" value="$(arg team_min_execution_time)"/>
+        <arg name="visibility_sample_dt" value="$(arg visibility_sample_dt)"/>
+        <arg name="visibility_min_target_distance" value="$(arg visibility_min_target_distance)"/>
+        <arg name="visibility_max_target_distance" value="$(arg visibility_max_target_distance)"/>
+        <arg name="visibility_occlusion_margin" value="$(arg visibility_occlusion_margin)"/>
+        <arg name="k3_local_escalation_enabled" value="$(arg k3_local_escalation_enabled)"/>
+        <arg name="encirclement_base_angular_slack_deg" value="$(arg encirclement_base_angular_slack_deg)"/>
+        <arg name="enable_encirclement_tracking" value="$(arg enable_encirclement_tracking)"/>
+        <arg name="weight_visibility" value="$(arg weight_visibility)"/>
+        <arg name="enable_candidate_hard_corridor_scp" value="$(arg enable_candidate_hard_corridor_scp)"/>
+        <arg name="candidate_hard_corridor_scp_radius" value="$(arg candidate_hard_corridor_scp_radius)"/>
+        <arg name="candidate_hard_corridor_scp_trust_region" value="$(arg candidate_hard_corridor_scp_trust_region)"/>
+        <arg name="candidate_hard_corridor_scp_time_trust_region" value="$(arg candidate_hard_corridor_scp_time_trust_region)"/>
+        <arg name="candidate_hard_corridor_scp_max_iterations" value="$(arg candidate_hard_corridor_scp_max_iterations)"/>
+        <arg name="candidate_hard_corridor_scp_samples" value="$(arg candidate_hard_corridor_scp_samples)"/>
+        <arg name="enable_team_spatiotemporal_scp" value="$(arg enable_team_spatiotemporal_scp)"/>
+        <arg name="team_scp_p_trust" value="$(arg team_scp_p_trust)"/>
+        <arg name="team_scp_t_trust_ratio" value="$(arg team_scp_t_trust_ratio)"/>
+        <arg name="team_scp_max_iterations" value="$(arg team_scp_max_iterations)"/>
+        <arg name="team_scp_soft_weight" value="$(arg team_scp_soft_weight)"/>
+        <arg name="team_scp_t_gain_ratio" value="$(arg team_scp_t_gain_ratio)"/>
+        <arg name="static_los_scene_file" value="$(arg scene_file)"/>
     </include>
 
-    <node if="$(arg rviz)" pkg="rviz" type="rviz" name="rviz" required="true"
+    <!-- 本轮修复（RViz 只能是观察器）：RViz 退出/崩溃绝不能拖死仿真核心。
+         required="true" 会让 rviz 一死就触发 roslaunch 整体 shutdown，
+         表现为"目标和无人机瞬间全部静止"。仿真核心（planner / traj_server /
+         target coordinator / rosmaster）的生命周期必须与 RViz UI 解耦。 -->
+    <node if="$(arg rviz)" pkg="rviz" type="rviz" name="rviz" required="false"
           args="-d $(env NATIVE_EGOV2_EXPERIMENT_DIR)/ros_ws/src/multi_uav_formation/config/native_egov2.rviz"/>
+    <param name="/drone_0_ego_planner_node/optimization/observation_radius_band" value="$(arg observation_radius_band)"/>
+    <param name="/drone_0_ego_planner_node/optimization/observation_height_band" value="$(arg observation_height_band)"/>
+    <param name="/drone_1_ego_planner_node/optimization/observation_radius_band" value="$(arg observation_radius_band)"/>
+    <param name="/drone_1_ego_planner_node/optimization/observation_height_band" value="$(arg observation_height_band)"/>
+    <param name="/drone_2_ego_planner_node/optimization/observation_radius_band" value="$(arg observation_radius_band)"/>
+    <param name="/drone_2_ego_planner_node/optimization/observation_height_band" value="$(arg observation_height_band)"/>
+    <param name="/drone_0_ego_planner_node/manager/encirclement_bearing_recovery_weight" value="$(arg encirclement_bearing_recovery_weight)"/>
+    <param name="/drone_1_ego_planner_node/manager/encirclement_bearing_recovery_weight" value="$(arg encirclement_bearing_recovery_weight)"/>
+    <param name="/drone_2_ego_planner_node/manager/encirclement_bearing_recovery_weight" value="$(arg encirclement_bearing_recovery_weight)"/>
 </launch>

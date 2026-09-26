@@ -21,6 +21,23 @@ def yaw_to_quaternion(yaw):
     return math.cos(0.5 * yaw), 0.0, 0.0, math.sin(0.5 * yaw)
 
 
+def load_scene_target_waypoints(path, target_height, use_waypoint_z):
+    with open(path, 'r') as stream:
+        scene = json.load(stream)
+    raw = (scene.get('targetTracking') or {}).get('waypointsENU') or []
+    if len(raw) < 2:
+        raise ValueError('scene target route needs at least two waypoints')
+    result = []
+    for index, point in enumerate(raw):
+        if len(point) < 2:
+            raise ValueError('scene target waypoint {} needs x,y'.format(index))
+        z = (float(point[2]) if use_waypoint_z and len(point) >= 3
+             else float(target_height))
+        result.append(np.asarray([float(point[0]), float(point[1]), z],
+                                 dtype=float))
+    return result
+
+
 class TargetStateCoordinator:
     """Owns the target clock and turns visible UAV observations into a shared estimate."""
 
@@ -33,7 +50,24 @@ class TargetStateCoordinator:
         self.target_speed = float(get('~target_speed', 0.45))
         self.align_yaw_to_velocity = bool(get('~align_yaw_to_velocity', True))
         self.target_waypoints_use_z = bool(get('~target_waypoints_use_z', False))
-        self.target_waypoints = self.parse_waypoints(get('~target_waypoints', '0.0,0.0'))
+        self.target_waypoints_scene_file = get('~target_waypoints_scene_file', '')
+        fallback_waypoints = get('~target_waypoints', '0.0,0.0')
+        if self.target_waypoints_scene_file:
+            try:
+                self.target_waypoints = load_scene_target_waypoints(
+                    self.target_waypoints_scene_file, self.target_height,
+                    self.target_waypoints_use_z)
+                rospy.loginfo(
+                    '[target-route-source] source=SCENE_FILE file=%s waypoints=%d',
+                    self.target_waypoints_scene_file,
+                    len(self.target_waypoints))
+            except (OSError, ValueError, TypeError) as exc:
+                rospy.logwarn(
+                    'Cannot load target route from scene %s; using launch fallback: %s',
+                    self.target_waypoints_scene_file, exc)
+                self.target_waypoints = self.parse_waypoints(fallback_waypoints)
+        else:
+            self.target_waypoints = self.parse_waypoints(fallback_waypoints)
         self.target_segment_speeds = self.parse_segment_speeds(get('~target_segment_speeds', ''))
         self.target_center_x = float(get('~target_center_x', 4.0))
         self.target_center_y = float(get('~target_center_y', 0.0))
@@ -46,6 +80,8 @@ class TargetStateCoordinator:
         self.ground_truth_topic = get('~ground_truth_topic', '/target_tracking/ground_truth')
         self.shared_topic = get('~shared_topic', '/object_odom')
         self.start_time_topic = get('~start_time_topic', '/target_tracking/target_start_time')
+        self.tracking_ready_topic_prefix = get(
+            '~tracking_ready_topic_prefix', '/target_tracking/ready')
         self.dynamic_obstacle_scene_file = get('~dynamic_obstacle_scene_file', '')
         self.dynamic_obstacle_avoidance_enabled = bool(
             get('~dynamic_obstacle_avoidance_enabled', False))
@@ -75,7 +111,8 @@ class TargetStateCoordinator:
 
         for uav_name in self.required_uavs:
             rospy.Subscriber(
-                '/target_tracking/ready/{}'.format(uav_name),
+                '{}/{}'.format(
+                    self.tracking_ready_topic_prefix.rstrip('/'), uav_name),
                 Bool,
                 self.ready_cb,
                 callback_args=uav_name,
@@ -112,11 +149,20 @@ class TargetStateCoordinator:
         return [max(float(value.strip()), 1.0e-3) for value in str(text).split(';') if value.strip()]
 
     def ready_cb(self, msg, uav_name):
+        changed = False
         with self.lock:
+            was_ready = uav_name in self.ready
             if msg.data:
                 self.ready.add(uav_name)
             else:
                 self.ready.discard(uav_name)
+                self.ready_since = None
+            changed = was_ready != bool(msg.data)
+        if changed:
+            rospy.loginfo(
+                '[startup-tracking-ready] uav=%s ready=%d source=%s/%s',
+                uav_name, 1 if msg.data else 0,
+                self.tracking_ready_topic_prefix.rstrip('/'), uav_name)
 
     def observation_cb(self, msg, uav_name):
         values = (
@@ -139,7 +185,10 @@ class TargetStateCoordinator:
 
     def maybe_start(self, stamp):
         with self.lock:
-            if self.start_time is not None or not set(self.required_uavs).issubset(self.ready):
+            if self.start_time is not None:
+                return
+            if not set(self.required_uavs).issubset(self.ready):
+                self.ready_since = None
                 return
             if self.ready_since is None:
                 self.ready_since = stamp
@@ -153,12 +202,17 @@ class TargetStateCoordinator:
             self.prepare_dynamic_safe_speeds(stamp)
         start_stamp = rospy.Time.now()
         with self.lock:
-            if self.start_time is not None:
+            if (self.start_time is not None or
+                    not set(self.required_uavs).issubset(self.ready)):
+                self.ready_since = None
                 return
             self.start_time = start_stamp
             start_sec = start_stamp.to_sec()
+            ready_uavs = sorted(self.ready)
         self.start_time_pub.publish(Float64(data=start_sec))
-        rospy.loginfo('Target clock started at %.6f after all UAVs entered TRACK', start_sec)
+        rospy.loginfo(
+            '[startup-mission-start] start_time=%.6f all_tracking_ready=1 '
+            'ready_uavs=%s', start_sec, ','.join(ready_uavs))
 
     def load_dynamic_obstacles(self):
         if not self.dynamic_obstacle_scene_file:
@@ -350,6 +404,12 @@ class TargetStateCoordinator:
         return self.make_odom(stamp, position, velocity, yaw, 'shared_target_from_{}'.format(source))
 
     def run(self):
+        initial_position, initial_velocity, _ = self.target_state(rospy.Time.now())
+        rospy.loginfo(
+            '[startup-pretrack-target] state_available=1 stationary=1 '
+            'position=(%.3f,%.3f,%.3f) velocity=(%.3f,%.3f,%.3f)',
+            initial_position[0], initial_position[1], initial_position[2],
+            initial_velocity[0], initial_velocity[1], initial_velocity[2])
         rate = rospy.Rate(self.rate_hz)
         while not rospy.is_shutdown():
             stamp = rospy.Time.now()

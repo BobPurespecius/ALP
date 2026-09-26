@@ -9,6 +9,7 @@ import os
 import rospy
 from gazebo_msgs.msg import ModelStates
 from geometry_msgs.msg import PoseStamped
+from nav_msgs.msg import Odometry
 from visualization_msgs.msg import Marker
 from visualization_msgs.msg import MarkerArray
 
@@ -49,11 +50,15 @@ def load_expected_positions(scene_file, count):
 
 class GazeboPoseBridge:
     def __init__(self, count, vehicle, frame_id, scene_file='', marker_topic='/gazebo_visualization_marker_array',
-                 publish_legacy_pose=False):
+                 publish_legacy_pose=False, publish_mavros_vision=False, use_truth_odom=False):
         self.count = count
         self.vehicle = vehicle
         self.frame_id = frame_id
         self.publish_legacy_pose = publish_legacy_pose
+        self.publish_mavros_vision = publish_mavros_vision
+        self.use_truth_odom = use_truth_odom
+        self.truth_odom_timeout = rospy.Duration(0.5)
+        self.last_truth_odom_time = {}
         self.expected_positions = load_expected_positions(scene_file, count)
         self.scene_models = self.load_scene_models(scene_file)
         self.model_names = {}
@@ -61,6 +66,17 @@ class GazeboPoseBridge:
             i: rospy.Publisher(f'/uav_{i}/gazebo_pose', PoseStamped, queue_size=10)
             for i in range(1, count + 1)
         }
+        self.gazebo_odom_publishers = {
+            i: rospy.Publisher(f'/uav_{i}/gazebo_odom', Odometry, queue_size=10)
+            for i in range(1, count + 1)
+        }
+        if publish_mavros_vision:
+            self.vision_pose_publishers = {
+                i: rospy.Publisher(f'/uav{i}/mavros/vision_pose/pose', PoseStamped, queue_size=10)
+                for i in range(1, count + 1)
+            }
+        else:
+            self.vision_pose_publishers = {}
         if publish_legacy_pose:
             self.pose_publishers = {
                 i: rospy.Publisher(f'/uav_{i}/pose', PoseStamped, queue_size=10)
@@ -75,6 +91,19 @@ class GazeboPoseBridge:
             self.model_states_cb,
             queue_size=1
         )
+        if use_truth_odom:
+            self.truth_odom_subscribers = [
+                rospy.Subscriber(
+                    f'/uav{i}/gazebo/truth_odom',
+                    Odometry,
+                    self.truth_odom_cb,
+                    callback_args=i,
+                    queue_size=1
+                )
+                for i in range(1, count + 1)
+            ]
+        else:
+            self.truth_odom_subscribers = []
         self.colors = [
             (1.0, 0.1, 0.0, 1.0),
             (1.0, 0.65, 0.0, 1.0),
@@ -118,6 +147,18 @@ class GazeboPoseBridge:
                 'height': float(obstacle.get('height', default_height)),
                 'color': (0.0, 0.8, 0.0, 0.85),
                 'ns': 'gazebo_static_obstacles',
+            }
+            marker_id += 1
+
+        for idx, (_key, obstacle) in enumerate(sorted_items(config.get('boxObstacleData'))):
+            name = obstacle.get('modelName', f'{world_name}_box_obstacle_{idx}')
+            size = obstacle.get('sizeENU', [1.0, 1.0, default_height])
+            models[name] = {
+                'id': marker_id,
+                'type': 'box',
+                'size': [float(size[0]), float(size[1]), float(size[2]) if len(size) >= 3 else default_height],
+                'color': (0.0, 0.8, 0.0, 0.85),
+                'ns': 'gazebo_box_obstacles',
             }
             marker_id += 1
 
@@ -173,6 +214,20 @@ class GazeboPoseBridge:
         if poses is None or expected is None:
             return None
 
+        position_model_name = self.resolve_model_name_by_position(
+            names,
+            poses,
+            expected,
+            used_names=used_names,
+        )
+        if position_model_name is not None:
+            return position_model_name
+        return None
+
+    def resolve_model_name_by_position(self, names, poses, expected, used_names=None):
+        if used_names is None:
+            used_names = set()
+
         best_name = None
         best_distance = math.inf
         for idx, name in enumerate(names):
@@ -205,17 +260,63 @@ class GazeboPoseBridge:
                 return candidate
         return None
 
+    def has_recent_truth_odom(self, uav_index):
+        stamp = self.last_truth_odom_time.get(uav_index)
+        if stamp is None:
+            return False
+        return rospy.Time.now() - stamp <= self.truth_odom_timeout
+
+    def publish_pose(self, uav_index, pose_msg):
+        self.gazebo_pose_publishers[uav_index].publish(pose_msg)
+        if self.publish_legacy_pose:
+            self.pose_publishers[uav_index].publish(pose_msg)
+        vision_pub = self.vision_pose_publishers.get(uav_index)
+        if vision_pub is not None:
+            vision_pub.publish(pose_msg)
+
+    def publish_odom(self, uav_index, pose, twist, stamp):
+        odom_msg = Odometry()
+        odom_msg.header.stamp = stamp
+        odom_msg.header.frame_id = self.frame_id
+        odom_msg.child_frame_id = f'uav{uav_index}/base_link'
+        odom_msg.pose.pose = copy.deepcopy(pose)
+        odom_msg.twist.twist = copy.deepcopy(twist)
+        self.gazebo_odom_publishers[uav_index].publish(odom_msg)
+
+    def truth_odom_cb(self, msg, uav_index):
+        pose_msg = PoseStamped()
+        pose_msg.header.stamp = msg.header.stamp if msg.header.stamp.to_sec() > 0.0 else rospy.Time.now()
+        pose_msg.header.frame_id = self.frame_id
+        pose_msg.pose = msg.pose.pose
+        self.last_truth_odom_time[uav_index] = rospy.Time.now()
+        self.publish_pose(uav_index, pose_msg)
+        self.publish_odom(uav_index, msg.pose.pose, msg.twist.twist, pose_msg.header.stamp)
+
     def model_states_cb(self, msg):
         names = msg.name
         marker_array = MarkerArray()
         used_names = set()
         for uav_index, publisher in self.gazebo_pose_publishers.items():
-            exact_model_name = self.resolve_exact_model_name(
-                names,
-                uav_index,
-                used_names=used_names
-            )
-            model_name = exact_model_name or self.model_names.get(uav_index)
+            if self.use_truth_odom and self.has_recent_truth_odom(uav_index):
+                continue
+            old_model_name = self.model_names.get(uav_index)
+            model_name = old_model_name if old_model_name in names and old_model_name not in used_names else None
+
+            expected = self.expected_positions.get(uav_index)
+            if model_name is None and expected is not None:
+                model_name = self.resolve_model_name_by_position(
+                    names,
+                    msg.pose,
+                    expected,
+                    used_names=used_names,
+                )
+            if model_name is None:
+                exact_model_name = self.resolve_exact_model_name(
+                    names,
+                    uav_index,
+                    used_names=used_names
+                )
+                model_name = exact_model_name or self.model_names.get(uav_index)
             if model_name not in names or model_name in used_names:
                 model_name = self.resolve_model_name(
                     names,
@@ -223,16 +324,15 @@ class GazeboPoseBridge:
                     poses=msg.pose,
                     used_names=used_names
                 )
-                if model_name is None:
-                    rospy.logwarn_throttle(
-                        5.0,
-                        'Could not resolve Gazebo model for uav%d. Available: %s',
-                        uav_index,
-                        ', '.join(names)
-                    )
-                    continue
+            if model_name is None:
+                rospy.logwarn_throttle(
+                    5.0,
+                    'Could not resolve Gazebo model for uav%d. Available: %s',
+                    uav_index,
+                    ', '.join(names)
+                )
+                continue
 
-            old_model_name = self.model_names.get(uav_index)
             if old_model_name != model_name:
                 self.model_names[uav_index] = model_name
                 rospy.loginfo('Mapped /uav_%d/gazebo_pose to Gazebo model %s', uav_index, model_name)
@@ -243,9 +343,8 @@ class GazeboPoseBridge:
             pose_msg.header.stamp = rospy.Time.now()
             pose_msg.header.frame_id = self.frame_id
             pose_msg.pose = msg.pose[idx]
-            publisher.publish(pose_msg)
-            if self.publish_legacy_pose:
-                self.pose_publishers[uav_index].publish(pose_msg)
+            self.publish_pose(uav_index, pose_msg)
+            self.publish_odom(uav_index, msg.pose[idx], msg.twist[idx], pose_msg.header.stamp)
             marker_array.markers.extend(self.uav_markers(uav_index, pose_msg))
 
         marker_array.markers.extend(self.scene_markers(msg))
@@ -333,6 +432,16 @@ def main():
         action='store_true',
         help='Also publish Gazebo truth to /uav_i/pose. Disabled by default to avoid mixing display truth with control/communication pose topics.'
     )
+    parser.add_argument(
+        '--publish-mavros-vision',
+        action='store_true',
+        help='Also publish Gazebo truth pose to /uavN/mavros/vision_pose/pose for PX4 external-vision EKF.'
+    )
+    parser.add_argument(
+        '--use-truth-odom',
+        action='store_true',
+        help='Prefer each model p3d odometry topic /uavN/gazebo/truth_odom when it is available.'
+    )
     args = parser.parse_args(rospy.myargv()[1:])
 
     rospy.init_node('gazebo_pose_bridge', anonymous=False)
@@ -342,7 +451,9 @@ def main():
         args.frame_id,
         scene_file=args.scene_file,
         marker_topic=args.marker_topic,
-        publish_legacy_pose=args.publish_legacy_pose
+        publish_legacy_pose=args.publish_legacy_pose,
+        publish_mavros_vision=args.publish_mavros_vision,
+        use_truth_odom=args.use_truth_odom
     )
     rospy.spin()
 

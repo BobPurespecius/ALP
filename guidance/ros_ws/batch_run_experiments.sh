@@ -3,6 +3,8 @@
 set -euo pipefail
 
 SCENE="more_obstacles"
+PLANNER="ego"
+RVIZ_ENABLED="false"
 RUNS=5
 DURATION=60
 COOLDOWN=2
@@ -21,6 +23,8 @@ Usage: ./batch_run_experiments.sh [options]
 
 Options:
   --scene NAME          Scene JSON/world name. Default: more_obstacles
+  --planner NAME        Planner backend: ego or egov2. Default: ego
+  --rviz                Enable RViz and SingleRun visualization markers. Default: disabled
   --runs N             Number of runs. Default: 5
   --duration SEC       Gazebo sim-time seconds to let each run execute after startup. Default: 60
   --startup-timeout SEC Seconds to wait for Gazebo/PX4/SingleRun startup. Default: 180
@@ -31,7 +35,7 @@ Options:
 
 Example:
   ./batch_run_experiments.sh --scene more_obstacles --runs 20 --duration 60
-  ./batch_run_experiments.sh --scene platform --runs 10 --duration 80
+  ./batch_run_experiments.sh --scene platform --planner egov2 --runs 10 --duration 80
 EOF
 }
 
@@ -40,6 +44,14 @@ while [ "$#" -gt 0 ]; do
         --scene)
             SCENE="$2"
             shift 2
+            ;;
+        --planner)
+            PLANNER="$2"
+            shift 2
+            ;;
+        --rviz)
+            RVIZ_ENABLED="true"
+            shift
             ;;
         --runs)
             RUNS="$2"
@@ -76,6 +88,16 @@ while [ "$#" -gt 0 ]; do
             ;;
     esac
 done
+
+case "$PLANNER" in
+    ego|egov2)
+        ;;
+    *)
+        echo "Invalid planner: $PLANNER"
+        usage
+        exit 1
+        ;;
+esac
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
@@ -191,13 +213,15 @@ wait_for_save_services() {
     local elapsed=0
     local ready=0
     local service=""
+    local services=""
 
     set +e
     while [ "$elapsed" -le "$timeout" ]; do
         ready=0
+        services="$(timeout "${STATUS_SERVICE_TIMEOUT}s" rosservice list 2>/dev/null || true)"
         for ((uav=1; uav<=expected; uav++)); do
             service="/single_run_${uav}/save_log"
-            if rosservice list 2>/dev/null | grep -qx "$service"; then
+            if printf '%s\n' "$services" | grep -qx "$service"; then
                 ready=$((ready + 1))
             fi
         done
@@ -215,6 +239,84 @@ wait_for_save_services() {
     echo "WARNING: only $ready/$expected SingleRun save services ready after ${timeout}s." | tee -a "$ANALYSIS_DIR/warnings.log"
     set -e
     return 1
+}
+
+wait_for_mavros_states() {
+    local expected="$1"
+    local timeout="$2"
+    local rc=0
+
+    set +e
+    python3 - "$expected" "$timeout" <<'PY'
+import sys
+import time
+
+expected = int(sys.argv[1])
+timeout = float(sys.argv[2])
+
+try:
+    import rospy
+    from mavros_msgs.msg import State
+except Exception as exc:
+    print(f"WARNING: cannot import ROS/MAVROS Python dependencies: {exc}", flush=True)
+    sys.exit(1)
+
+states = {}
+
+def callback_for(uav_number):
+    def callback(msg):
+        states[uav_number] = msg
+    return callback
+
+try:
+    rospy.init_node('wait_for_mavros_states', anonymous=True, disable_signals=True)
+    subscribers = [
+        rospy.Subscriber(f'/uav{uav}/mavros/state', State, callback_for(uav), queue_size=1)
+        for uav in range(1, expected + 1)
+    ]
+except Exception as exc:
+    print(f"WARNING: failed to subscribe MAVROS states: {exc}", flush=True)
+    sys.exit(1)
+
+deadline = time.time() + timeout
+last_report = 0.0
+last_summary = ''
+
+while time.time() <= deadline and not rospy.is_shutdown():
+    ready = 0
+    summary_parts = []
+    for uav in range(1, expected + 1):
+        state = states.get(uav)
+        if state is None:
+            summary_parts.append(f'uav{uav}:no_msg')
+            continue
+
+        mode = state.mode or '<empty>'
+        summary_parts.append(
+            f'uav{uav}:connected={int(bool(state.connected))},mode={mode},armed={int(bool(state.armed))}'
+        )
+        if state.connected and state.mode:
+            ready += 1
+
+    last_summary = '; '.join(summary_parts)
+    if ready == expected:
+        print(f"All {ready}/{expected} MAVROS FCU states are ready.")
+        print(f"MAVROS states: {last_summary}")
+        sys.exit(0)
+
+    now = time.time()
+    if now - last_report >= 5.0:
+        print(f"Waiting for MAVROS FCU states: {ready}/{expected} ready. {last_summary}", flush=True)
+        last_report = now
+
+    time.sleep(0.1)
+
+print(f"WARNING: MAVROS FCU states not ready after {timeout:.1f}s. {last_summary}", flush=True)
+sys.exit(1)
+PY
+    rc=$?
+    set -e
+    return "$rc"
 }
 
 gazebo_sim_time() {
@@ -387,11 +489,48 @@ force_cleanup() {
     tmux kill-session -t "$SESSION_NAME" >/dev/null 2>&1
     pkill -f '[r]oslaunch.*multi_uav_mavros_sitl' >/dev/null 2>&1
     pkill -f '[r]oslaunch.*ego_more_obstacles' >/dev/null 2>&1
+    pkill -f '[r]oslaunch.*ego_v2_more_obstacles' >/dev/null 2>&1
     pkill -x px4 >/dev/null 2>&1
     pkill -x gazebo >/dev/null 2>&1
     pkill -x gzserver >/dev/null 2>&1
     pkill -x gzclient >/dev/null 2>&1
     set -e
+}
+
+reset_px4_iris_param_cache() {
+    local ros_home="${ROS_HOME:-}"
+    local cleared=0
+
+    if [ -z "$ros_home" ]; then
+        if [ -z "${HOME:-}" ]; then
+            return 0
+        fi
+        ros_home="$HOME/.ros"
+    fi
+
+    if [ ! -d "$ros_home" ]; then
+        return 0
+    fi
+
+    set +e
+    cleared="$(
+        find "$ros_home" -maxdepth 2 -type f \
+            \( -path "$ros_home/sitl_iris_*/parameters.bson" -o \
+               -path "$ros_home/sitl_iris_*/parameters_backup.bson" -o \
+               -path "$ros_home/sitl_iris_*/param_import_fail.bson" \) \
+            -print -delete 2>/dev/null | wc -l
+    )"
+    cleared=$((cleared + $(
+        find "$ros_home" -maxdepth 4 -type f \
+            \( -path "$ros_home/sitl_*/eeprom/parameters_*" -o \
+               -path "$ros_home/sitl_*/eeprom/parameters_backup_*" \) \
+            -print -delete 2>/dev/null | wc -l
+    )))
+    set -e
+
+    if [ "${cleared:-0}" -gt 0 ] 2>/dev/null; then
+        echo "Cleared $cleared stale PX4 SITL parameter cache file(s)."
+    fi
 }
 
 pause_gazebo_physics() {
@@ -416,6 +555,7 @@ finish_run() {
 trap force_cleanup EXIT
 
 echo "Batch scene: $SCENE"
+echo "Planner: $PLANNER"
 echo "Runs: $RUNS"
 echo "Duration per run: $DURATION s sim time"
 echo "Cooldown between runs: $COOLDOWN s"
@@ -427,12 +567,13 @@ EXPECTED_UAVS="$(expected_uavs_for_scene)"
 echo "Expected UAV data files per run: $EXPECTED_UAVS"
 
 for ((run_idx=1; run_idx<=RUNS; run_idx++)); do
-    PREFIX="batch_${SCENE}_$(date +%Y%m%d_%H%M%S)_$(printf '%03d' "$run_idx")"
+    PREFIX="batch_${SCENE}_${PLANNER}_$(date +%Y%m%d_%H%M%S)_$(printf '%03d' "$run_idx")"
     RUN_DIR="$RUN_ROOT/$PREFIX"
 
     echo
     echo "[$run_idx/$RUNS] Starting run prefix: $PREFIX"
     force_cleanup
+    reset_px4_iris_param_cache
     sleep "$COOLDOWN"
 
     if ! generate_world_for_scene; then
@@ -442,7 +583,7 @@ for ((run_idx=1; run_idx<=RUNS; run_idx++)); do
         continue
     fi
 
-    if ! tmuxinator start --no-attach -p tmuxinator.yml scene="$SCENE" run_prefix="$PREFIX"; then
+    if ! tmuxinator start --no-attach -p tmuxinator.yml scene="$SCENE" planner="$PLANNER" run_prefix="$PREFIX" enable_rviz="$RVIZ_ENABLED"; then
         echo "[$run_idx/$RUNS] ERROR: tmuxinator failed to start; cleaning up." | tee -a "$ANALYSIS_DIR/warnings.log"
         force_cleanup
         sleep "$COOLDOWN"
@@ -453,6 +594,12 @@ for ((run_idx=1; run_idx<=RUNS; run_idx++)); do
     echo "[$run_idx/$RUNS] Waiting for Gazebo/PX4/SingleRun startup for up to ${STARTUP_TIMEOUT}s..."
     if ! wait_for_save_services "$EXPECTED_UAVS" "$STARTUP_TIMEOUT"; then
         echo "[$run_idx/$RUNS] ERROR: startup did not complete; cleaning up." | tee -a "$ANALYSIS_DIR/warnings.log"
+        force_cleanup
+        sleep "$COOLDOWN"
+        continue
+    fi
+    if ! wait_for_mavros_states "$EXPECTED_UAVS" "$STARTUP_TIMEOUT"; then
+        echo "[$run_idx/$RUNS] ERROR: MAVROS/PX4 FCU state did not become ready; cleaning up." | tee -a "$ANALYSIS_DIR/warnings.log"
         force_cleanup
         sleep "$COOLDOWN"
         continue

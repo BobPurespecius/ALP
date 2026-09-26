@@ -52,7 +52,24 @@ def visibility_metrics(path, window):
         'zero_visible_ratio': sum(count == 0 for count in counts) / len(counts),
         'visibility_count_histogram': {
             str(count): counts.count(count) for count in range(4)},
+        'k2_ratio': sum(count >= 2 for count in counts) / len(counts),
+        'k3_ratio': sum(count == 3 for count in counts) / len(counts),
     }
+
+    intervals = [max(0.0, times[index] - times[index - 1])
+                 for index in range(1, len(times))]
+    result['accumulated_camera_visible_time_s'] = sum(
+        counts[index] * dt for index, dt in enumerate(intervals, start=1))
+
+    def longest_loss(predicate):
+        longest = current = 0.0
+        for index, dt in enumerate(intervals, start=1):
+            current = current + dt if predicate(counts[index]) else 0.0
+            longest = max(longest, current)
+        return longest
+
+    result['longest_k2_loss_s'] = longest_loss(lambda count: count < 2)
+    result['longest_all3_loss_s'] = longest_loss(lambda count: count < 3)
 
     def outages(predicate):
         spans = []
@@ -107,6 +124,9 @@ def trajectory_metrics(path, window, clearance_threshold, start_time):
     result = {}
     all_static = []
     all_moving = []
+    all_pair_distances = []
+    swarm_violation_samples = 0
+    unvalidated_executed_samples = 0
     team_errors = []
     formation_spreads = []
     time_groups = {}
@@ -153,6 +173,8 @@ def trajectory_metrics(path, window, clearance_threshold, start_time):
         moving = [float(row['moving_clearance_m']) for row in rows]
         all_static.extend(static)
         all_moving.extend(moving)
+        unvalidated_executed_samples += sum(
+            row.get('safety_validated', '').lower() != 'true' for row in rows)
         result['uav{}'.format(uav)] = {
             'samples': len(rows),
             'path_length_m': path_length,
@@ -196,6 +218,8 @@ def trajectory_metrics(path, window, clearance_threshold, start_time):
                           for index, first in enumerate(points)
                           for second in points[index + 1:]]
         if pair_distances:
+            all_pair_distances.extend(pair_distances)
+            swarm_violation_samples += min(pair_distances) < clearance_threshold
             formation_spreads.append(sum(pair_distances) / len(pair_distances))
     mean_spacing = (sum(formation_spreads) / len(formation_spreads)
                     if formation_spreads else 0.0)
@@ -207,6 +231,9 @@ def trajectory_metrics(path, window, clearance_threshold, start_time):
     result['team'] = {
         'min_static_clearance_m': min(all_static, default=0.0),
         'min_moving_clearance_m': min(all_moving, default=0.0),
+        'min_swarm_separation_m': min(all_pair_distances, default=0.0),
+        'swarm_violation_samples': swarm_violation_samples,
+        'unvalidated_executed_samples': unvalidated_executed_samples,
         'mean_centroid_target_distance_m': (sum(team_errors) / len(team_errors)
                                             if team_errors else 0.0),
         'rms_centroid_target_distance_m': rms(team_errors),

@@ -16,6 +16,22 @@ bool PolynomialPrediction::valid() const
 
 void PolynomialPrediction::setPredictionPath(const nav_msgs::Path &path)
 {
+  // A rolling prediction republishes the same source authority at a new
+  // window origin. Do not fold that origin (or continuously changing sample
+  // positions) into source identity: doing so confuses version identity with
+  // temporal coverage and makes asynchronous consumers permanently disagree.
+  // The frame and discretization shape identify the producer/model contract;
+  // validFrom()/validTo() independently prove that a requested interval is
+  // covered.
+  uint64_t identity = 1469598103934665603ULL;
+  for (const unsigned char value : path.header.frame_id)
+  {
+    identity ^= static_cast<uint64_t>(value);
+    identity *= 1099511628211ULL;
+  }
+  identity ^= static_cast<uint64_t>(path.poses.size()) +
+              0x9e3779b97f4a7c15ULL + (identity << 6) + (identity >> 2);
+  source_identity_ = identity == 0 ? 1 : identity;
   samples_.clear();
   samples_.reserve(path.poses.size());
   for (size_t i = 0; i < path.poses.size(); ++i)
@@ -98,6 +114,21 @@ Eigen::Vector3d PolynomialPrediction::evaluateConstVelVelocity(double time) cons
     }
   }
   return samples_.back().velocity;
+}
+
+double PolynomialPrediction::validFrom() const
+{
+  return valid() ? samples_.front().time : std::numeric_limits<double>::quiet_NaN();
+}
+
+double PolynomialPrediction::validTo() const
+{
+  return valid() ? samples_.back().time : std::numeric_limits<double>::quiet_NaN();
+}
+
+uint64_t PolynomialPrediction::sourceIdentity() const
+{
+  return valid() ? source_identity_ : 0;
 }
 
 void ObjHistory::init(int id, int skip_num, int queue_size, ros::Time global_start_time)
@@ -199,6 +230,12 @@ bool ObjPredictor::hasPrediction(int obj_id) const
   return predict_trajs_ && obj_id >= 0 && obj_id < obj_num_ && predict_trajs_->at(obj_id).valid();
 }
 
+bool ObjPredictor::hasObservedObject(int obj_id) const
+{
+  return obj_id >= 0 && obj_id < obj_num_ &&
+         obj_id < static_cast<int>(scale_init_.size()) && scale_init_[obj_id];
+}
+
 Eigen::Vector3d ObjPredictor::evaluateConstVel(int obj_id, double time) const
 {
   if (!hasPrediction(obj_id))
@@ -228,6 +265,49 @@ Eigen::Vector3d ObjPredictor::getObjScale(int obj_id) const
   if (!obj_scale_ || obj_id < 0 || obj_id >= obj_num_)
     return Eigen::Vector3d::Ones();
   return obj_scale_->at(obj_id);
+}
+
+double ObjPredictor::commonPredictionValidFrom() const
+{
+  double begin = -std::numeric_limits<double>::infinity();
+  bool any = false;
+  for (int i = 0; i < obj_num_; ++i)
+  {
+    if (!hasPrediction(i))
+      continue;
+    begin = std::max(begin, predict_trajs_->at(i).validFrom());
+    any = true;
+  }
+  return any ? begin : 0.0;
+}
+
+double ObjPredictor::commonPredictionValidTo() const
+{
+  double end = std::numeric_limits<double>::infinity();
+  bool any = false;
+  for (int i = 0; i < obj_num_; ++i)
+  {
+    if (!hasPrediction(i))
+      continue;
+    end = std::min(end, predict_trajs_->at(i).validTo());
+    any = true;
+  }
+  return any ? end : std::numeric_limits<double>::infinity();
+}
+
+uint64_t ObjPredictor::predictionIdentity() const
+{
+  uint64_t hash = 1469598103934665603ULL;
+  bool any = false;
+  for (int i = 0; i < obj_num_; ++i)
+  {
+    if (!hasPrediction(i))
+      continue;
+    any = true;
+    hash ^= predict_trajs_->at(i).sourceIdentity() +
+            0x9e3779b97f4a7c15ULL + (hash << 6) + (hash >> 2);
+  }
+  return any ? hash : 1ULL;
 }
 
 void ObjPredictor::markerCallback(const visualization_msgs::MarkerConstPtr &msg)

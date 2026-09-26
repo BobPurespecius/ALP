@@ -55,6 +55,12 @@ Visualization Manager:
       Value: true
       Marker Topic: /native_egov2/uav3_marker
       Queue Size: 10
+    - Class: rviz/MarkerArray
+      Name: Camera FOV (executed yaw)
+      Enabled: true
+      Value: true
+      Marker Topic: /native_egov2/camera_fov
+      Queue Size: 5
     - Class: rviz/Marker
       Name: UAV 1 trajectory
       Enabled: true
@@ -72,6 +78,42 @@ Visualization Manager:
       Enabled: true
       Value: true
       Marker Topic: /drone_2_ego_planner_node/optimal_list
+      Queue Size: 20
+    - Class: rviz/Marker
+      Name: UAV 1 validated execution authority
+      Enabled: true
+      Value: true
+      Marker Topic: /drone_0_ego_planner_node/validated_optimal_list
+      Queue Size: 20
+    - Class: rviz/Marker
+      Name: UAV 2 validated execution authority
+      Enabled: true
+      Value: true
+      Marker Topic: /drone_1_ego_planner_node/validated_optimal_list
+      Queue Size: 20
+    - Class: rviz/Marker
+      Name: UAV 3 validated execution authority
+      Enabled: true
+      Value: true
+      Marker Topic: /drone_2_ego_planner_node/validated_optimal_list
+      Queue Size: 20
+    - Class: rviz/Marker
+      Name: UAV 1 unvalidated future suffix
+      Enabled: true
+      Value: true
+      Marker Topic: /drone_0_ego_planner_node/unvalidated_future_list
+      Queue Size: 20
+    - Class: rviz/Marker
+      Name: UAV 2 unvalidated future suffix
+      Enabled: true
+      Value: true
+      Marker Topic: /drone_1_ego_planner_node/unvalidated_future_list
+      Queue Size: 20
+    - Class: rviz/Marker
+      Name: UAV 3 unvalidated future suffix
+      Enabled: true
+      Value: true
+      Marker Topic: /drone_2_ego_planner_node/unvalidated_future_list
       Queue Size: 20
     - Class: rviz/Path
       Name: UAV 1 path

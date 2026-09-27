@@ -1,0 +1,710 @@
+<?xml version="1.0"?>
+<sdf version="1.6">
+  <world name="long_cylinder_forest">
+    <include><uri>model://sun</uri></include>
+    <include><uri>model://ground_plane</uri></include>
+    <physics name="default_physics" default="0" type="ode">
+      <gravity>0 0 -9.8066</gravity>
+      <ode>
+        <solver><type>quick</type><iters>10</iters><sor>1.3</sor></solver>
+        <constraints>
+          <cfm>0</cfm>
+          <erp>0.2</erp>
+          <contact_max_correcting_vel>100</contact_max_correcting_vel>
+          <contact_surface_layer>0.001</contact_surface_layer>
+        </constraints>
+      </ode>
+      <max_step_size>0.004</max_step_size>
+      <real_time_factor>1</real_time_factor>
+      <real_time_update_rate>250</real_time_update_rate>
+    </physics>
+    <model name="long_forest_cylinder_00">
+      <static>true</static>
+      <pose>-26.090 1.580 1.800 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.430</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.430</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0.08 0.55 0.16 0.92</ambient><diffuse>0.08 0.55 0.16 0.92</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_cylinder_01">
+      <static>true</static>
+      <pose>-25.940 -0.650 1.800 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.430</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.430</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0.08 0.55 0.16 0.92</ambient><diffuse>0.08 0.55 0.16 0.92</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_cylinder_02">
+      <static>true</static>
+      <pose>-18.650 6.900 1.800 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.430</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.430</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0.08 0.55 0.16 0.92</ambient><diffuse>0.08 0.55 0.16 0.92</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_cylinder_03">
+      <static>true</static>
+      <pose>-17.750 3.130 1.800 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.430</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.430</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0.08 0.55 0.16 0.92</ambient><diffuse>0.08 0.55 0.16 0.92</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_cylinder_04">
+      <static>true</static>
+      <pose>-9.500 4.290 1.800 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.430</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.430</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0.08 0.55 0.16 0.92</ambient><diffuse>0.08 0.55 0.16 0.92</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_cylinder_05">
+      <static>true</static>
+      <pose>-9.150 0.900 1.800 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.430</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.430</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0.08 0.55 0.16 0.92</ambient><diffuse>0.08 0.55 0.16 0.92</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_cylinder_06">
+      <static>true</static>
+      <pose>-1.510 1.770 1.800 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.430</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.430</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0.08 0.55 0.16 0.92</ambient><diffuse>0.08 0.55 0.16 0.92</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_cylinder_07">
+      <static>true</static>
+      <pose>-1.510 -1.750 1.800 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.430</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.430</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0.08 0.55 0.16 0.92</ambient><diffuse>0.08 0.55 0.16 0.92</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_cylinder_08">
+      <static>true</static>
+      <pose>7.280 3.000 1.800 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.430</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.430</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0.08 0.55 0.16 0.92</ambient><diffuse>0.08 0.55 0.16 0.92</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_cylinder_09">
+      <static>true</static>
+      <pose>7.420 -0.400 1.800 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.430</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.430</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0.08 0.55 0.16 0.92</ambient><diffuse>0.08 0.55 0.16 0.92</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_cylinder_10">
+      <static>true</static>
+      <pose>16.030 4.450 1.800 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.430</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.430</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0.08 0.55 0.16 0.92</ambient><diffuse>0.08 0.55 0.16 0.92</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_cylinder_11">
+      <static>true</static>
+      <pose>16.440 1.150 1.800 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.430</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.430</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0.08 0.55 0.16 0.92</ambient><diffuse>0.08 0.55 0.16 0.92</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_cylinder_12">
+      <static>true</static>
+      <pose>25.060 5.800 1.800 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.430</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.430</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0.08 0.55 0.16 0.92</ambient><diffuse>0.08 0.55 0.16 0.92</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_cylinder_13">
+      <static>true</static>
+      <pose>24.440 1.710 1.800 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.430</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.430</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0.08 0.55 0.16 0.92</ambient><diffuse>0.08 0.55 0.16 0.92</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_cylinder_14">
+      <static>true</static>
+      <pose>31.230 2.690 1.800 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.430</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.430</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0.08 0.55 0.16 0.92</ambient><diffuse>0.08 0.55 0.16 0.92</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_cylinder_15">
+      <static>true</static>
+      <pose>31.160 -0.450 1.800 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.430</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.430</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0.08 0.55 0.16 0.92</ambient><diffuse>0.08 0.55 0.16 0.92</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_cylinder_16">
+      <static>true</static>
+      <pose>-20.850 0.000 1.800 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.500</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.500</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0.08 0.55 0.16 0.92</ambient><diffuse>0.08 0.55 0.16 0.92</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_cylinder_17">
+      <static>true</static>
+      <pose>-11.950 5.340 1.800 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.500</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.500</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0.08 0.55 0.16 0.92</ambient><diffuse>0.08 0.55 0.16 0.92</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_cylinder_18">
+      <static>true</static>
+      <pose>-6.230 -3.750 1.800 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.500</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.500</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0.08 0.55 0.16 0.92</ambient><diffuse>0.08 0.55 0.16 0.92</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_cylinder_19">
+      <static>true</static>
+      <pose>2.690 5.150 1.800 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.500</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.500</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0.08 0.55 0.16 0.92</ambient><diffuse>0.08 0.55 0.16 0.92</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_cylinder_20">
+      <static>true</static>
+      <pose>12.310 -1.020 1.800 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.500</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.500</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0.08 0.55 0.16 0.92</ambient><diffuse>0.08 0.55 0.16 0.92</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_cylinder_21">
+      <static>true</static>
+      <pose>20.270 6.210 1.800 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.500</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.500</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0.08 0.55 0.16 0.92</ambient><diffuse>0.08 0.55 0.16 0.92</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_cylinder_22">
+      <static>true</static>
+      <pose>27.610 -2.950 1.800 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.500</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.500</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0.08 0.55 0.16 0.92</ambient><diffuse>0.08 0.55 0.16 0.92</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_cylinder_23">
+      <static>true</static>
+      <pose>34.270 3.780 1.800 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.500</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.500</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0.08 0.55 0.16 0.92</ambient><diffuse>0.08 0.55 0.16 0.92</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_cylinder_24">
+      <static>true</static>
+      <pose>-31.000 -3.800 1.800 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.550</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.550</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0.08 0.55 0.16 0.92</ambient><diffuse>0.08 0.55 0.16 0.92</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_cylinder_25">
+      <static>true</static>
+      <pose>-29.000 5.500 1.800 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.550</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.550</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0.08 0.55 0.16 0.92</ambient><diffuse>0.08 0.55 0.16 0.92</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_cylinder_26">
+      <static>true</static>
+      <pose>-23.000 -3.500 1.800 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.550</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.550</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0.08 0.55 0.16 0.92</ambient><diffuse>0.08 0.55 0.16 0.92</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_cylinder_27">
+      <static>true</static>
+      <pose>-14.000 7.200 1.800 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.550</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.550</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0.08 0.55 0.16 0.92</ambient><diffuse>0.08 0.55 0.16 0.92</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_cylinder_28">
+      <static>true</static>
+      <pose>-10.000 -3.000 1.800 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.550</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.550</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0.08 0.55 0.16 0.92</ambient><diffuse>0.08 0.55 0.16 0.92</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_cylinder_29">
+      <static>true</static>
+      <pose>-5.000 5.200 1.800 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.550</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.550</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0.08 0.55 0.16 0.92</ambient><diffuse>0.08 0.55 0.16 0.92</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_cylinder_30">
+      <static>true</static>
+      <pose>1.000 5.000 1.800 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.550</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.550</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0.08 0.55 0.16 0.92</ambient><diffuse>0.08 0.55 0.16 0.92</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_cylinder_31">
+      <static>true</static>
+      <pose>5.000 -3.200 1.800 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.550</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.550</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0.08 0.55 0.16 0.92</ambient><diffuse>0.08 0.55 0.16 0.92</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_cylinder_32">
+      <static>true</static>
+      <pose>12.000 -3.000 1.800 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.550</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.550</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0.08 0.55 0.16 0.92</ambient><diffuse>0.08 0.55 0.16 0.92</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_cylinder_33">
+      <static>true</static>
+      <pose>19.000 -3.200 1.800 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.550</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.550</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0.08 0.55 0.16 0.92</ambient><diffuse>0.08 0.55 0.16 0.92</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_cylinder_34">
+      <static>true</static>
+      <pose>27.000 5.700 1.800 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.550</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.550</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0.08 0.55 0.16 0.92</ambient><diffuse>0.08 0.55 0.16 0.92</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_cylinder_35">
+      <static>true</static>
+      <pose>34.000 5.800 1.800 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.550</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.550</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0.08 0.55 0.16 0.92</ambient><diffuse>0.08 0.55 0.16 0.92</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_moving_0">
+      <static>false</static>
+      <pose>-8.000 2.700 1.800 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial>
+          <mass>1.0</mass>
+          <inertia>
+            <ixx>0.1</ixx><ixy>0.0</ixy><ixz>0.0</ixz>
+            <iyy>0.1</iyy><iyz>0.0</iyz>
+            <izz>0.1</izz>
+          </inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.280</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.280</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0 0.8 0 0.85</ambient><diffuse>0 0.8 0 0.85</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_moving_1">
+      <static>false</static>
+      <pose>8.800 -0.150 1.800 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial>
+          <mass>1.0</mass>
+          <inertia>
+            <ixx>0.1</ixx><ixy>0.0</ixy><ixz>0.0</ixz>
+            <iyy>0.1</iyy><iyz>0.0</iyz>
+            <izz>0.1</izz>
+          </inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.280</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.280</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0 0.8 0 0.85</ambient><diffuse>0 0.8 0 0.85</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_moving_2">
+      <static>false</static>
+      <pose>24.500 -1.400 1.800 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial>
+          <mass>1.0</mass>
+          <inertia>
+            <ixx>0.1</ixx><ixy>0.0</ixy><ixz>0.0</ixz>
+            <iyy>0.1</iyy><iyz>0.0</iyz>
+            <izz>0.1</izz>
+          </inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.280</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.280</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0 0.8 0 0.85</ambient><diffuse>0 0.8 0 0.85</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_moving_3">
+      <static>false</static>
+      <pose>-14.000 0.711 1.800 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial>
+          <mass>1.0</mass>
+          <inertia>
+            <ixx>0.1</ixx><ixy>0.0</ixy><ixz>0.0</ixz>
+            <iyy>0.1</iyy><iyz>0.0</iyz>
+            <izz>0.1</izz>
+          </inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.280</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.280</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0 0.8 0 0.85</ambient><diffuse>0 0.8 0 0.85</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_moving_4">
+      <static>false</static>
+      <pose>2.000 -0.787 1.800 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial>
+          <mass>1.0</mass>
+          <inertia>
+            <ixx>0.1</ixx><ixy>0.0</ixy><ixz>0.0</ixz>
+            <iyy>0.1</iyy><iyz>0.0</iyz>
+            <izz>0.1</izz>
+          </inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.280</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.280</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0 0.8 0 0.85</ambient><diffuse>0 0.8 0 0.85</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_moving_5">
+      <static>false</static>
+      <pose>18.800 0.550 1.800 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial>
+          <mass>1.0</mass>
+          <inertia>
+            <ixx>0.1</ixx><ixy>0.0</ixy><ixz>0.0</ixz>
+            <iyy>0.1</iyy><iyz>0.0</iyz>
+            <izz>0.1</izz>
+          </inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.280</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.280</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0 0.8 0 0.85</ambient><diffuse>0 0.8 0 0.85</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_moving_6">
+      <static>false</static>
+      <pose>-24.000 1.000 1.800 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial>
+          <mass>1.0</mass>
+          <inertia>
+            <ixx>0.1</ixx><ixy>0.0</ixy><ixz>0.0</ixz>
+            <iyy>0.1</iyy><iyz>0.0</iyz>
+            <izz>0.1</izz>
+          </inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.280</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.280</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0 0.8 0 0.85</ambient><diffuse>0 0.8 0 0.85</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_moving_7">
+      <static>false</static>
+      <pose>-4.000 -1.500 1.800 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial>
+          <mass>1.0</mass>
+          <inertia>
+            <ixx>0.1</ixx><ixy>0.0</ixy><ixz>0.0</ixz>
+            <iyy>0.1</iyy><iyz>0.0</iyz>
+            <izz>0.1</izz>
+          </inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.280</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.280</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0 0.8 0 0.85</ambient><diffuse>0 0.8 0 0.85</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_moving_8">
+      <static>false</static>
+      <pose>10.500 3.800 1.800 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial>
+          <mass>1.0</mass>
+          <inertia>
+            <ixx>0.1</ixx><ixy>0.0</ixy><ixz>0.0</ixz>
+            <iyy>0.1</iyy><iyz>0.0</iyz>
+            <izz>0.1</izz>
+          </inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.280</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.280</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0 0.8 0 0.85</ambient><diffuse>0 0.8 0 0.85</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="long_forest_moving_9">
+      <static>false</static>
+      <pose>29.000 0.600 1.800 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial>
+          <mass>1.0</mass>
+          <inertia>
+            <ixx>0.1</ixx><ixy>0.0</ixy><ixz>0.0</ixz>
+            <iyy>0.1</iyy><iyz>0.0</iyz>
+            <izz>0.1</izz>
+          </inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.280</radius><length>3.600</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.280</radius><length>3.600</length></cylinder></geometry>
+          <material><ambient>0 0.8 0 0.85</ambient><diffuse>0 0.8 0 0.85</diffuse></material>
+        </visual>
+      </link>
+    </model>
+  </world>
+</sdf>

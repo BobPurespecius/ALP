@@ -1,0 +1,111 @@
+{
+  "run_id": "20260926_105704_628281",
+  "exit_status": "RUN_ID=20260926_105704_628281\nCORE_EXIT_CODE=0\nRVIZ_EXIT_CODE=NOT_STARTED\nCLEANUP_STATUS=OK\nFINAL_EXIT_CODE=0\nLAST_BOOT_STAGE=BOOT-12\nSIMULATION_REACHED_BOOT_12=YES",
+  "process_status": "BOOT12_TARGET_MOVING=YES\nBOOT12_UAV0_MOVING=YES\nBOOT12_UAV1_MOVING=YES\nBOOT12_UAV2_MOVING=YES\nCLEANUP_REASON=RUN_COMPLETE\nCLEANUP_TARGET_PGID=628389\nCLEANUP_OWNED_PROCESS_COUNT=29\nCLEANUP_FORCE_KILLED=0\nCLEANUP_REMAINING_OWNED=0\nCLEANUP_KILLED_FOREIGN_PROCESSES=0\nCORE_TERMINATED_BY_RUNNER=1\nCORE_EXIT_CODE_RAW=0\nRViz 是否被单独观测：本次由 roslaunch 托管，required=false，其退出不影响上述退出码",
+  "astar_required": 117,
+  "astar_raw_path_safe": 117,
+  "corridor_build_success": 17,
+  "guide_rejected_hard": 0,
+  "side_intent_telemetry": 117,
+  "side_intent_inconsistent": 31,
+  "timing_count": 116,
+  "timing_dilation_applied": 109,
+  "lambda": {
+    "count": 109,
+    "p50": 2.896958,
+    "p90": 3.379175,
+    "max": 5.351896
+  },
+  "v_before": {
+    "count": 115,
+    "p50": 2.996802,
+    "p90": 4.435501,
+    "max": 12.491074
+  },
+  "v_after": {
+    "count": 108,
+    "p50": 1.196751,
+    "p90": 2.088805,
+    "max": 2.977458
+  },
+  "a_before": {
+    "count": 114,
+    "p50": 23.747093,
+    "p90": 38.351316,
+    "max": 115.943292
+  },
+  "a_after": {
+    "count": 108,
+    "p50": 2.905014,
+    "p90": 4.37267,
+    "max": 12.728174
+  },
+  "j_before": {
+    "count": 109,
+    "p50": 486.246426,
+    "p90": 771.724323,
+    "max": 3065.865066
+  },
+  "j_after": {
+    "count": 108,
+    "p50": 21.062062,
+    "p90": 26.066035,
+    "max": 166.28036
+  },
+  "duration_before": {
+    "count": 108,
+    "p50": 4.686857,
+    "p90": 5.211813,
+    "max": 5.758795
+  },
+  "duration_after": {
+    "count": 107,
+    "p50": 12.500322,
+    "p90": 16.221882,
+    "max": 19.24863
+  },
+  "seed_continuous_corridor_violation": {
+    "count": 16,
+    "p50": 6.148579,
+    "p90": 36.689516,
+    "max": 90.94721
+  },
+  "corridor_scp_attempt": 16,
+  "corridor_scp_success": 0,
+  "corridor_scp_reasons": {
+    "TRUE_CONSTRAINT_INFEASIBILITY": 5,
+    "QP_MAX_ITER_EXHAUSTED": 3,
+    "DYNAMICS_MODEL_MISMATCH_TRUST_EXHAUSTED": 6,
+    "LOCAL_SFC_FINAL_VIOLATION": 1,
+    "P_TRUST_TOO_SMALL": 1
+  },
+  "qp_max_iter_status_lines": 8,
+  "execution_deadline_side_minco": 197,
+  "min_budget_applied": 0,
+  "k3_events": 16,
+  "k3_recovered": 4,
+  "los_hard_reject_count": 0,
+  "executed_all3": 0.901525054466231,
+  "executed_k2": 0.9912854030501089,
+  "all3_loss": {
+    "total": 7.531772000000002,
+    "longest": 1.6331550000000021
+  },
+  "k2_loss": {
+    "total": 0.6669410000000084,
+    "longest": 0.6669410000000084
+  },
+  "blackout_samples": 0,
+  "static_contact": 0,
+  "dynamic_contact": 0,
+  "min_static_clearance": 0.325628,
+  "min_dynamic_clearance": 0.391899,
+  "min_swarm_separation_moving": 1.046779734846353,
+  "swarm_contact_moving": 0,
+  "swarm_violation_logs": 0,
+  "unvalidated_executed": 0,
+  "pva_mismatch_logs": 0,
+  "partial_team_activation_logs": 0,
+  "successor_starvation": 0,
+  "terminal_hold_enter": 0
+}

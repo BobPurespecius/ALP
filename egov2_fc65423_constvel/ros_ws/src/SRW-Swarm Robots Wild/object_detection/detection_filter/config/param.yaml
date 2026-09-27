@@ -1,0 +1,24 @@
+detection_filter:
+  # rostopic 
+  drone_odom_topic: "drone_odom_topic"
+  detection_bboxes_topic: "/yolov5trt/bboxes_pub"
+  yolo_car_odom_pub_topic:  "yolo_car_odom"
+  ekf_car_odom_pub_topic: "/object_odom_dtc2brig"
+
+  # degree
+  pitch_thr:  18
+  # meter
+  ekf_reset_dist_thr: 4
+  object_height: 0.7
+
+ekf:
+  ekf_pred_times_thr: 10
+  ekf_frequence:  10
+
+  p_noise_prediction: 0.01
+  v_noise_prediction: 0.1
+  noise_observation:  0.01
+  p_prior_var:  0.01
+  v_prior_var:  0.1
+  max_vel: 2.0
+

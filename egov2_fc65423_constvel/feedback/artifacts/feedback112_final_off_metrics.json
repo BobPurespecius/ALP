@@ -1,0 +1,138 @@
+{
+  "20260925_145659_150538": {
+    "exit_status": [
+      "RUN_ID=20260925_145659_150538",
+      "CORE_EXIT_CODE=0",
+      "RVIZ_EXIT_CODE=NOT_STARTED",
+      "CLEANUP_STATUS=OK",
+      "FINAL_EXIT_CODE=0",
+      "LAST_BOOT_STAGE=BOOT-12",
+      "SIMULATION_REACHED_BOOT_12=YES"
+    ],
+    "k3": {
+      "alignment_max_m": null,
+      "alignment_p95_m": null,
+      "alignment_samples": 0,
+      "close_reasons": {},
+      "contracts": 25,
+      "escalation_events": 0,
+      "event_rows": {},
+      "live_snapshot_drift_max_m": null,
+      "live_snapshot_drift_p95_m": null,
+      "progress_activated": 0,
+      "progress_candidates": 0,
+      "progress_selected": 0,
+      "recovered_events": 0,
+      "result_count": 0,
+      "side_both_failed": 0,
+      "sources": {
+        "LOCAL_HARD_PREFLIGHT_FAILED:0": 1,
+        "LOCAL_HARD_PREFLIGHT_FAILED:1": 8,
+        "TEAM_SCP_FAILED:1": 5
+      },
+      "tail_reasons": {}
+    },
+    "liveness_log_mentions": {
+      "MIN_BUDGET_APPLIED": 100,
+      "MOVING_SUCCESSOR_STARVATION": 2
+    },
+    "m2_risk_world_times": [
+      1790319435.3480914,
+      1790319435.427452,
+      1790319438.346965,
+      1790319438.4382322,
+      1790319452.7784576,
+      1790319452.8501763,
+      1790319500.5426452,
+      1790319500.532817,
+      1790319500.6323836,
+      1790319500.6733208,
+      1790319500.6128337,
+      1790319500.533498,
+      1790319500.778419
+    ],
+    "process_status": [
+      "BOOT12_TARGET_MOVING=YES",
+      "BOOT12_UAV0_MOVING=YES",
+      "BOOT12_UAV1_MOVING=YES",
+      "BOOT12_UAV2_MOVING=YES",
+      "CLEANUP_REASON=RUN_COMPLETE",
+      "CLEANUP_TARGET_PGID=150642",
+      "CLEANUP_OWNED_PROCESS_COUNT=29",
+      "CLEANUP_FORCE_KILLED=0",
+      "CLEANUP_REMAINING_OWNED=0",
+      "CLEANUP_KILLED_FOREIGN_PROCESSES=0",
+      "CORE_TERMINATED_BY_RUNNER=1",
+      "CORE_EXIT_CODE_RAW=0",
+      "RViz \u662f\u5426\u88ab\u5355\u72ec\u89c2\u6d4b\uff1a\u672c\u6b21\u7531 roslaunch \u6258\u7ba1\uff0crequired=false\uff0c\u5176\u9000\u51fa\u4e0d\u5f71\u54cd\u4e0a\u8ff0\u9000\u51fa\u7801"
+    ],
+    "run_id": "20260925_145659_150538",
+    "safety": {
+      "dynamic_contact_samples": 5,
+      "min_dynamic_clearance_m": 0.0,
+      "min_static_clearance_m": 0.208499,
+      "static_contact_samples": 0,
+      "unvalidated_executed_samples": 0
+    },
+    "visibility": {
+      "accumulated_camera_visible_time_s": 226.20562200000052,
+      "all3_ratio": 0.9024286322965488,
+      "blackout_samples": 0,
+      "duration_s": 78.20036,
+      "k2_ratio": 0.9902002556455048,
+      "k3_loss_total_s": 7.629421999999989,
+      "longest_all3_loss_s": 1.5967969999999951,
+      "longest_k2_loss_s": 0.7332590000000039,
+      "loss_intervals": [
+        {
+          "begin_s": 8.004705,
+          "duration_s": 0.7613800000000008,
+          "end_s": 8.766085
+        },
+        {
+          "begin_s": 11.033026,
+          "duration_s": 0.9999669999999998,
+          "end_s": 12.032993
+        },
+        {
+          "begin_s": 25.266138,
+          "duration_s": 1.1345139999999994,
+          "end_s": 26.400652
+        },
+        {
+          "begin_s": 38.932699,
+          "duration_s": 0.7356920000000002,
+          "end_s": 39.668391
+        },
+        {
+          "begin_s": 44.165589,
+          "duration_s": 0.066670000000002,
+          "end_s": 44.232259
+        },
+        {
+          "begin_s": 64.132377,
+          "duration_s": 1.0003019999999907,
+          "end_s": 65.132679
+        },
+        {
+          "begin_s": 70.435731,
+          "duration_s": 1.5967969999999951,
+          "end_s": 72.032528
+        },
+        {
+          "begin_s": 73.432831,
+          "duration_s": 1.06630100000001,
+          "end_s": 74.499132
+        }
+      ],
+      "mean_visible": 2.892628887942054,
+      "samples": 2347,
+      "visible_ratio": [
+        0.9373668512995313,
+        0.985939497230507,
+        0.9693225394120153
+      ]
+    },
+    "world_offset_s": 1790319426.5716717
+  }
+}

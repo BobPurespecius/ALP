@@ -1,0 +1,17 @@
+detection_filter:
+  cam_fx: 846.044120
+  cam_fy: 846.044120
+  cam_cx: 639.500000
+  cam_cy: 359.500000
+
+  R_cam_00: 1
+  R_cam_10: 0
+  R_cam_20: 0
+
+  R_cam_01: 0 
+  R_cam_11: 0
+  R_cam_21: -1
+
+  R_cam_02: 0
+  R_cam_12: 1
+  R_cam_22: 0

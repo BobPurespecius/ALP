@@ -1,0 +1,464 @@
+ALP Native Local-SFC -> MINCO -> SCP -> OSQP Source Audit
+Date: 2026-09-02
+Project: /home/bob/ALP/egov2_fc65423_constvel
+Scope: ALP only. No RRCT code or results included.
+Mode: Read-only source audit; no code or parameter changes.
+
+======================================================================
+1. Local SFC generation
+======================================================================
+
+【源码已确认】
+
+Frontend file/class/function:
+  File:
+    ros_ws/src/EGO-Planner-v2/swarm-playground/tracking_ws/src/planner/
+      plan_manage/src/planner_manager.cpp
+  Class:
+    ego_planner::EGOPlannerManager
+  Function context:
+    EGOPlannerManager::optimizeSide() lambda optimize_side(side, result)
+    (the SIDE recovery path in planner_manager.cpp; the lambda begins around
+     the side candidate generation section and builds repaired_local_sfc_planes).
+
+Inputs used by the Local-SFC builder:
+  - A* repair raw path: raw_path
+  - Simplified/reinserted A* guide path: simplified_path
+  - Inflated static map: grid_map_->getInflateOccupancy(...)
+  - SIDE sign: side (+1 PLUS / RIGHT, -1 MINUS / LEFT)
+  - Obstacle clearance used as geometric margin:
+      margin = max(grid_map resolution, ploy_traj_opt_->getObsClearance())
+  - Collision interval anchors:
+      collision_start, collision_end
+  - Repaired path local tangent from neighboring guide points
+
+It does not directly consume an independent polytope object or a separate
+FIRI implementation.  The builder is a sparse set of LocalSfcPlane records.
+
+Key data structure (poly_traj_optimizer.h):
+
+  struct LocalSfcPlane
+  {
+    Eigen::Vector3d normal;
+    Eigen::Vector3d point;
+    Eigen::Vector3d guide;
+    int source_segment;
+    int source_guide_index;
+    double clearance;
+    double active_start;
+    double active_end;
+  };
+
+Semantics:
+  normal.dot(position - point) >= clearance
+  and the row is active only on [active_start, active_end].
+
+Construction details (planner_manager.cpp, approximately lines 2551-2627):
+  - For each interior simplified_path point, tangent is formed from the
+    previous and next guide points.
+  - tangent is normalized in XY; normal = tangent.cross(UnitZ()), normalized,
+    then multiplied by side (+1/-1).
+  - guide = simplified_path[path_index].
+  - An obstacle-side probe is tested at guide - normal * (2*margin).
+    If that probe is not occupied, no plane is emitted for that guide.
+  - plane.point = guide - normal * margin.
+  - plane.source_segment = path_index - 1.
+  - plane.source_guide_index = path_index.
+  - plane.active_start/end are derived by interpolating the guide index over
+    [collision_start, collision_end].
+  - Orientation is sanity checked using guide and probe occupancy/sign.
+  - Result container: std::vector<LocalSfcPlane> repaired_local_sfc_planes.
+
+Important distinction:
+  A* first supplies a geometric guide path.  Local SFC is generated only for
+  selected interior guide points whose obstacle-side probe is occupied.  The
+  static map check and semantic-v2 check are separate admission checks.
+
+======================================================================
+2. SFC handoff to backend
+======================================================================
+
+【源码已确认】
+
+Frontend handoff:
+  planner_manager.cpp:
+    local_sfc_planes = repaired_local_sfc_planes;
+    ...
+    ploy_traj_opt_->setCandidateLocalSfc(active_local_sfc);
+
+The optimizer object is:
+  PolyTrajOptimizer *ploy_traj_opt_
+
+The member that stores SFC state is (poly_traj_optimizer.h):
+  std::vector<LocalSfcPlane> candidate_local_sfc_planes_;
+
+The setter is (poly_traj_optimizer.cpp):
+  void PolyTrajOptimizer::setCandidateLocalSfc(
+      const std::vector<LocalSfcPlane> &planes)
+  {
+    candidate_local_sfc_planes_ = planes;
+  }
+
+Before each candidate, the vector is either replaced with the active plane
+copy or cleared:
+  ploy_traj_opt_->setCandidateLocalSfc(active_local_sfc);
+  ploy_traj_opt_->clearCandidateLocalSfc();
+
+After retiming, planner_manager rescales each plane's active_start/end by the
+same side_retiming_scale before calling setCandidateLocalSfc().  This keeps
+the local interval on the retimed trajectory time axis.
+
+The SFC vector is passed to optimizeTrajectory indirectly through optimizer
+object state; it is not an optimizeTrajectory argument.  The actual
+optimizeTrajectory arguments are MINCO states/variables:
+  optimizeTrajectory(iniState, finState, initInnerPts, initT,
+                     optimal_points, final_cost)
+
+======================================================================
+3. Does SFC modify MINCO parameterization?
+======================================================================
+
+【源码已确认】
+
+No LocalSfcPlane member or SFC-specific argument exists in the MinJerkOpt
+class itself.  MinJerkOpt remains the native polynomial generator and
+derivative engine.
+
+Native MINCO generation (poly_traj_utils.hpp, MinJerkOpt::generate):
+  - Input P: inner waypoint matrix (3 x (N-1))
+  - Input T: real piece durations (N-vector)
+  - Output b: quintic polynomial coefficient matrix
+  - Boundary P/V/A are held by MinJerkOpt::reset(headState, tailState, N)
+
+The SIDE/SFC path initializes and regenerates MINCO through calls such as:
+  jerkOpt_.reset(iniState, finState, piece_num_);
+  jerkOpt_.generate(current_points, current_durations);
+
+SFC is therefore an external hard-constraint source consumed by the SCP
+linearization/QP layer.  It does not alter the core MinJerkOpt equations.
+
+【根据代码行为推断】
+  SFC affects the accepted P/T update because its rows constrain the SCP step,
+  but it does not change polynomial order, boundary equations, or MINCO's
+  P/T parameterization.
+
+======================================================================
+4. Local SFC plane -> OSQP row
+======================================================================
+
+【源码已确认】
+
+Backend file/class/function:
+  File:
+    ros_ws/src/EGO-Planner-v2/swarm-playground/tracking_ws/src/planner/
+      traj_opt/src/poly_traj_optimizer.cpp
+  Class:
+    ego_planner::PolyTrajOptimizer
+  Main function:
+    PolyTrajOptimizer::optimizeTrajectory(...)
+  QP adapter:
+    ego_planner::SCPOptimizer::solve(...)
+  Adapter file:
+    planner/traj_opt/src/scp_optimizer.cpp
+
+SCP variable dimensions (poly_traj_optimizer.cpp):
+  position_dim = 3 * (piece_num_ - 1)
+  virtual_time_dim = piece_num_
+  dim = position_dim + virtual_time_dim
+  optimize_time = true
+
+Thus the QP step is:
+  Delta x = [Delta P, Delta virtual_T]
+
+The current real durations are reconstructed by:
+  VirtualT2RealT(current_virtual_t, current_durations)
+
+For each LocalSfcPlane and each sample in its active interval:
+
+  p = jerkOpt_.getTraj().getPos(t)
+  h = plane.clearance - normal.dot(p - plane.point)
+  grad_h = -mincoSampleGradientWrtX(..., normal, SAMPLE_POSITION, ds_dT)
+  appendLinearUpperBound(grad_h, -h, rows, upper)
+
+This represents:
+  h + grad_h * Delta x <= 0
+  i.e.
+  grad_h * Delta x <= -h
+
+appendLinearUpperBound() normalizes the row and upper bound, then appends:
+  rows_out.emplace_back(row / row_norm)
+  upper_out.push_back(ub / row_norm)
+
+The Local-SFC rows are appended after SIDE corridor rows and before native
+static rows:
+  rows = SIDE/corridor rows
+       + Local-SFC rows
+       + native static rows
+       + v/a/j hard rows
+  Trust-region box rows are appended after those hard rows.
+
+The final matrix assembly (poly_traj_optimizer.cpp) creates:
+  Eigen::MatrixXd A(rows.size() + dim, dim)
+  Eigen::VectorXd lower(A.rows()), upper_bound(A.rows())
+
+For ordinary hard rows:
+  lower[row] = -1.0e20
+  upper_bound[row] = upper[row]
+
+For each trust variable column:
+  -P columns use A(row, column) = 1.0 and bounds +/- trust_p.
+  -virtual_T columns use A(row, column) = realTimeJacobianAt(vt_i) and
+   bounds +/- (trust_t * current_durations(i)).
+
+The complete matrix is handed to:
+  SCPOptimizer::solve(gradient, A, lower, upper_bound, hessian)
+
+OSQP adapter mapping (scp_optimizer.cpp):
+  data.n = n;
+  data.m = m;
+  data.A = CSC matrix made from constraint_matrix;
+  data.l[row] = lower_bound(row);
+  data.u[row] = upper_bound(row);
+  data.P = diagonal positive-definite Hessian;
+  data.q[i] = gradient(i);
+
+Therefore OSQP solves the standard box-constrained QP:
+  minimize 0.5 * Delta x' P Delta x + q' Delta x
+  subject to l <= A Delta x <= u
+
+The SFC half-space is one or more rows in this same A matrix.  It is not a
+separate OSQP problem in production.
+
+======================================================================
+5. Relationship between SFC and native MINCO/SCP constraints
+======================================================================
+
+【源码已确认】
+
+They are parallel row groups in one QP constraint matrix.
+
+Current major row groups and source locations:
+
+  1) SIDE preservation/corridor geometry
+     poly_traj_optimizer.cpp, optimizeTrajectory(), corridor row loop.
+     The row is generated from candidate_preserve_reference_ and the SIDE
+     conflict window, using mincoSampleGradientWrtX().
+
+  2) Local SFC geometry
+     poly_traj_optimizer.cpp, optimizeTrajectory(), LocalSfcPlane loop.
+     Variables: Delta P and Delta virtual_T through analytic MINCO Jacobians.
+
+  3) Native static obstacle separating rows
+     poly_traj_optimizer.cpp, optimizeTrajectory(), cps_ loop.
+     Data: ConstraintPoints cps_ (points/base_point/direction/flag_temp).
+     Rows use obs_clearance_ and native separating directions.
+
+  4) Velocity hard rows
+     appendDynamicsConstraints() in poly_traj_optimizer.cpp.
+     Rows linearize squared velocity norm against max_vel_.
+
+  5) Acceleration hard rows
+     appendDynamicsConstraints(); squared acceleration norm against max_acc_.
+
+  6) Jerk hard rows
+     appendDynamicsConstraints(); squared jerk norm against max_jer_.
+
+  7) P trust rows
+     Final A assembly in optimizeTrajectory(); +/- trust_p per P scalar.
+
+  8) T trust rows
+     Final A assembly; virtual_T Jacobian realTimeJacobianAt(vt_i) and
+     physical-duration-scaled bounds +/- trust_t * current_durations(i).
+
+  9) Optional adaptive-trust feasibility probes
+     runAdaptiveProbe() uses the same safety rows and only varies whether P/T
+     trust blocks are included.  It is diagnostic/probing logic around the
+     production SCP solve, not a separate SFC solver.
+
+Native nonlinear cost/gradient remains separately evaluated before row build:
+  costFunctionCallback(this, x.data(), gradient.data(), dim)
+
+The callback regenerates MINCO from P/T and accumulates native objective
+gradients.  It then maps MINCO coefficient adjoints into gradP/gradT.
+
+======================================================================
+6. Piece/sample to corridor correspondence
+======================================================================
+
+【源码已确认】
+
+There is no one-piece/one-corridor rule.
+
+Local-SFC association is:
+  one LocalSfcPlane -> a local active time interval
+  one plane -> sample_count samples over that interval
+
+The interval is normalized at the beginning of optimizeTrajectory:
+  local_sfc_ratios[plane_index] =
+      [plane.active_start / initial_total_duration,
+       plane.active_end   / initial_total_duration]
+
+On every virtual-time update, the interval is remapped:
+  active_start = ratio_start * total_duration
+  active_end   = ratio_end   * total_duration
+
+For every sampled time t, locatePieceTime(t, piece_index, piece_time) maps
+the global trajectory time to the actual MINCO piece and local piece time.
+
+The row Jacobian is then evaluated at that piece/local time through
+mincoSampleGradientWrtX().  Consequently, a sample can lie inside any piece;
+the mapping is by time/index, not by a fixed corridor-per-piece association.
+
+Native static ConstraintPoints use a separate lattice mapping:
+  piece = min(cp / cps_num_prePiece_, piece_num_-1)
+  local_index = cp % cps_num_prePiece_
+  sample_time = sum(previous durations) + local_index/cps_num_prePiece_
+                * current_durations(piece)
+
+Thus Local-SFC samples and native static samples are distinct row sources,
+although both ultimately constrain the same Delta P/Delta virtual_T vector.
+
+======================================================================
+7. Native objective/cost path retained by SCP
+======================================================================
+
+【源码已确认】
+
+At each SCP iteration:
+  x = [P, virtual_T]
+  current_native_cost = costFunctionCallback(this, x.data(), gradient.data(), dim)
+
+Inside costFunctionCallback:
+  - VirtualT2RealT(t, T)
+  - jerkOpt_.generate(P, T)
+  - initAndGetSmoothnessGradCost2PT(gradT, smoo_cost)
+  - addPVAGradCost2CT(gradT, obs_swarm_feas_qvar_costs, cps_num_prePiece_)
+  - jerkOpt_.getGrad2TP(gradT, gradP)
+  - VirtualTGradCost(T, t, gradT, gradt, time_cost)
+
+addPVAGradCost2CT() currently visits the native cost/feasibility hooks:
+  - obstacleGradCostP()              static obstacle penalty
+  - swarmGradCostP()                 formation/swarm penalty
+  - movingObjGradCostP()             dynamic obstacle penalty
+  - candidateSideGradCostP()         SIDE soft side term
+  - candidateSideRegionGradCostP()   SIDE region term
+  - candidateSideCorridorGradCostP() candidate corridor term
+  - candidatePreservationGradCostP() previous/reference preservation term
+  - trackingGradCostP()              target tracking term
+  - angularGradCostP()               angular/FOV-related term
+  - yawGradCostPV()                  yaw/FOV execution-orientation term
+  - feasibilityGradCostV()           velocity penalty
+  - feasibilityGradCostA()           acceleration penalty
+  - feasibilityGradCostJ()           jerk penalty when enable_fov_costs_ is true
+  - distanceSqrVarianceWithGradCost2p() trajectory variance/regularization term
+
+Each active term contributes to both:
+  - MINCO coefficient gradient gdC -> gradP
+  - gradT -> virtual_T gradient after VirtualTGradCost mapping
+
+The SCP QP objective uses the resulting full gradient vector and a positive
+diagonal Hessian.  Therefore the hard SFC rows are additional constraints; the
+native objective is not replaced by a pure geometry objective.
+
+【根据代码行为推断】
+  The exact enable/disable state of every cost is runtime-parameter dependent.
+  The callback contains the hooks, and each hook is guarded by its own runtime
+  flags/weights.  A particular run may have a term numerically zero if its
+  weight or activation predicate is disabled.
+
+======================================================================
+8. True call chain
+======================================================================
+
+  SIDE risk trigger / candidate generation
+    -> EGOPlannerManager SIDE optimize_side(side, result)
+    -> A* repair search and raw_path/simplified_path construction
+    -> local_sfc_planes: std::vector<LocalSfcPlane>
+    -> PolyTrajOptimizer::setCandidateLocalSfc(active_local_sfc)
+    -> PolyTrajOptimizer::optimizeTrajectory(
+         side_head_state, side_tail_state, side_inner_points,
+         side_init_traj.getDurations(), ...)
+    -> MinJerkOpt::reset(head PVA, tail PVA, piece_num)
+    -> MinJerkOpt::generate(P, T)
+    -> PolyTrajOptimizer::costFunctionCallback()
+         native MINCO costs -> gradient(P, virtual_T)
+    -> build SIDE/corridor rows
+    -> build Local-SFC rows
+    -> build native static rows from ConstraintPoints cps_
+    -> build velocity/acceleration/jerk rows
+    -> append P/T trust rows
+    -> SCPOptimizer::solve(...)
+    -> OSQP solve: l <= A Delta x <= u
+    -> Delta x = [Delta P, Delta virtual_T]
+    -> update current_points/current_virtual_t
+    -> VirtualT2RealT(..., current_durations)
+    -> MinJerkOpt::generate(trial_points, trial_durations)
+    -> nonlinear recheck of corridor/SFC/static/dynamics
+    -> accept/reject trial
+    -> next SCP iteration or final checker
+    -> planner candidate selection/activation
+
+======================================================================
+9. Classification of conclusions
+======================================================================
+
+【源码已确认】
+  - Local SFC is represented by std::vector<LocalSfcPlane>.
+  - The vector is stored in PolyTrajOptimizer::candidate_local_sfc_planes_.
+  - MinJerkOpt itself has no SFC field or SFC API.
+  - SFC rows, native static rows, SIDE rows, dynamics rows, and trust rows are
+    assembled into one Eigen::MatrixXd A.
+  - OSQP receives that matrix through SCPOptimizer::solve().
+  - QP variables include both inner P and virtual_T in the current path.
+  - Every accepted SCP step regenerates MINCO from updated P/T.
+  - Native cost callback is still called at each SCP iteration.
+
+【根据代码行为推断】
+  - SFC is an additive hard-constraint layer over the native MINCO objective,
+    not a replacement of MinJerkOpt mathematics.
+  - A candidate can be rejected by nonlinear rechecks even when OSQP returns a
+    solved status; OSQP success alone is not final acceptance.
+
+【尚未确认】
+  - A specific runtime experiment's numerical contribution of every optional
+    cost term requires the corresponding launch/runtime flags and logs.
+  - Continuous-time safety between sampled SFC rows is not proven by this
+    source chain; the production rows are sampled/linearized.
+  - The exact final candidate ranking policy is outside the SFC-to-OSQP row
+    assembly path and was not inferred beyond the existing candidate result
+    logic.
+
+======================================================================
+10. Bottom-line answers
+======================================================================
+
+  1) Local SFC generation:
+     planner_manager.cpp builds sparse LocalSfcPlane records from an A* repair
+     guide and inflated-map probes.
+
+  2) Handoff:
+     repaired_local_sfc_planes -> local_sfc_planes -> active_local_sfc ->
+     PolyTrajOptimizer::candidate_local_sfc_planes_.
+
+  3) MINCO modification:
+     No direct modification to MinJerkOpt parameterization.  SFC is external
+     to MinJerkOpt and consumed by PolyTrajOptimizer SCP row construction.
+
+  4) OSQP conversion:
+     each active plane/sample creates grad_h * Delta x <= -h; all rows become
+     one l <= A Delta x <= u problem in SCPOptimizer::solve().
+
+  5) Relationship:
+     SFC and native constraints are parallel row groups in the same QP matrix;
+     native MINCO costs/gradients remain in the QP objective linear term.
+
+  6) Piece/sample mapping:
+     plane -> local time interval -> sample times -> locatePieceTime() ->
+     MINCO analytic Jacobian; not one piece per corridor.
+
+Final classification:
+  SFC_BACKEND_INTEGRATION = MINCO-generated polynomial + additive hard rows
+                            + SCP/OSQP solve + MINCO regeneration.
+  SFC_DIRECTLY_REPLACES_MINCO = NO.
+  SINGLE_QP_CONSTRAINT_MATRIX = YES.
+

@@ -1,0 +1,43 @@
+drone_ids: [0]
+object_odom_topic: /object_odom
+odom_topic_template: /drone_{id}_visual_slam/odom
+command_topic_template: /drone_{id}_planning/pos_cmd
+marker_topic: /fov_tracking/markers
+frame_id: world
+
+rate: 30.0
+prediction_dt: 0.25
+prediction_steps: 8
+lookahead_time: 1.0
+plan_duration: 1.6
+command_time_forward: 0.25
+
+tracking_distance: 1.2
+relative_positions:
+  - [-1.2, 0.0, 0.0]
+min_target_distance: 0.7
+max_target_distance: 3.0
+min_uav_distance: 0.8
+fov_half_angle_deg: 42.5
+enable_candidate_goal: false
+candidate_count: 33
+candidate_angle_span_deg: 220.0
+candidate_radius_samples: [0.85, 1.0, 1.2]
+
+max_vel_xy: 1.0
+max_vel_z: 0.45
+max_acc: 1.8
+target_height: 1.2
+lock_tracking_height: true
+
+desired_weight: 1.0
+smooth_weight: 0.2
+distance_weight: 0.6
+occlusion_weight: 3.0
+shared_visibility_weight: 0.8
+lost_visibility_weight: 6.0
+inter_uav_weight: 4.0
+
+# Obstacles are optional cylinders in world/ENU:
+#   {x, y, radius, z_min, z_max}
+obstacles: []

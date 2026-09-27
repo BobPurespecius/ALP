@@ -1,0 +1,275 @@
+<?xml version="1.0"?>
+<sdf version="1.6">
+  <world name="platform_track">
+    <include><uri>model://sun</uri></include>
+    <include><uri>model://ground_plane</uri></include>
+    <physics name="default_physics" default="0" type="ode">
+      <gravity>0 0 -9.8066</gravity>
+      <ode>
+        <solver><type>quick</type><iters>10</iters><sor>1.3</sor></solver>
+        <constraints>
+          <cfm>0</cfm>
+          <erp>0.2</erp>
+          <contact_max_correcting_vel>100</contact_max_correcting_vel>
+          <contact_surface_layer>0.001</contact_surface_layer>
+        </constraints>
+      </ode>
+      <max_step_size>0.004</max_step_size>
+      <real_time_factor>1</real_time_factor>
+      <real_time_update_rate>250</real_time_update_rate>
+    </physics>
+    <model name="platform_track_obstacle_0">
+      <static>true</static>
+      <pose>-5.400 -1.800 1.500 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.600</radius><length>3.000</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.600</radius><length>3.000</length></cylinder></geometry>
+          <material><ambient>0 0.8 0 0.85</ambient><diffuse>0 0.8 0 0.85</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="platform_track_obstacle_1">
+      <static>true</static>
+      <pose>-3.200 1.900 1.500 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.500</radius><length>3.000</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.500</radius><length>3.000</length></cylinder></geometry>
+          <material><ambient>0 0.8 0 0.85</ambient><diffuse>0 0.8 0 0.85</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="platform_track_obstacle_2">
+      <static>true</static>
+      <pose>-0.800 -2.600 1.500 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.550</radius><length>3.000</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.550</radius><length>3.000</length></cylinder></geometry>
+          <material><ambient>0 0.8 0 0.85</ambient><diffuse>0 0.8 0 0.85</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="platform_track_obstacle_3">
+      <static>true</static>
+      <pose>1.800 2.800 1.500 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.550</radius><length>3.000</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.550</radius><length>3.000</length></cylinder></geometry>
+          <material><ambient>0 0.8 0 0.85</ambient><diffuse>0 0.8 0 0.85</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="platform_track_obstacle_4">
+      <static>true</static>
+      <pose>3.800 -2.000 1.500 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.600</radius><length>3.000</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.600</radius><length>3.000</length></cylinder></geometry>
+          <material><ambient>0 0.8 0 0.85</ambient><diffuse>0 0.8 0 0.85</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="platform_track_obstacle_5">
+      <static>true</static>
+      <pose>6.000 2.400 1.500 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.600</radius><length>3.000</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.600</radius><length>3.000</length></cylinder></geometry>
+          <material><ambient>0 0.8 0 0.85</ambient><diffuse>0 0.8 0 0.85</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="platform_track_obstacle_6">
+      <static>true</static>
+      <pose>8.300 -2.900 1.500 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.650</radius><length>3.000</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.650</radius><length>3.000</length></cylinder></geometry>
+          <material><ambient>0 0.8 0 0.85</ambient><diffuse>0 0.8 0 0.85</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="platform_track_obstacle_7">
+      <static>true</static>
+      <pose>10.800 2.200 1.500 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.650</radius><length>3.000</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.650</radius><length>3.000</length></cylinder></geometry>
+          <material><ambient>0 0.8 0 0.85</ambient><diffuse>0 0.8 0 0.85</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="platform_track_obstacle_8">
+      <static>true</static>
+      <pose>12.500 -2.300 1.500 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.550</radius><length>3.000</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.550</radius><length>3.000</length></cylinder></geometry>
+          <material><ambient>0 0.8 0 0.85</ambient><diffuse>0 0.8 0 0.85</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="platform_track_obstacle_9">
+      <static>true</static>
+      <pose>13.000 2.600 1.500 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.500</radius><length>3.000</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.500</radius><length>3.000</length></cylinder></geometry>
+          <material><ambient>0 0.8 0 0.85</ambient><diffuse>0 0.8 0 0.85</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="goal_platform">
+      <static>true</static>
+      <pose>16.000 0.000 0.525 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>3.200 11.200 1.050</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>3.200 11.200 1.050</size></box></geometry>
+          <material><ambient>0.48 0.48 0.48 1</ambient><diffuse>0.48 0.48 0.48 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="platform_moving_obstacle_0">
+      <static>false</static>
+      <pose>-4.200 3.100 1.500 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial>
+          <mass>1.0</mass>
+          <inertia>
+            <ixx>0.1</ixx><ixy>0.0</ixy><ixz>0.0</ixz>
+            <iyy>0.1</iyy><iyz>0.0</iyz>
+            <izz>0.1</izz>
+          </inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.280</radius><length>3.000</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.280</radius><length>3.000</length></cylinder></geometry>
+          <material><ambient>0 0.8 0 0.85</ambient><diffuse>0 0.8 0 0.85</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="platform_moving_obstacle_1">
+      <static>false</static>
+      <pose>-1.000 3.420 1.500 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial>
+          <mass>1.0</mass>
+          <inertia>
+            <ixx>0.1</ixx><ixy>0.0</ixy><ixz>0.0</ixz>
+            <iyy>0.1</iyy><iyz>0.0</iyz>
+            <izz>0.1</izz>
+          </inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.280</radius><length>3.000</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.280</radius><length>3.000</length></cylinder></geometry>
+          <material><ambient>0 0.8 0 0.85</ambient><diffuse>0 0.8 0 0.85</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="platform_moving_obstacle_2">
+      <static>false</static>
+      <pose>4.800 3.400 1.500 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial>
+          <mass>1.0</mass>
+          <inertia>
+            <ixx>0.1</ixx><ixy>0.0</ixy><ixz>0.0</ixz>
+            <iyy>0.1</iyy><iyz>0.0</iyz>
+            <izz>0.1</izz>
+          </inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.300</radius><length>3.000</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.300</radius><length>3.000</length></cylinder></geometry>
+          <material><ambient>0 0.8 0 0.85</ambient><diffuse>0 0.8 0 0.85</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="platform_moving_obstacle_3">
+      <static>false</static>
+      <pose>7.200 -1.645 1.500 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial>
+          <mass>1.0</mass>
+          <inertia>
+            <ixx>0.1</ixx><ixy>0.0</ixy><ixz>0.0</ixz>
+            <iyy>0.1</iyy><iyz>0.0</iyz>
+            <izz>0.1</izz>
+          </inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.280</radius><length>3.000</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.280</radius><length>3.000</length></cylinder></geometry>
+          <material><ambient>0 0.8 0 0.85</ambient><diffuse>0 0.8 0 0.85</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="platform_moving_obstacle_4">
+      <static>false</static>
+      <pose>11.671 3.000 1.500 0 0 0</pose>
+      <link name="link">
+        <gravity>false</gravity>
+        <inertial>
+          <mass>1.0</mass>
+          <inertia>
+            <ixx>0.1</ixx><ixy>0.0</ixy><ixz>0.0</ixz>
+            <iyy>0.1</iyy><iyz>0.0</iyz>
+            <izz>0.1</izz>
+          </inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.300</radius><length>3.000</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.300</radius><length>3.000</length></cylinder></geometry>
+          <material><ambient>0 0.8 0 0.85</ambient><diffuse>0 0.8 0 0.85</diffuse></material>
+        </visual>
+      </link>
+    </model>
+  </world>
+</sdf>

@@ -1,0 +1,257 @@
+MUSK more_obstacles 排障记录
+============================
+
+本文记录 more_obstacles 场景从新增到稳定运行过程中遇到的主要问题、现象、
+原因判断和解决方法。当前最终状态为：5 架无人机，1 个 leader，穿越障碍物林，
+到达对面对应目标点并悬停；EGO-Planner 负责路径规划，MUSK 负责状态机、
+PX4/Gazebo/MAVROS 接入和控制指令下发。
+
+
+1. EGO-Planner 不能随 MUSK 正常启动
+-----------------------------------
+现象：
+- 启动 more_obstacles 时，EGO 相关窗口没有正常出现。
+- 原脚本查找的 EGO setup 路径不对。
+
+原因：
+- EGO 工作空间实际位于：
+  /app/guidance/ros_ws/src/ego-planner
+- 旧脚本主要查找：
+  /app/ego-planner
+
+解决：
+- 修改 multi_uav_formation.sh，增加多个候选路径查找 EGO setup.bash。
+- 找到 EGO setup 后，只在 scene=more_obstacles 时启动 ego_more_obstacles.launch。
+- 各 tmux pane 统一 source setup_runtime_env.sh，减少环境变量不一致。
+
+
+2. 父级 catkin build 误编译 ego-planner
+--------------------------------------
+现象：
+- catkin build 时进入 ego-planner 内部包，例如 plan_env、path_searching、
+  bspline_opt、ego_planner 等。
+- 输出大量 VTK/PCL/OpenNI 相关 warning，最后 CMake configure incomplete。
+
+原因：
+- ego-planner 被放在 MUSK 的 src 目录下后，父级 catkin 工作空间会递归发现
+  ego-planner 的 catkin 包，并尝试一起编译。
+- 这些包本来属于 EGO 自己的工作空间，不应由 MUSK 父级工作空间编译。
+
+解决：
+- 在嵌套的 ego-planner 目录增加 CATKIN_IGNORE。
+- MUSK 父级工作空间只编译 multi_uav_formation。
+- EGO 在运行时通过自己的 devel/setup.bash 被 source。
+
+
+3. OpenCV 3.4 动态库缺失
+------------------------
+现象：
+- EGO 节点启动时报找不到 libopencv_core.so.3.4 等动态库。
+
+原因：
+- EGO 二进制按 OpenCV 3.4 编译。
+- ROS Noetic 环境里常见 OpenCV 4.x，动态库版本不匹配。
+
+解决：
+- 增加 scripts/ego_with_opencv.sh 作为 roslaunch launch-prefix。
+- 启动 EGO 节点前设置 LD_LIBRARY_PATH。
+- 在运行环境中保证能找到 OpenCV 3.4 的动态库。
+
+
+4. MAVROS fcu_url 参数读取太早
+-----------------------------
+现象：
+- P230 初始化时可能因为 /uavX/mavros/fcu_url 尚不存在而报错。
+
+原因：
+- MAVROS 和 SingleRun 的启动存在时序差。
+- 旧代码直接 rospy.get_param，不等待参数出现。
+
+解决：
+- 修改 P230.py，读取 fcu_url 时使用默认值 None。
+- 如果参数尚不存在，则循环等待，并节流打印 warning。
+- 参数出现后再判断 sim/real 模式。
+
+
+5. RViz 中障碍物不是物理碰撞
+---------------------------
+现象：
+- RViz 能看到圆柱障碍物，但无人机可以穿过。
+- 用户看到“穿过圆柱”后怀疑避障没有生效。
+
+原因：
+- RViz marker 只是显示层，不参与 Gazebo 物理碰撞。
+- 真正会产生碰撞的是 Gazebo world 里的 collision 模型。
+
+解决：
+- 新增 worlds/more_obstacles.world。
+- 在 Gazebo world 中加入与 JSON 场景匹配的静态圆柱 collision/visual 模型。
+- tmuxinator.yml 在 scene=more_obstacles 时加载 more_obstacles.world。
+
+说明：
+- 即使有 Gazebo collision，路径规划是否避障仍取决于 EGO 接收到的地图/点云和
+  MUSK 下发的控制命令是否一致。
+
+
+6. EGO 启动阶段 no odom / wait for trigger
+-----------------------------------------
+现象：
+- EGO 终端出现 no odom 或 wait for goal or trigger。
+
+原因：
+- EGO 需要 odometry、障碍物点云和 trigger。
+- 如果 MUSK 只在 GUIDANCE 后发布输入，EGO 在前期容易等待。
+
+解决：
+- SingleRun.py 在所有状态持续发布 EGO 需要的 odom/cloud。
+- 进入 GUIDANCE 后发布 /traj_start_trigger。
+
+判断：
+- wait for goal or trigger 在启动阶段是正常现象。
+- no odom 如果长期存在，则说明 SingleRun 没有正常发布对应 drone_i 的 odom。
+
+
+7. 早期三机配置与五机需求不一致
+-------------------------------
+现象：
+- 最初 more_obstacles 按 3 架无人机构建。
+- 后续需求改为 5 架，且只有 1 个 leader。
+
+解决：
+- more_obstacles.json 改为 number=5、leaders=1、head=1。
+- takeoffPointENU、preparePointENU、egoPlanner.goalsENU 扩展到 5 架。
+- multi_uav_mavros_sitl.launch 扩展到 uav1-uav5。
+- ego_more_obstacles.launch 扩展到 drone_0-drone_4。
+- tmux 的 uavs 窗口启动 5 个 SingleRun pane。
+
+
+8. 起飞/悬停高度和障碍物高度不匹配
+---------------------------------
+现象：
+- 用户调低 JSON 里的高度后，仿真中无人机仍看起来很高。
+- 若飞行高度高于障碍物林，避障演示意义变弱。
+
+原因：
+- 高度涉及多个位置：
+  more_obstacles.json 中的 takeoff/prepare/goals。
+  ego_more_obstacles.launch 中每个 drone 的 point0_z。
+  Gazebo 障碍物高度。
+- 只改其中一处会造成视觉或规划目标不一致。
+
+解决：
+- 将目标高度统一到 1.2 m。
+- more_obstacles.json 和 ego_more_obstacles.launch 保持一致。
+- 障碍物高度保持约 3.0 m，保证路径需要在平面上绕障。
+
+
+9. 起飞逻辑导致个别无人机横向移动
+---------------------------------
+现象：
+- 某些无人机起飞阶段出现向后或横向移动。
+
+原因：
+- 旧 TAKEOFF 逻辑直接向配置的 takeoffPointENU 飞。
+- 如果 PX4/MAVROS local frame 与场景坐标不一致，或者起飞点与当前实际点不同，
+  起飞阶段就会产生横向速度。
+
+解决：
+- TAKEOFF 改为“就地垂直起飞”：
+  记录当前 x/y，只把 z 拉到目标高度。
+- PREPARE 阶段再去对应准备点。
+
+
+10. 无人机无限上升
+-----------------
+现象：
+- 某次修改后，无人机在飞行中或接近目标后持续上升，无法停止。
+
+原因：
+- 控制模式和 setpoint 坐标转换曾被错误改动过。
+- PX4/MAVROS setpoint_raw/local 的 z 方向若被误按 NED/ENU 反号处理，
+  会导致高度控制方向错误。
+
+解决：
+- P230.py 恢复原来的 z 方向写法：
+  local_pos_cb 直接读 msg.pose.position.z。
+  positionENUControl 写 setpoint.position.z = posENU[2]。
+  velocityENUControl 写 setpoint.velocity.z = velENU[2]。
+  accerlationENUControl 写 acceleration.z = accENU[2]。
+
+
+11. GUIDANCE 超时后返回/降落不符合需求
+-------------------------------------
+现象：
+- 飞行一段时间后，个别无人机没有继续悬停在目标，而是返回或降落。
+
+原因：
+- 原 MUSK 状态机在 formationTime 结束后会进入 BACK/LAND。
+- 用户需求是到达对面目标点后保持悬停。
+
+解决：
+- EGO 模式下，目标到达后设置 egoGoalReached。
+- 到达后持续 velocityToPointENUControl(final_goal)，保持目标点悬停。
+- formationTime 到期后不再自动 BACK/LAND，而是继续持有目标。
+
+
+12. RViz 仍只显示 3 架无人机
+---------------------------
+现象：
+- Gazebo/日志中有 5 架，但 RViz1 只显示 3 架。
+
+原因：
+- visualize_obstacles.rviz 仍只订阅：
+  /uav_1/pose
+  /uav_2/pose
+  /uav_3/pose
+
+解决：
+- 修改 visualize_obstacles.rviz，增加：
+  /uav_4/pose
+  /uav_5/pose
+- 将显示名称改为 UAV1 Pose 到 UAV5 Pose。
+
+
+13. 三号机 RViz 与 Gazebo 坐标不一致
+-----------------------------------
+现象：
+- RViz 中第三架无人机开局出现在其他四架前方。
+- Gazebo 中第三架开局在队列中间，但起飞悬停后立刻向后飞。
+- 这说明“控制器/RViz看到的位置”和 Gazebo 物理位置不一致。
+
+原因：
+- uav3 的 MAVROS local_position 原点与 Gazebo spawn 坐标不一致。
+- uav3 的 raw MAVROS local pose 初始接近 (0,0,z)，而任务坐标应是
+  (-4.8,0,z)。
+- RViz 和 MUSK 控制器都使用 MAVROS local_position，因此控制器误以为三号机
+  在前方，然后试图把它拉回配置中的 prepare/takeoff 位置。
+
+解决：
+- 在 more_obstacles.json 中增加 mavrosLocalOffsetENU。
+- 只对 uav3 设置 offset [-4.8, 0.0, 0.0]。
+- P230.py 读取位置时：
+  task_position = raw_mavros_position + localOffsetENU
+- P230.py 发送位置 setpoint 时：
+  raw_setpoint = task_position - localOffsetENU
+- 这样 RViz、EGO、MUSK 状态机使用统一的任务坐标；PX4/MAVROS 仍收到自己的
+  local 坐标。
+
+
+14. 日志文件总是 uav_debug_0.csv
+--------------------------------
+现象：
+- 多次仿真后 debug_logs 中总是 uav_debug_0.csv，难以区分是哪一次运行。
+
+原因：
+- record_debug.py 用 rospy.Time.now() 命名文件。
+- 仿真时间刚启动时可能是 0。
+
+解决：
+- record_debug.py 改用真实墙钟时间命名：
+  uav_debug_YYYYMMDD_HHMMSS.csv
+- 记录器同时记录 raw MAVROS 坐标和补偿后的 MUSK 坐标。
+
+
+最终确认
+--------
+修复坐标偏移后，RViz 与 Gazebo 中第三架无人机位置一致。
+五架无人机可以起飞、穿越障碍物林、到达对面对应目标点并悬停。

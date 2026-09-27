@@ -1,0 +1,12 @@
+<launch>
+  <arg name="odom_topic" default="/vins_estimator/imu_propagate"/>
+
+  <node name="detection_filter_node" pkg="detection_filter" type="detection_filter_node" output="screen" >
+    <rosparam command="load" file="$(find detection_filter)/config/param.yaml" />
+    <rosparam command="load" file="$(find detection_filter)/config/camera.yaml" />
+    
+    <remap from="~drone_odom_topic" to="$(arg odom_topic)"/>
+  </node>
+
+
+</launch>

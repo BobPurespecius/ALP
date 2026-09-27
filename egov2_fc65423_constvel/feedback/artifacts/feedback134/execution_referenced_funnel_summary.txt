@@ -1,0 +1,15 @@
+FINAL_GEOMETRIC_RECOVERY_NO_TOTAL_LOSS_REGRESSION 49 PRECHECK_HARD 25 CERT_AND_TRUTH_BODY 8
+episode  drone  candidate       kind  selected  committed  executed  sustained_recovery_time  common_K3_loss_seconds  executed_common_loss  execution_begin  execution_end
+   u1e1      0         38 SIDE_MINUS      True       True      True                 8.714576                    0.77                  0.80         7.404016       7.673391
+   u1e3      0        173 SIDE_MINUS      True       True      True                26.200277                    1.02                  1.10        25.202846      25.435620
+   u3e1      2        148  SIDE_PLUS     False      False     False                35.767077                    0.86                  0.92              NaN            NaN
+   u3e1      2        151  SIDE_PLUS     False      False     False                36.099463                    0.81                  0.93              NaN            NaN
+   u3e1      2        154  SIDE_PLUS      True       True      True                36.323832                    0.92                  0.92        34.971546      35.203324
+   u3e2      2        377    NOMINAL      True       True      True                71.356338                    1.17                  1.20        70.138195      70.368911
+   u3e2      2        380    NOMINAL      True       True      True                71.383072                    1.00                  1.07        70.403234      70.636261
+   u3e3      2        409  SIDE_PLUS      True       True      True                73.994970                    0.81                  0.86        72.835517      73.107612
+SELECTED/COMMITTED/EXECUTED 6 6 6
+EXECUTED_TO_RECOVERY 0
+EXECUTED_RECOVERY_AND_DWELL 0
+EP 5 ['u1e1' 'u1e3' 'u3e1' 'u3e2' 'u3e3']
+SEED_GENERATED_EXEC_REFERENCE 23

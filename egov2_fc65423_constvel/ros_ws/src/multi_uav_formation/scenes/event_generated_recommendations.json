@@ -1,0 +1,328 @@
+{
+    "source_scene": "/home/bob/ALP/egov2_fc65423_constvel/ros_ws/src/multi_uav_formation/scenes/long_cylinder_forest.json",
+    "source_trajectory": "/tmp/v2_C2_visibility_run1_trajectory.csv",
+    "sample_count": 3027,
+    "events_per_scene": {
+        "spatial": 3,
+        "temporal": 3,
+        "mixed": 3
+    },
+    "events": [
+        {
+            "modelName": "event_spatial_0",
+            "centerENU": [
+                -16.0019,
+                4.1877
+            ],
+            "radius": 0.28,
+            "height": 3.6,
+            "axisENU": [
+                0.0,
+                1.0
+            ],
+            "amplitude": 0.18,
+            "period": 20.0,
+            "phase": -6.205708919953082,
+            "eventDerivation": {
+                "expected_type": "spatial",
+                "intent": "upper route with a free upper side",
+                "target_position_at_conflict": [
+                    -16.0019,
+                    4.1877
+                ],
+                "observed_sample_time_s": 19.7534,
+                "static_side_clearance_m": {
+                    "minus": 1.337,
+                    "center": 1.6132,
+                    "plus": 2.1209
+                },
+                "side_offset_m": 0.8,
+                "source_rule": "nearest observed target trajectory sample by x",
+                "conflict_time_s": 19.7534,
+                "desired_offset_at_conflict_m": 0.0,
+                "derived_phase_rad": -6.205709
+            }
+        },
+        {
+            "modelName": "event_spatial_1",
+            "centerENU": [
+                9.9994,
+                1.3431
+            ],
+            "radius": 0.28,
+            "height": 3.6,
+            "axisENU": [
+                0.0,
+                1.0
+            ],
+            "amplitude": 0.18,
+            "period": 20.0,
+            "phase": -17.24084722817256,
+            "eventDerivation": {
+                "expected_type": "spatial",
+                "intent": "middle route with symmetric static clearance",
+                "target_position_at_conflict": [
+                    9.9994,
+                    1.3431
+                ],
+                "observed_sample_time_s": 56.7543,
+                "static_side_clearance_m": {
+                    "minus": 2.2896,
+                    "center": 2.6832,
+                    "plus": 2.4213
+                },
+                "side_offset_m": 0.8,
+                "source_rule": "nearest observed target trajectory sample by x",
+                "conflict_time_s": 56.7543,
+                "desired_offset_at_conflict_m": 0.1,
+                "derived_phase_rad": -17.240847
+            }
+        },
+        {
+            "modelName": "event_spatial_2",
+            "centerENU": [
+                -23.9939,
+                1.6036
+            ],
+            "radius": 0.28,
+            "height": 3.6,
+            "axisENU": [
+                0.0,
+                1.0
+            ],
+            "amplitude": 0.16,
+            "period": 20.0,
+            "phase": -2.6870818986736484,
+            "eventDerivation": {
+                "expected_type": "spatial",
+                "intent": "early route, near-symmetric static clearance",
+                "target_position_at_conflict": [
+                    -23.9939,
+                    1.6036
+                ],
+                "observed_sample_time_s": 10.2199,
+                "static_side_clearance_m": {
+                    "minus": 1.8052,
+                    "center": 1.6662,
+                    "plus": 1.8221
+                },
+                "side_offset_m": 0.8,
+                "source_rule": "nearest observed target trajectory sample by x",
+                "conflict_time_s": 10.2199,
+                "desired_offset_at_conflict_m": 0.08,
+                "derived_phase_rad": -2.687082
+            }
+        },
+        {
+            "modelName": "event_temporal_3",
+            "centerENU": [
+                -7.9982,
+                1.4982
+            ],
+            "radius": 0.28,
+            "height": 3.6,
+            "axisENU": [
+                0.0,
+                1.0
+            ],
+            "amplitude": 1.45,
+            "period": 8.0,
+            "phase": -23.839601216842205,
+            "eventDerivation": {
+                "expected_type": "temporal",
+                "intent": "lateral crossing with short occupancy",
+                "target_position_at_conflict": [
+                    -7.9982,
+                    1.4982
+                ],
+                "observed_sample_time_s": 30.3535,
+                "static_side_clearance_m": {
+                    "minus": 0.7393,
+                    "center": 0.8679,
+                    "plus": 1.3815
+                },
+                "side_offset_m": 0.8,
+                "source_rule": "nearest observed target trajectory sample by x",
+                "conflict_time_s": 30.3535,
+                "desired_offset_at_conflict_m": 0.0,
+                "derived_phase_rad": -23.839601
+            }
+        },
+        {
+            "modelName": "event_temporal_4",
+            "centerENU": [
+                4.0159,
+                0.9209
+            ],
+            "radius": 0.28,
+            "height": 3.6,
+            "axisENU": [
+                0.0,
+                1.0
+            ],
+            "amplitude": 1.4,
+            "period": 7.5,
+            "phase": -42.072539731300694,
+            "eventDerivation": {
+                "expected_type": "temporal",
+                "intent": "middle crossing with independent phase",
+                "target_position_at_conflict": [
+                    4.0159,
+                    0.9209
+                ],
+                "observed_sample_time_s": 50.2204,
+                "static_side_clearance_m": {
+                    "minus": 2.9137,
+                    "center": 3.2214,
+                    "plus": 3.0758
+                },
+                "side_offset_m": 0.8,
+                "source_rule": "nearest observed target trajectory sample by x",
+                "conflict_time_s": 50.2204,
+                "desired_offset_at_conflict_m": 0.0,
+                "derived_phase_rad": -42.07254
+            }
+        },
+        {
+            "modelName": "event_temporal_5",
+            "centerENU": [
+                9.9994,
+                1.3431
+            ],
+            "radius": 0.28,
+            "height": 3.6,
+            "axisENU": [
+                0.0,
+                1.0
+            ],
+            "amplitude": 1.45,
+            "period": 8.5,
+            "phase": -41.95265458444431,
+            "eventDerivation": {
+                "expected_type": "temporal",
+                "intent": "late-middle crossing with independent phase",
+                "target_position_at_conflict": [
+                    9.9994,
+                    1.3431
+                ],
+                "observed_sample_time_s": 56.7543,
+                "static_side_clearance_m": {
+                    "minus": 2.2896,
+                    "center": 2.6832,
+                    "plus": 2.4213
+                },
+                "side_offset_m": 0.8,
+                "source_rule": "nearest observed target trajectory sample by x",
+                "conflict_time_s": 56.7543,
+                "desired_offset_at_conflict_m": 0.0,
+                "derived_phase_rad": -41.952655
+            }
+        },
+        {
+            "modelName": "event_mixed_6",
+            "centerENU": [
+                -19.9879,
+                3.5121
+            ],
+            "radius": 0.28,
+            "height": 3.6,
+            "axisENU": [
+                0.0,
+                1.0
+            ],
+            "amplitude": 0.85,
+            "period": 9.5,
+            "phase": -9.594128035250526,
+            "eventDerivation": {
+                "expected_type": "mixed",
+                "intent": "offset crossing with a usable upper side",
+                "target_position_at_conflict": [
+                    -19.9879,
+                    3.5121
+                ],
+                "observed_sample_time_s": 15.0896,
+                "static_side_clearance_m": {
+                    "minus": 1.8466,
+                    "center": 1.8403,
+                    "plus": 2.1009
+                },
+                "side_offset_m": 0.8,
+                "source_rule": "nearest observed target trajectory sample by x",
+                "conflict_time_s": 15.0896,
+                "desired_offset_at_conflict_m": 0.32,
+                "derived_phase_rad": -9.594128
+            }
+        },
+        {
+            "modelName": "event_mixed_7",
+            "centerENU": [
+                9.9994,
+                1.3431
+            ],
+            "radius": 0.28,
+            "height": 3.6,
+            "axisENU": [
+                0.0,
+                1.0
+            ],
+            "amplitude": 0.8,
+            "period": 10.0,
+            "phase": -35.302185293132155,
+            "eventDerivation": {
+                "expected_type": "mixed",
+                "intent": "offset crossing with a usable lower side",
+                "target_position_at_conflict": [
+                    9.9994,
+                    1.3431
+                ],
+                "observed_sample_time_s": 56.7543,
+                "static_side_clearance_m": {
+                    "minus": 2.2896,
+                    "center": 2.6832,
+                    "plus": 2.4213
+                },
+                "side_offset_m": 0.8,
+                "source_rule": "nearest observed target trajectory sample by x",
+                "conflict_time_s": 56.7543,
+                "desired_offset_at_conflict_m": 0.28,
+                "derived_phase_rad": -35.302185
+            }
+        },
+        {
+            "modelName": "event_mixed_8",
+            "centerENU": [
+                -23.9939,
+                1.6036
+            ],
+            "radius": 0.28,
+            "height": 3.6,
+            "axisENU": [
+                0.0,
+                1.0
+            ],
+            "amplitude": 0.75,
+            "period": 9.0,
+            "phase": -6.795009033372429,
+            "eventDerivation": {
+                "expected_type": "mixed",
+                "intent": "early offset crossing and timing window",
+                "target_position_at_conflict": [
+                    -23.9939,
+                    1.6036
+                ],
+                "observed_sample_time_s": 10.2199,
+                "static_side_clearance_m": {
+                    "minus": 1.8052,
+                    "center": 1.6662,
+                    "plus": 1.8221
+                },
+                "side_offset_m": 0.8,
+                "source_rule": "nearest observed target trajectory sample by x",
+                "conflict_time_s": 10.2199,
+                "desired_offset_at_conflict_m": 0.25,
+                "derived_phase_rad": -6.795009
+            }
+        }
+    ],
+    "note": "Parameters are geometrically derived recommendations; candidate improvements require runtime measurement."
+}

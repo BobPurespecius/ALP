@@ -1,0 +1,17 @@
+<launch>
+  <node name="sim_tracking_inputs" pkg="detection_filter" type="sim_tracking_inputs.py" output="screen">
+    <param name="rate" value="20.0"/>
+    <param name="cam_fx" value="846.044120"/>
+    <param name="cam_fy" value="846.044120"/>
+    <param name="cam_cx" value="639.5"/>
+    <param name="cam_cy" value="359.5"/>
+    <param name="object_height" value="0.7"/>
+  </node>
+
+  <node name="detection_filter_node" pkg="detection_filter" type="detection_filter_node" output="screen">
+    <rosparam command="load" file="$(find detection_filter)/config/param.yaml"/>
+    <rosparam command="load" file="$(find detection_filter)/config/camera.yaml"/>
+    <param name="detection_filter/detection_bboxes_topic" value="/sim_tracking_inputs/bboxes"/>
+    <remap from="~drone_odom_topic" to="/sim_tracking_inputs/drone_odom"/>
+  </node>
+</launch>

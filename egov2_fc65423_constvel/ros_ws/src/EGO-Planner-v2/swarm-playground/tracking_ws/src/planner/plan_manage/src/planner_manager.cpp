@@ -1483,15 +1483,21 @@ static bool rebaseWorldTimeAnchoredPlane(LocalSfcPlane &plane,
       std::vector<CandidateSetOutput> &sets,bool touch_goal,double head_threshold,int &selected_set)
   {
     selected_set=-1;
-    // All alternatives and the active suffix use this SAME activation epoch.
-    double activation=ros::Time::now().toSec()+local_activation_margin_;
+    // FROZEN-ACTIVATION contract: the batch's only activation was fixed in
+    // prepareFutureActivation BEFORE any candidate was generated, and every
+    // candidate already carries the matching head P/V/A, target epoch and
+    // prediction epoch.  Finalization consumes it verbatim — it never moves
+    // the boundary and therefore never rebuilds an optimized polynomial.
+    const double activation = local_activation_time_;
     local_activation_time_=activation;
     // 阶段 E：本 batch 的唯一 activation 在此冻结。全部 N/L/R 候选共享同一
     // activation、同一 predecessor 边界、同一目标世界时原点之后才做 visibility
     // 比较与 bundle 导出（TimedTrajectoryCandidate 契约）。
     ROS_INFO("[candidate-batch-activation] drone=%d batch_activation=%.9f "
-             "same_activation_contract=1",
-        pp_.drone_id,activation);
+             "plan_start=%.9f planning_reserve=%.6f "
+             "frozen_before_optimization=1 same_activation_contract=1",
+        pp_.drone_id,activation,local_planning_started_,
+        activation-local_planning_started_-local_activation_margin_);
     auto current=evaluateLocalGeometry(traj_.local_traj.traj,traj_.local_traj.start_time,
         activation,geometry_policy_.horizon);
     // ---- K3 Local recovery 比较上下文(第三轮 authority 清理)--------------
@@ -1610,17 +1616,19 @@ static bool rebaseWorldTimeAnchoredPlane(LocalSfcPlane &plane,
         const auto t=prepared.getTraj();
         if(t.getPieceNum()<=0) continue;
         candidate_ready_time_=ros::Time::now().toSec();
-        std::string reanchor_reason;
-        double candidate_activation=activation;
-        // 阶段 E：reanchor_to_now=false —— batch 入口已冻结唯一的
-        // T_batch_activation，所有候选共享它；绝不逐候选重锚定。
-        if(!prepareLocalHandoff(prepared,candidate_activation,
-                                &reanchor_reason,
-                                &candidate.local_sfc_planes,
-                                /*reanchor_to_now=*/false))
+        std::string handoff_reason;
+        const double candidate_activation=activation;
+        // Validation-only handoff: the polynomial arrives exactly as the
+        // optimizer produced it — generation already anchored its head P/V/A,
+        // target and prediction epochs to the frozen activation.  A pipeline
+        // that missed the frozen slot is rejected whole; the safe incumbent
+        // keeps flying and the next rolling tick refreezes a later boundary.
+        const std::uint64_t payload_hash_before_handoff =
+            trajectoryPayloadHash(prepared.getTraj());
+        if(!validateLocalHandoffWindow(candidate_activation,&handoff_reason))
         {
           ROS_INFO("[moving-rehead-reject] drone=%d candidate=%d reason=%s",
-              pp_.drone_id,candidate.candidate_id,reanchor_reason.c_str());
+              pp_.drone_id,candidate.candidate_id,handoff_reason.c_str());
           continue;
         }
         if(std::abs(candidate_activation-activation)>1.0e-9)
@@ -1631,7 +1639,20 @@ static bool rebaseWorldTimeAnchoredPlane(LocalSfcPlane &plane,
               pp_.drone_id,candidate.candidate_id,activation,candidate_activation);
           continue;
         }
-        activation=candidate_activation;
+        const std::uint64_t payload_hash_after_handoff =
+            trajectoryPayloadHash(prepared.getTraj());
+        if(payload_hash_after_handoff!=payload_hash_before_handoff)
+        {
+          // Structural tripwire: nothing between the two hashes may touch the
+          // polynomial.  If this fires, post-optimization mutation authority
+          // has returned somewhere and must be removed, not tolerated.
+          ROS_ERROR("[candidate-batch-activation] drone=%d candidate=%d "
+                    "reason=POST_OPT_PAYLOAD_MUTATED hash_before=%lu "
+                    "hash_after=%lu",
+              pp_.drone_id,candidate.candidate_id,
+              payload_hash_before_handoff,payload_hash_after_handoff);
+          continue;
+        }
         // Do not select a nearly zero-duration stationary hypothesis just
         // because its optimization cost is small. The 0.2 m/s threshold is
         // the continuous-motion diagnostic threshold, not a safety limit.
@@ -1651,7 +1672,7 @@ static bool rebaseWorldTimeAnchoredPlane(LocalSfcPlane &plane,
         // it or the next ordinary rolling tick replans from the new state.
         std::string reason;
         const bool safe=validateRetimedLocalSfc(candidate,prepared.getTraj()) &&
-            checkActiveHandoff(prepared.getTraj(),activation,candidateKindName(candidate.kind),false) &&
+            checkActiveHandoff(prepared.getTraj(),activation,candidateKindName(candidate.kind),true) &&
             validateExecutionTrajectory(prepared.getTraj(),activation,touch_goal,reason);
         if(!safe) {
           ROS_INFO("[local-geometry-candidate] drone=%d candidate=%d hypothesis=%d safe=0 reason=%s",
@@ -1679,12 +1700,15 @@ static bool rebaseWorldTimeAnchoredPlane(LocalSfcPlane &plane,
          * certificate together. */
         ROS_INFO("[FROZEN_CANDIDATE] candidate=%d revision=%lu "
                  "kind=%s payload_hash=%lu activation=%.9f "
-                 "checked_until=%.9f active_end=%.9f",
+                 "checked_until=%.9f active_end=%.9f "
+                 "handoff_mutation=0 hash_before_handoff=%lu "
+                 "hash_after_handoff=%lu",
                  candidate.candidate_id, candidate.execution_revision,
                  candidateKindName(candidate.kind),
                  candidate.validated_payload_hash, activation,
                  candidate.checked_until,
-                 activation + candidate.min_jerk_opt.getTraj().getTotalDuration());
+                 activation + candidate.min_jerk_opt.getTraj().getTotalDuration(),
+                 payload_hash_before_handoff, payload_hash_after_handoff);
         candidate.execution_target_position=sets[i].visibility_target_position;
         candidate.execution_target_velocity=sets[i].visibility_target_velocity;
         candidate.execution_target_state_time=sets[i].visibility_target_epoch;
@@ -2108,9 +2132,32 @@ static bool rebaseWorldTimeAnchoredPlane(LocalSfcPlane &plane,
   {
     local_planning_started_ = ros::Time::now().toSec();
     const auto &active = traj_.local_traj;
-    // The start-of-batch estimate is only a seed.  Candidate finalization
-    // recomputes the real earliest activation from its ready time.
-    local_activation_time_ = local_planning_started_ + local_activation_margin_;
+    // FROZEN-ACTIVATION contract (single optimizer authority): the batch's
+    // only activation is fixed HERE, before any candidate exists.  Generation,
+    // target/dynamic prediction, handoff and finalization all share this one
+    // world-time origin; finalization may never move it and therefore never
+    // rebuilds the optimized polynomial.
+    // The planning reserve is the measured execution-budget estimate — the
+    // SAME authority `canStart` admitted this batch with — so the boundary is
+    // conservative against real pipeline latency yet normally lands while the
+    // predecessor still owns execution.  No second timing estimator exists.
+    double frozen_activation =
+        local_planning_started_ + local_activation_margin_;
+    if (!current_state_restart_active_)
+    {
+      // The reserve is the measured PLANNING latency (EWMA, bounded) — pure
+      // pipeline time, not the supervisory batch budget: the supervisory
+      // estimate also counts Team-coordination waits and, used as a
+      // scheduling reserve, once froze an activation 1.2 s out and let the
+      // generator reduce every candidate to a stationary sliver inside the
+      // predecessor's remaining coverage window.
+      frozen_activation += local_planning_budget_;
+      // Never freeze beyond the predecessor's validated handoff deadline.
+      if (std::isfinite(planning_deadline_ros_))
+        frozen_activation = std::min(frozen_activation, planning_deadline_ros_);
+    }
+    local_activation_time_ = std::max(
+        frozen_activation, local_planning_started_ + local_activation_margin_);
     if(current_state_restart_active_)
     {
       // The caller supplies the production odometry P/V and its existing
@@ -2136,16 +2183,23 @@ static bool rebaseWorldTimeAnchoredPlane(LocalSfcPlane &plane,
       const auto state = trajectory_lifecycle::sample(active.traj, local_activation_time_-active.start_time);
       p = state.p; v = state.v; a = state.a;
     }
-    ROS_INFO("[future-activation] drone=%d plan_start=%.9f activation_earliest=%.9f planning_budget_estimate=%.6f activation_margin=%.6f t_validated_end=%.9f t_planning_deadline=%.9f old_id=%d current_state_restart=%d",
+    ROS_INFO("[future-activation] drone=%d plan_start=%.9f activation_frozen=%.9f planning_reserve=%.6f activation_margin=%.6f t_validated_end=%.9f t_planning_deadline=%.9f old_id=%d current_state_restart=%d",
         pp_.drone_id, local_planning_started_, local_activation_time_,
-        local_planning_budget_, local_activation_margin_,validated_coverage_end_,
+        local_activation_time_ - local_planning_started_ - local_activation_margin_,
+        local_activation_margin_,validated_coverage_end_,
         planning_deadline_ros_, active.traj_id,int(current_state_restart_active_));
   }
 
-  bool EGOPlannerManager::prepareLocalHandoff(poly_traj::MinJerkOpt &opt,
+  bool EGOPlannerManager::rebuildLocalCandidateAtActivation(poly_traj::MinJerkOpt &opt,
       double &activation, std::string *reason,
       std::vector<LocalSfcPlane> *local_sfc_planes, bool reanchor_to_now)
   {
+    // REBUILD contract, foreign payloads only (Team relay anchor probe,
+    // defensive commit of a not-yet-prepared candidate).  This function owns
+    // polynomial-mutation authority; the ordinary Local N/L/R production
+    // contract must never enter here — it validates through
+    // validateLocalHandoffWindow + checkActiveHandoff against the frozen
+    // batch activation instead.
     const double now = ros::Time::now().toSec();
     // 本函数会把 activation 重新锚定到"候选就绪时刻"。世界时间锚定的 LOS 平面
     // 必须以世界时间为不变量跟着一起换算，否则遮挡事件会随 activation 漂移。
@@ -2233,6 +2287,56 @@ static bool rebaseWorldTimeAnchoredPlane(LocalSfcPlane &plane,
         pp_.drone_id,active.traj_id,now,local_activation_time_,activation,
         validated_end,state.p.x(),state.p.y(),state.p.z(),state.v.x(),state.v.y(),
         state.v.z(),state.a.x(),state.a.y(),state.a.z());
+    return true;
+  }
+
+  bool EGOPlannerManager::validateLocalHandoffWindow(double activation,
+      std::string *reason) const
+  {
+    // Validation-only handoff contract: the optimizer owns the polynomial and
+    // this check owns only scheduling.  A candidate whose pipeline missed its
+    // frozen activation is rejected whole (MISSED_FROZEN_ACTIVATION); the
+    // safe incumbent keeps executing and the next ordinary rolling tick
+    // refreezes a later boundary from the true predecessor state.  Nothing
+    // here may reset, regenerate or re-anchor a candidate.
+    if (current_state_restart_active_)
+    {
+      // Odometry authority: the expired predecessor owns no window.  The
+      // restart branch of checkActiveHandoff validates continuity against the
+      // odometry-propagated state instead.
+      if (!current_state_valid_)
+      {
+        if (reason) *reason = "CURRENT_STATE_INVALID";
+        return false;
+      }
+      if (reason) reason->clear();
+      return true;
+    }
+    const double now = ros::Time::now().toSec();
+    const auto &active = traj_.local_traj;
+    if (active.traj_id > 0 && active.traj.getPieceNum() > 0)
+    {
+      double validated_end = active.start_time + active.duration;
+      if (execution_safe_until_ > 0.0)
+        validated_end = std::min(validated_end, execution_safe_until_);
+      const ValidatedMovingCoverageWindow window{
+          now, validated_end, local_activation_margin_};
+      if (!window.activationFits(activation))
+      {
+        const bool missed = activation + 1.0e-9 < window.activationEarliest();
+        if (reason)
+          *reason = missed ? "MISSED_FROZEN_ACTIVATION"
+                           : "MOVING_SUFFIX_EXHAUSTED";
+        ROS_WARN("[handoff-validation] drone=%d event=FROZEN_SLOT_UNAVAILABLE "
+                 "reason=%s activation=%.9f now=%.9f activation_earliest=%.9f "
+                 "validated_end=%.9f plan_start=%.9f",
+            pp_.drone_id, reason->c_str(), activation, now,
+            window.activationEarliest(), validated_end,
+            local_planning_started_);
+        return false;
+      }
+    }
+    if (reason) reason->clear();
     return true;
   }
 
@@ -3226,6 +3330,10 @@ static bool rebaseWorldTimeAnchoredPlane(LocalSfcPlane &plane,
           side_certificate->conflict_progress;
       ack.side_contract_guidance_window =
           side_certificate->guidance_window;
+      trajectoryToMINCOMessage(side_certificate->seed_trajectory,
+                               pp_.drone_id, source_candidate_id,
+                               schedule.activation_time.toSec(),
+                               ack.side_contract_seed_trajectory);
     }
     team_trajectory_ack_pub_.publish(ack);
     ROS_INFO("[TEAM_REFERENCE_ACK] drone=%d reference_id=%lu topology=%d "
@@ -3280,10 +3388,47 @@ static bool rebaseWorldTimeAnchoredPlane(LocalSfcPlane &plane,
             static_cast<double>(count - 1)));
       return points;
     };
-    visualization_->displayValidatedOptimalList(sample(0.0, valid_duration), marker_id);
+    Eigen::Vector4d topology_color(0.72, 0.25, 1.0, 1.0);
+    const char *color_name = "PURPLE";
+    const char *topology_name = candidateKindName(active_candidate_kind_);
+    switch (active_candidate_kind_)
+    {
+      case CandidateKind::NOMINAL:
+        break;
+      case CandidateKind::SIDE_MINUS:
+        // SIDE_PLUS follows the right normal (tangent cross +Z), so SIDE_MINUS
+        // is the left-hand detour in the N/L/R visualization convention.
+        topology_color = Eigen::Vector4d(1.0, 0.08, 0.08, 1.0);
+        color_name = "RED";
+        break;
+      case CandidateKind::SIDE_PLUS:
+        topology_color = Eigen::Vector4d(0.12, 0.42, 1.0, 1.0);
+        color_name = "BLUE";
+        break;
+    }
+    visualization_->displayValidatedOptimalList(
+        sample(0.0, valid_duration), marker_id, topology_color);
     if (valid_duration + 1.0e-6 < total)
+    {
+      Eigen::Vector4d unvalidated_color = topology_color;
+      unvalidated_color(3) = 0.45;
       visualization_->displayUnvalidatedFutureList(
-          sample(valid_duration, total), marker_id);
+          sample(valid_duration, total), marker_id, unvalidated_color);
+    }
+    else
+    {
+      visualization_->clearUnvalidatedFutureList(marker_id);
+    }
+    const char *n_l_r = active_candidate_kind_ == CandidateKind::NOMINAL
+                            ? "NOMINAL"
+                            : active_candidate_kind_ == CandidateKind::SIDE_MINUS
+                                  ? "L"
+                                  : "R";
+    ROS_INFO("[rviz-topology-color] drone=%d trajectory_id=%d topology=%s "
+             "candidate_type=%s color=%s validated_alpha=1.0 "
+             "unvalidated_alpha=0.45",
+        pp_.drone_id, traj_.local_traj.traj_id, n_l_r,
+        topology_name, color_name);
     ROS_INFO("[rviz-authority] drone=%d trajectory_id=%d start=%.9f "
              "validated_end=%.9f total_end=%.9f validated_prefix_only=1",
         pp_.drone_id, traj_.local_traj.traj_id, start_time,
@@ -4357,6 +4502,7 @@ static bool rebaseWorldTimeAnchoredPlane(LocalSfcPlane &plane,
         realized_side_certificate.offset = side_offset;
         realized_side_certificate.conflict_progress = conflict_progress;
         realized_side_certificate.guidance_window = team_window;
+        realized_side_certificate.seed_trajectory = topology_seed;
         team_side_scope.reset(new CandidateSideScope(
             ploy_traj_opt_.get(), head_p, tail_p, side, side_offset,
             conflict_progress, team_window, true, &side_direction));
@@ -4374,6 +4520,9 @@ static bool rebaseWorldTimeAnchoredPlane(LocalSfcPlane &plane,
     }
     ploy_traj_opt_->setCandidateLocalSfc(realized_sfc);
     ploy_traj_opt_->setCandidatePreservationReference(topology_seed);
+    if (team_side_scope &&
+        !ploy_traj_opt_->setCandidateSideTopologyReference(topology_seed))
+      return reject("TEAM_SIDE_TOPOLOGY_REFERENCE_INVALID");
     // The Team reference initializer is defined at this activation epoch.
     ploy_traj_opt_->setTeamVisibilityReserveActivation(activation);
     const Eigen::MatrixXd initial_constraints = initializer.getInitConstraintPoints(
@@ -6364,7 +6513,7 @@ static bool rebaseWorldTimeAnchoredPlane(LocalSfcPlane &plane,
     }
     std::string reanchor_reason;
     if (!candidate.execution_prepared &&
-        !prepareLocalHandoff(committed, activation,&reanchor_reason,
+        !rebuildLocalCandidateAtActivation(committed, activation,&reanchor_reason,
                              &candidate.local_sfc_planes))
       return retain_previous("TOPOLOGY_READY_TOO_LATE",reanchor_reason)
           ? TopologyProcessStatus::RETAINED_PREVIOUS : TopologyProcessStatus::FAILED;
@@ -6692,7 +6841,7 @@ static bool rebaseWorldTimeAnchoredPlane(LocalSfcPlane &plane,
             poly_traj::MinJerkOpt anchor_probe = team.trajectory;
             double anchor_activation = team.activation_time;
             const bool anchor_ok =
-                prepareLocalHandoff(anchor_probe, anchor_activation,
+                rebuildLocalCandidateAtActivation(anchor_probe, anchor_activation,
                                     &anchor_reason, nullptr, false) &&
                 checkActiveHandoff(anchor_probe.getTraj(), anchor_activation,
                                    "JOINT_TEAM_SOLUTION", true);
@@ -7831,16 +7980,11 @@ static bool rebaseWorldTimeAnchoredPlane(LocalSfcPlane &plane,
   {
     max_vel = traj.getMaxVelRate();
     max_acc = traj.getMaxAccRate();
-    max_jer = 0.0;
-
-    const double duration = traj.getTotalDuration();
-    const double dt = std::max(0.02, std::min(0.05, duration / 100.0));
-    for (double t = 0.0; t < duration + 1.0e-6; t += dt)
-    {
-      const double tt = std::min(t, duration);
-      max_jer = std::max(max_jer, traj.getJer(tt).norm());
-    }
-    max_jer = std::max(max_jer, traj.getJer(duration).norm());
+    // Exact per-piece analytic maximum of |jerk|.  Uniform sampling misses
+    // interior jerk peaks; the same payload then oscillates between
+    // optimizer-side acceptance (sampled) and this kernel's rejection until
+    // both sides evaluate the same exact quantity.
+    max_jer = traj.getMaxJerRate();
 
     const double tol = 1.0 + std::max(0.0, pp_.feasibility_tolerance_);
     const bool vel_ok = pp_.max_vel_ <= 0.0 || max_vel <= pp_.max_vel_ * tol;
@@ -12612,10 +12756,34 @@ static bool rebaseWorldTimeAnchoredPlane(LocalSfcPlane &plane,
             // trajectory and the same local conflict window used by the
             // existing side guidance/region terms.
             ploy_traj_opt_->setCandidatePreservationReference(side_init_traj);
+            const bool topology_reference_valid =
+                !enable_candidate_region_constraint_ ||
+                ploy_traj_opt_->setCandidateSideTopologyReference(side_init_traj);
+            ploy_traj_opt_->evaluateCandidateSideRegion(
+                side_init_traj, region_violation_before,
+                region_deviation_before);
+            ROS_INFO("[SIDE_TOPOLOGY_SEED_REFERENCE] drone=%d kind=%s "
+                     "source=%s astar_repaired=%d pva_timed=1 "
+                     "piece_num=%d duration=%.6f valid=%d "
+                     "seed_violation=%.9g",
+                     pp_.drone_id, side > 0 ? "SIDE_PLUS" : "SIDE_MINUS",
+                     astar_repair_applied ? "ASTAR" :
+                         (side_warm_start_used ? "WARM" : "FRESH"),
+                     static_cast<int>(astar_repair_applied),
+                     side_init_traj.getPieceNum(),
+                     side_init_traj.getTotalDuration(),
+                     static_cast<int>(topology_reference_valid),
+                     region_deviation_before);
+            if (!topology_reference_valid ||
+                !std::isfinite(region_deviation_before) ||
+                region_deviation_before > 1.0e-6)
+            {
+              log_side_preinit_failure("SIDE_TOPOLOGY_SEED_INTERFACE_INVALID",
+                                       &side_init_traj);
+              return;
+            }
             ploy_traj_opt_->setCandidateRiskWindow(
                 active_conflict_time, kGuidanceWindowSeconds);
-            ploy_traj_opt_->evaluateCandidateSideRegion(
-                side_init_traj, region_violation_before, region_deviation_before);
 
             PolyTrajOptimizer::CandidateDynamicsSummary initializer_dynamics;
             const bool initializer_dynamics_ok =
@@ -12682,6 +12850,17 @@ static bool rebaseWorldTimeAnchoredPlane(LocalSfcPlane &plane,
                          ? feasible_initializer_risk.min_distance : -1.0,
                      candidateSafetyClassName(feasible_initializer_class));
 
+            // Scheduling recalibration: the batch-wide call reserve
+            // (uninterruptible_budget_, 50 ms) matches the nominal solve's
+            // time scale.  Measured SIDE solves converge in ~2-5 ms; with the
+            // nominal reserve they were refused ENTRY whenever the batch had
+            // less than 50 ms left — the common K3-event state — dying at
+            // 0.05 ms without a single iteration.  This reserve covers a few
+            // LBFGS iterations plus one QP; the batch wall deadline itself is
+            // untouched, so predecessor coverage authority is unchanged.
+            constexpr double kSideSolveCallReserve = 0.01;
+            ploy_traj_opt_->setExecutionDeadline(
+                planning_deadline_wall_, kSideSolveCallReserve);
             const auto optimization_start = std::chrono::steady_clock::now();
             result.success = ploy_traj_opt_->optimizeTrajectory(
                 side_head_state, side_tail_state, side_inner_points,
@@ -12791,13 +12970,22 @@ static bool rebaseWorldTimeAnchoredPlane(LocalSfcPlane &plane,
               const bool fallback_local_sfc_ok =
                   std::isfinite(fallback_local_sfc_violation) &&
                   fallback_local_sfc_violation <= 1.0e-3;
+              double fallback_side_region_rms = 0.0;
+              double fallback_side_region_max = 0.0;
+              ploy_traj_opt_->evaluateCandidateSideRegion(
+                  fallback_traj, fallback_side_region_rms,
+                  fallback_side_region_max);
+              const bool fallback_side_region_ok =
+                  std::isfinite(fallback_side_region_max) &&
+                  fallback_side_region_max <= 2.0e-3;
               const double fallback_prediction_epoch = planning_prediction_epoch;
               const DynamicRiskInfo fallback_risk = dynamic_risk_at_epoch(
                   fallback_traj, fallback_prediction_epoch, touch_goal);
               CandidateResult fallback_contract;
               fallback_contract.success = fallback_dynamics_ok &&
                   fallback_static_ok && fallback_local_sfc_ok &&
-                  side_init_valid && side_dynamic_valid;
+                  fallback_side_region_ok && side_init_valid &&
+                  side_dynamic_valid;
               fallback_contract.kind = result.kind;
               fallback_contract.min_jerk_opt.reset(
                   feasible_initializer_head, feasible_initializer_tail,
@@ -12813,7 +13001,9 @@ static bool rebaseWorldTimeAnchoredPlane(LocalSfcPlane &plane,
                       CandidateSafetyClass::ABSOLUTE_SAFE;
               ROS_INFO("[side-feasible-fallback] candidate_type=%s used=%d "
                        "reason=%s static_ok=%d dynamics_ok=%d local_sfc_ok=%d "
-                       "local_sfc_violation=%.6f risk_valid=%d risk_distance=%.6f "
+                       "local_sfc_violation=%.6f side_region_ok=%d "
+                       "side_region_max_violation=%.6f "
+                       "risk_valid=%d risk_distance=%.6f "
                        "safety_class=%s",
                        side > 0 ? "SIDE_PLUS" : "SIDE_MINUS",
                        static_cast<int>(fallback_usable),
@@ -12822,6 +13012,8 @@ static bool rebaseWorldTimeAnchoredPlane(LocalSfcPlane &plane,
                        static_cast<int>(fallback_dynamics_ok),
                        static_cast<int>(fallback_local_sfc_ok),
                        fallback_local_sfc_violation,
+                       static_cast<int>(fallback_side_region_ok),
+                       fallback_side_region_max,
                        static_cast<int>(fallback_risk.valid),
                        fallback_risk.valid ? fallback_risk.min_distance : -1.0,
                        candidateSafetyClassName(fallback_contract.safety_class));
@@ -12833,6 +13025,12 @@ static bool rebaseWorldTimeAnchoredPlane(LocalSfcPlane &plane,
                 // metadata; replacing the whole CandidateResult would erase
                 // the A*/SFC/corridor lifecycle evidence.
                 result.success = true;
+                // Round-5 measurement: applying the PVA timing initializer to
+                // the raw fallback seed did NOT reduce all-fail K3 batches
+                // (26 vs 25) — the dilated seeds survived preflight elsewhere
+                // and displaced better-optimized payloads during episodes
+                // (ALL3 89.3 -> 87.8).  The fallback contract therefore keeps
+                // shipping the raw seed; the hard preflight remains its gate.
                 result.min_jerk_opt.reset(
                     feasible_initializer_head, feasible_initializer_tail,
                     feasible_initializer_durations.size());
@@ -13151,19 +13349,16 @@ static bool rebaseWorldTimeAnchoredPlane(LocalSfcPlane &plane,
                    nominal_result.risk.min_distance,
                    result.success && result.risk.valid ? result.risk.min_distance : -1.0,
                    optimization_elapsed_ms, static_cast<int>(result.success));
-          const double region_width = std::max(
-              0.10, 0.25 * std::abs(accepted_side_offset *
-                                    std::sin(M_PI * active_conflict_progress)));
           ROS_INFO("[candidate-region] drone=%d candidate_type=%s obstacle_id=%d "
                    "region_type=%s "
-                   "conflict_window=[%.3f,%.3f] region_width=%.4f "
+                   "conflict_window=[%.3f,%.3f] "
                    "initial_region_violation=%.4f final_region_violation=%.4f "
                    "region_cost=%.6g final_clearance=%.4f final_conflict_deviation=%.4f "
                    "enabled=%d",
                    pp_.drone_id, side > 0 ? "SIDE_PLUS" : "SIDE_MINUS",
                    nominal_result.risk.obstacle_id,
                    ploy_traj_opt_->getCandidateRegionType().c_str(),
-                   conflict_window_start, conflict_window_end, region_width,
+                   conflict_window_start, conflict_window_end,
                    region_violation_before, region_violation_after,
                    diag_final.side_region_cost,
                    result.success && result.risk.valid ? result.risk.min_distance : -1.0,
@@ -13236,6 +13431,27 @@ static bool rebaseWorldTimeAnchoredPlane(LocalSfcPlane &plane,
         const auto attempt_side = [&](const int side, const bool mandatory_supply) {
           if (preserve_active_observation_side)
             return;
+          // Budget-aware skip: in the low-coverage band the whole batch wall
+          // budget is a few ms; measured side solves entered with <10 ms left
+          // and died at the entry checkpoint (optimization_ms P50 = 0.08)
+          // after nominal's warm solve had already consumed the window.
+          // Skipping here ends a doomed batch immediately so the next
+          // rolling tick refreezes with a full budget — the same
+          // no-blocking, refreeze-later contract as MISSED_FROZEN_ACTIVATION.
+          const double wall_remaining =
+              planning_deadline_wall_ - ros::WallTime::now().toSec();
+          if (std::isfinite(planning_deadline_wall_) && wall_remaining < 0.02)
+          {
+            if (side > 0)
+              plus_attempted = true;
+            else
+              minus_attempted = true;
+            ROS_INFO("[side-budget-skip] drone=%d side=%s wall_remaining=%.4f "
+                     "reason=PIPELINE_BUDGET_EXHAUSTED",
+                pp_.drone_id, side > 0 ? "SIDE_PLUS" : "SIDE_MINUS",
+                wall_remaining);
+            return;
+          }
           // 本轮审计：区分两种"没有 BODY/LOS 描述符证据"的 SIDE 尝试。
           //   * MISSING_EXECUTABLE_NOMINAL —— 本轮 NOMINAL 不可执行，SIDE 只是
           //     安全供给兜底，与 visibility 无关（既有冻结语义）；

@@ -1,0 +1,216 @@
+{
+  "20260927_132753_1316604": {
+    "run_id": "20260927_132753_1316604",
+    "status": {
+      "RUN_ID": "20260927_132753_1316604",
+      "CORE_EXIT_CODE": "120",
+      "RVIZ_EXIT_CODE": "NOT_STARTED",
+      "CLEANUP_STATUS": "OK",
+      "FINAL_EXIT_CODE": "8",
+      "LAST_BOOT_STAGE": "BOOT-08",
+      "SIMULATION_REACHED_BOOT_12": "NO"
+    },
+    "seed_references": 3860,
+    "seed_reference_valid": 3860,
+    "seed_violation_p50": 0.0,
+    "seed_violation_p95": 0.0,
+    "seed_violation_max": 0.0,
+    "seed_sources": {
+      "FRESH": {
+        "count": 3847,
+        "max": 0.0
+      },
+      "WARM": {
+        "count": 9,
+        "max": 0.0
+      },
+      "ASTAR": {
+        "count": 4,
+        "max": 0.0
+      }
+    },
+    "scp_attempts": 3886,
+    "scp_final_ok": 694,
+    "scp_reason_counts": {
+      "SCP_FINAL_OK": 694,
+      "DYNAMICS_MODEL_MISMATCH_TRUST_EXHAUSTED": 3,
+      "QP_MAX_ITER_EXHAUSTED": 2,
+      "DYNAMICS_TRUST_RETRY_EXHAUSTED": 3179,
+      "MISSING_MAP_PREDICTION_OR_PEER": 1,
+      "SPATIAL_TRUST_RETRY_EXHAUSTED": 2,
+      "SCP_FINAL_DYNAMIC_VIOLATION": 1,
+      "QP_NUMERICAL_FAILURE": 4
+    },
+    "scp_seed_violation_max": 0.0,
+    "scp_hard_rows_positive": 3254,
+    "final_topology_violation_max": 0.001785,
+    "final_topology_collapse_gt_0p002": 0,
+    "fallback_checked": 3860,
+    "fallback_accepted": 3163,
+    "fallback_region_rejected": 0,
+    "log_counts": {
+      "TERMINAL_HOLD_ENTER": 88,
+      "MOVING_SUCCESSOR_STARVATION": 53,
+      "MIN_BUDGET_APPLIED": 1859
+    },
+    "visibility_samples": 2344,
+    "visibility_elapsed_s": 78.251225,
+    "K3_diagnostic": 0.0908703071672355,
+    "K2_diagnostic": 0.10409556313993173,
+    "K3_loss_total_diagnostic_s": 71.104428,
+    "longest_K3_loss_diagnostic_s": 71.104428,
+    "K3_loss_episodes_diagnostic": 1,
+    "mean_visible_diagnostic": 1.1693686006825939,
+    "blackout_samples_diagnostic": 60,
+    "trajectory_samples": 16881,
+    "terminal_hold_samples": 11133,
+    "first_terminal_hold": {
+      "timestamp": "1790486886.576429",
+      "uav_id": "2",
+      "trajectory_id": "3",
+      "trajectory_source": "TERMINAL_HOLD"
+    },
+    "unvalidated_executed_samples": 11133,
+    "static_contact_samples": 0,
+    "moving_contact_samples": 0,
+    "min_static_clearance": 0.220612,
+    "min_moving_clearance": 0.846489
+  },
+  "20260927_133236_1329404": {
+    "run_id": "20260927_133236_1329404",
+    "status": {
+      "RUN_ID": "20260927_133236_1329404",
+      "CORE_EXIT_CODE": "120",
+      "RVIZ_EXIT_CODE": "NOT_STARTED",
+      "CLEANUP_STATUS": "OK",
+      "FINAL_EXIT_CODE": "8",
+      "LAST_BOOT_STAGE": "BOOT-08",
+      "SIMULATION_REACHED_BOOT_12": "NO"
+    },
+    "seed_references": 471,
+    "seed_reference_valid": 467,
+    "seed_violation_p50": 0.0,
+    "seed_violation_p95": 0.0,
+    "seed_violation_max": 0.0,
+    "seed_sources": {
+      "FRESH": {
+        "count": 467,
+        "max": 0.0
+      },
+      "WARM": {
+        "count": 0,
+        "max": null
+      },
+      "ASTAR": {
+        "count": 0,
+        "max": null
+      }
+    },
+    "scp_attempts": 592,
+    "scp_final_ok": 578,
+    "scp_reason_counts": {
+      "SCP_FINAL_OK": 578,
+      "QP_NUMERICAL_FAILURE": 5,
+      "SCP_NO_ACCEPTED_UPDATE": 1,
+      "SCP_QP_FAILURE": 3,
+      "QP_MAX_ITER_EXHAUSTED": 5
+    },
+    "scp_seed_violation_max": 0.0,
+    "scp_hard_rows_positive": 591,
+    "final_topology_violation_max": 0.000945,
+    "final_topology_collapse_gt_0p002": 0,
+    "fallback_checked": 598,
+    "fallback_accepted": 25,
+    "fallback_region_rejected": 0,
+    "log_counts": {
+      "MIN_BUDGET_APPLIED": 25232,
+      "MOVING_SUCCESSOR_STARVATION": 91,
+      "TERMINAL_HOLD_ENTER": 190
+    },
+    "visibility_samples": 0,
+    "visibility_elapsed_s": null,
+    "K3_diagnostic": null,
+    "K2_diagnostic": null,
+    "K3_loss_total_diagnostic_s": 0,
+    "longest_K3_loss_diagnostic_s": 0.0,
+    "K3_loss_episodes_diagnostic": 0,
+    "mean_visible_diagnostic": null,
+    "blackout_samples_diagnostic": 0,
+    "trajectory_samples": 0,
+    "terminal_hold_samples": 0,
+    "first_terminal_hold": null,
+    "unvalidated_executed_samples": 0,
+    "static_contact_samples": 0,
+    "moving_contact_samples": 0,
+    "min_static_clearance": null,
+    "min_moving_clearance": null
+  },
+  "20260927_134239_1338169": {
+    "run_id": "20260927_134239_1338169",
+    "status": {
+      "RUN_ID": "20260927_134239_1338169",
+      "CORE_EXIT_CODE": "120",
+      "RVIZ_EXIT_CODE": "NOT_STARTED",
+      "CLEANUP_STATUS": "OK",
+      "FINAL_EXIT_CODE": "11",
+      "LAST_BOOT_STAGE": "BOOT-11",
+      "SIMULATION_REACHED_BOOT_12": "NO"
+    },
+    "seed_references": 680,
+    "seed_reference_valid": 680,
+    "seed_violation_p50": 0.0,
+    "seed_violation_p95": 0.0,
+    "seed_violation_max": 0.0,
+    "seed_sources": {
+      "FRESH": {
+        "count": 679,
+        "max": 0.0
+      },
+      "WARM": {
+        "count": 1,
+        "max": 0.0
+      },
+      "ASTAR": {
+        "count": 0,
+        "max": null
+      }
+    },
+    "scp_attempts": 739,
+    "scp_final_ok": 726,
+    "scp_reason_counts": {
+      "SCP_FINAL_OK": 726,
+      "QP_MAX_ITER_EXHAUSTED": 10,
+      "QP_NUMERICAL_FAILURE": 2,
+      "SCP_QP_FAILURE": 1
+    },
+    "scp_seed_violation_max": 0.0,
+    "scp_hard_rows_positive": 729,
+    "final_topology_violation_max": 0.001141,
+    "final_topology_collapse_gt_0p002": 0,
+    "fallback_checked": 738,
+    "fallback_accepted": 15,
+    "fallback_region_rejected": 0,
+    "log_counts": {
+      "TERMINAL_HOLD_ENTER": 184,
+      "MOVING_SUCCESSOR_STARVATION": 64,
+      "MIN_BUDGET_APPLIED": 9580
+    },
+    "visibility_samples": 0,
+    "visibility_elapsed_s": null,
+    "K3_diagnostic": null,
+    "K2_diagnostic": null,
+    "K3_loss_total_diagnostic_s": 0,
+    "longest_K3_loss_diagnostic_s": 0.0,
+    "K3_loss_episodes_diagnostic": 0,
+    "mean_visible_diagnostic": null,
+    "blackout_samples_diagnostic": 0,
+    "trajectory_samples": 0,
+    "terminal_hold_samples": 0,
+    "first_terminal_hold": null,
+    "unvalidated_executed_samples": 0,
+    "static_contact_samples": 0,
+    "moving_contact_samples": 0,
+    "min_static_clearance": null,
+    "min_moving_clearance": null
+  }
+}

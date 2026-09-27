@@ -1,0 +1,304 @@
+--- 
++++ 
+@@ -1451,4 +1451,97 @@
+   }
+ 
++
++  // Feedback134: opt-in diagnostic payload capture. No geometry evaluation,
++  // solver calls, new gates, or writes to planner/candidate state occur here.
++  void EGOPlannerManager::traceTopologyAudit134(
++      const char *stage, const CandidateResult *candidate,
++      const poly_traj::Trajectory *trajectory, const std::string &reason,
++      int related_id, double comparison_begin, double comparison_end) const
++  {
++    static const char *directory = std::getenv("ALP_TOPOLOGY_AUDIT_DIR");
++    if (!directory || !*directory || geometry_target_v_.norm() < 0.1) return;
++    static std::ofstream output(std::string(directory) + "/candidate_drone_" +
++        std::to_string(pp_.drone_id) + ".jsonl", std::ios::app);
++    if (!output) return;
++    const auto started = std::chrono::steady_clock::now();
++    static double cumulative_us = 0.0;
++    std::ostringstream o;
++    o << std::setprecision(17);
++    const auto number = [&](double x) { if (std::isfinite(x)) o << x; else o << "null"; };
++    const auto vector = [&](const Eigen::Vector3d &v) {
++      o << '['; for (int i=0;i<3;++i) { if(i) o<<',';number(v(i)); } o << ']';
++    };
++    o << "{\"stage\":" << std::quoted(stage) << ",\"reason\":" << std::quoted(reason)
++      << ",\"drone\":" << pp_.drone_id << ",\"world\":";
++    number(ros::Time::now().toSec()); o << ",\"batch\":";number(local_planning_started_);
++    o << ",\"activation\":";number(local_activation_time_);
++    o << ",\"wall_remaining\":";number(planning_deadline_wall_-ros::WallTime::now().toSec());
++    o << ",\"event\":" << k3_event_.escalation_id << ",\"event_active\":" << k3_event_.active
++      << ",\"cycle\":" << k3_event_.cycle_count << ",\"related_id\":" << related_id;
++    o << ",\"comparison_begin\":";number(comparison_begin);
++    o << ",\"comparison_end\":";number(comparison_end);
++    o << ",\"self_yaw\":";number(visibility_odom_[pp_.drone_id].yaw);
++    o << ",\"self_yaw_rate\":";number(visibility_odom_[pp_.drone_id].yaw_rate);
++    o << ",\"self_odom_stamp\":";number(visibility_odom_[pp_.drone_id].stamp);
++    o << ",\"target_epoch\":";number(geometry_target_stamp_);
++    o << ",\"target\":";vector(geometry_target_p_);o << ",\"target_v\":";vector(geometry_target_v_);
++    o << ",\"baseline_valid\":" << k3_baseline_valid_ << ",\"baseline_k2\":";number(k3_baseline_window_k2_);
++    o << ",\"baseline_c3\":";number(k3_baseline_window_c3_);o << ",\"baseline_d3\":";number(k3_baseline_window_d3_);
++    o << ",\"writer_cumulative_us\":";number(cumulative_us);
++    if (candidate) {
++      const auto &c=*candidate; const auto &f=c.conflict;
++      o << ",\"candidate\":" << c.candidate_id << ",\"kind\":" << int(c.kind)
++        << ",\"success\":" << c.success << ",\"revision\":" << c.execution_revision
++        << ",\"hash\":" << c.validated_payload_hash << ",\"fallback\":" << c.feasible_initializer_fallback
++        << ",\"class\":" << int(c.safety_class) << ",\"static_valid\":" << c.static_valid
++        << ",\"dynamics_valid\":" << c.dynamics_valid << ",\"swarm_valid\":" << c.swarm_valid
++        << ",\"astar\":" << c.astar_used << ",\"sfc\":" << c.local_sfc_used
++        << ",\"mask\":" << f.reason_mask << ",\"blocker\":" << f.obstacle_identity
++        << ",\"motion\":" << int(f.obstacle_motion) << ",\"los_blocker\":" << f.los_obstacle_identity
++        << ",\"los_motion\":" << int(f.los_obstacle_motion);
++      o << ",\"blocker_p\":";vector(f.obstacle_position);
++      o << ",\"los_blocker_p\":";vector(f.los_obstacle_position);
++      o << ",\"los_effective_radius\":";number(f.los_obstacle_effective_radius);
++      o << ",\"los_primitive_type\":" << f.los_primitive_type
++        << ",\"los_enter_rel\":";number(c.los_occlusion_enter_time);
++      o << ",\"los_exit_rel\":";number(c.los_occlusion_exit_time);
++      o << ",\"los_plane_created\":" << c.los_observation_plane_created
++        << ",\"los_seed_reached_side\":" << c.los_reached_side;
++      o << ",\"frame_forward\":";vector(f.frame_forward);o << ",\"frame_right\":";vector(f.frame_right);
++      o << ",\"witness_target\":";vector(f.target_position);o << ",\"witness_observer\":";vector(f.observer_position);
++      o << ",\"los_first_risk_world\":";number(f.los_first_risk_world_time);
++      o << ",\"checked_until\":";number(c.checked_until);
++      o << ",\"k3_valid\":" << c.k3_window.valid << ",\"K2\":";number(c.k3_window.k2);
++      o << ",\"C3\":";number(c.k3_window.c3);o << ",\"D3\":";number(c.k3_window.d3);
++      o << ",\"self_had_binary_loss\":" << c.k3_window.self_had_binary_loss
++        << ",\"all3_had_binary_loss\":" << c.k3_window.all3_had_binary_loss;
++      o << ",\"self_first_binary_recovery_world\":";
++      number(c.k3_window.self_first_binary_recovery_world_time);
++      o << ",\"self_persistent_binary_recovery_world\":";
++      number(c.k3_window.self_persistent_binary_recovery_world_time);
++      o << ",\"all3_first_binary_recovery_world\":";
++      number(c.k3_window.all3_first_binary_recovery_world_time);
++      o << ",\"all3_persistent_binary_recovery_world\":";
++      number(c.k3_window.all3_persistent_binary_recovery_world_time);
++      o << ",\"max_v\":";number(c.max_velocity);o << ",\"max_a\":";number(c.max_acceleration);
++      o << ",\"max_j\":";number(c.max_jerk);
++    }
++    if (trajectory) {
++      o << ",\"poly_hash\":" << trajectoryPayloadHash(*trajectory) << ",\"pieces\":[";
++      for(int i=0;i<trajectory->getPieceNum();++i) {
++        if(i) o<<',';
++        o<<'[';number((*trajectory)[i].getDuration());
++        const auto &a=(*trajectory)[i].getCoeffMat();
++        for(int row=0;row<3;++row) for(int col=0;col<6;++col) {o<<',';number(a(row,col));}
++        o<<']';
++      }
++      o << ']';
++    }
++    o << "}\n";
++    output << o.str();
++    cumulative_us += std::chrono::duration<double,std::micro>(
++        std::chrono::steady_clock::now()-started).count();
++  }
++
+   void EGOPlannerManager::finishPlanningBatch(double wall_started)
+   {
+@@ -1484,4 +1577,14 @@
+   {
+     selected_set=-1;
++    for (const auto &audit_set : sets) for (const auto &audit_candidate : audit_set.candidates) {
++      if (audit_candidate.success) {
++        const auto audit_traj = audit_candidate.min_jerk_opt.getTraj();
++        traceTopologyAudit134("FINAL_INPUT", &audit_candidate, &audit_traj);
++      } else traceTopologyAudit134("FINAL_INPUT_FAILED", &audit_candidate);
++      if (audit_candidate.joint_seed_valid) {
++        const auto audit_seed = audit_candidate.joint_seed.getTraj();
++        traceTopologyAudit134("JOINT_SEED", &audit_candidate, &audit_seed);
++      }
++    }
+     // FROZEN-ACTIVATION contract: the batch's only activation was fixed in
+     // prepareFutureActivation BEFORE any candidate was generated, and every
+@@ -1601,4 +1704,5 @@
+           ROS_WARN("[coverage-quality] event=QUALITY_SEARCH_ABORTED_FOR_DEADLINE drone=%d reserved_candidate=%d t_planning_deadline=%.9f",
+               pp_.drone_id,reserved_first_safe->candidate_id,planning_deadline_ros_);
++          traceTopologyAudit134("FINALIZE_DEADLINE_STOP", &candidate, nullptr, "QUALITY_SEARCH_ABORTED_FOR_DEADLINE");
+           deadline_stopped_quality=true;
+           break;
+@@ -1628,4 +1732,5 @@
+         if(!validateLocalHandoffWindow(candidate_activation,&handoff_reason))
+         {
++          traceTopologyAudit134("HANDOFF_REJECT", &candidate, nullptr, handoff_reason);
+           ROS_INFO("[moving-rehead-reject] drone=%d candidate=%d reason=%s",
+               pp_.drone_id,candidate.candidate_id,handoff_reason.c_str());
+@@ -1664,4 +1769,5 @@
+            std::max({t.getMaxVelRate(),t.getVel(0).norm(),
+                      t.getVel(t.getTotalDuration()).norm()}) < 0.2) {
++          traceTopologyAudit134("STATIONARY_REJECT", &candidate);
+           ROS_INFO("[moving-candidate-reject] drone=%d candidate=%d reason=SHORT_STATIONARY_HYPOTHESIS duration=%.6f required=%.6f",
+               pp_.drone_id,candidate.candidate_id,t.getTotalDuration(),rolling_coverage);
+@@ -1676,4 +1782,5 @@
+             validateExecutionTrajectory(prepared.getTraj(),activation,touch_goal,reason);
+         if(!safe) {
++          traceTopologyAudit134("PREFLIGHT_REJECT", &candidate, nullptr, reason);
+           ROS_INFO("[local-geometry-candidate] drone=%d candidate=%d hypothesis=%d safe=0 reason=%s",
+               pp_.drone_id,candidate.candidate_id,sets[i].hypothesis_id,reason.c_str());continue;
+@@ -1683,4 +1790,5 @@
+         if (!std::isfinite(checked_until) ||
+             checked_until <= activation + 1.0e-6) {
++          traceTopologyAudit134("CERTIFICATE_REJECT", &candidate);
+           ROS_WARN("[CANDIDATE_CERTIFICATE] candidate=%d status=UNKNOWN "
+                    "reason=MISSING_MAP_PREDICTION_OR_PEER activation=%.9f",
+@@ -1898,4 +2006,7 @@
+           }
+         }
++        traceTopologyAudit134(candidate_better ? "COMPARATOR_WIN" : "COMPARATOR_LOSS",
++            &candidate, nullptr, k3_decision_reason, best ? best->candidate_id : -1,
++            k3_comparison_begin, k3_comparison_end);
+         if(candidate_better)
+         {
+@@ -2024,7 +2135,11 @@
+         if (d3_improved) ++k3_event_.d3_improved_cycles;
+       }
++      traceTopologyAudit134("SELECTED", best, nullptr, k3_selected_reason, -1,
++          k3_comparison_begin, k3_comparison_end);
+       const auto status=finalizeTopologyCandidate(*best,sets[selected_set].nominal_risk,
+           sets[selected_set].nominal_obstacle_id,touch_goal,head_threshold,sets[selected_set].planning_epoch,
+           false,"LOCAL_GEOMETRY_PRESERVATION_OR_RECOVERY");
++      traceTopologyAudit134(status == TopologyProcessStatus::COMMITTED ? "COMMITTED" : "COMMIT_FAILED",
++          best, nullptr, "", traj_.local_traj.traj_id, k3_comparison_begin, k3_comparison_end);
+       // Feedback117 (§10): global SIDE commit stage of the candidate
+       // lifecycle (K3-scoped progress counting stays separate below).
+@@ -7820,4 +7935,11 @@
+     }
+     const double dt = visibility_sample_dt_;
++    struct BinaryStateSample
++    {
++      double world_time;
++      bool visible;
++    };
++    std::vector<BinaryStateSample> self_binary_history;
++    std::vector<BinaryStateSample> all3_binary_history;
+     const double first = std::ceil(scan_begin / dt) * dt;
+     for (double world_time = first; world_time <= scan_end + 1.0e-9;
+@@ -7915,4 +8037,8 @@
+                           static_cast<int>(visible[1]) +
+                           static_cast<int>(visible[2]);
++        self_binary_history.push_back(
++            BinaryStateSample{world_time, visible[pp_.drone_id]});
++        all3_binary_history.push_back(
++            BinaryStateSample{world_time, count == 3});
+         m.c3 += count == 3 ? 1.0 : 0.0;
+         m.k2 += count >= 2 ? 1.0 : 0.0;
+@@ -7920,4 +8046,33 @@
+       previous_world = world_time;
+     }
++    const auto recordBinaryRecovery = [](
++        const std::vector<BinaryStateSample> &history, bool &had_loss,
++        double &first_recovery, double &persistent_recovery) {
++      bool loss_seen = false;
++      had_loss = false;
++      for (const BinaryStateSample &sample : history)
++      {
++        if (!sample.visible)
++        {
++          loss_seen = true;
++          had_loss = true;
++        }
++        else if (loss_seen && first_recovery < 0.0)
++          first_recovery = sample.world_time;
++      }
++      if (!had_loss || history.empty() || !history.back().visible)
++        return;
++      std::size_t suffix_begin = history.size() - 1;
++      while (suffix_begin > 0 && history[suffix_begin - 1].visible)
++        --suffix_begin;
++      if (suffix_begin > 0)
++        persistent_recovery = history[suffix_begin].world_time;
++    };
++    recordBinaryRecovery(self_binary_history, m.self_had_binary_loss,
++        m.self_first_binary_recovery_world_time,
++        m.self_persistent_binary_recovery_world_time);
++    recordBinaryRecovery(all3_binary_history, m.all3_had_binary_loss,
++        m.all3_first_binary_recovery_world_time,
++        m.all3_persistent_binary_recovery_world_time);
+     if (m.sample_count > 0)
+     {
+@@ -9510,6 +9665,8 @@
+         nominal_result.conflict.los_primitive_type =
+             static_visibility_witness.primitive_type;
+-        nominal_result.conflict.los_obstacle_position =
+-            static_visibility_witness.primitive_center;
++      nominal_result.conflict.los_obstacle_position =
++          static_visibility_witness.primitive_center;
++      nominal_result.conflict.los_obstacle_effective_radius =
++          static_visibility_witness.effective_radius;
+         const Eigen::Vector2d static_los_target_xy = raw_static_los_blocked
+             ? Eigen::Vector2d(raw_static_target.head<2>())
+@@ -9700,4 +9857,6 @@
+               0.5 * std::max(raw_dynamic_scale.x(), raw_dynamic_scale.y()) +
+               visibility_occlusion_margin_;
++          nominal_result.conflict.los_obstacle_effective_radius =
++              nominal_result.conflict.radius;
+         }
+       }
+@@ -10116,4 +10275,5 @@
+           result.prediction_epoch = planning_prediction_epoch;
+           result.conflict = nominal_result.conflict;
++          traceTopologyAudit134("SIDE_DISPATCH", &result);
+           const bool body_hard_conflict =
+               (nominal_result.conflict.reason_mask & CONFLICT_BODY_SAFETY) != 0 &&
+@@ -10228,4 +10388,5 @@
+           const auto log_side_preinit_failure =
+               [&](const char *reason, const poly_traj::Trajectory *candidate_traj) {
++                traceTopologyAudit134("PREINIT_REJECT", &result, candidate_traj, reason);
+                 const double candidate_duration = candidate_traj != nullptr
+                                                       ? candidate_traj->getTotalDuration()
+@@ -10383,4 +10544,6 @@
+ 
+             const poly_traj::Trajectory side_init_candidate_traj = side_init_mjo.getTraj();
++            traceTopologyAudit134("RAW_SEED_ATTEMPT", &result, &side_init_candidate_traj,
++                use_observation_frame ? "OBSERVATION_FRAME" : "PATH_FRAME");
+             if (side_init_candidate_traj.getPieceNum() <= 0 ||
+                 !std::isfinite(side_init_candidate_traj.getTotalDuration()) ||
+@@ -12403,4 +12566,5 @@
+           // and STATIC plane piece ids are immutable during this correction.
+           poly_traj::Trajectory side_init_traj = side_init_mjo.getTraj();
++          traceTopologyAudit134("PRE_TIMING_SEED", &result, &side_init_traj);
+           if (side_init_traj.getPieceNum() <= 0) {
+             log_side_preinit_failure("NUMERICAL_INITIALIZATION_FAILED", nullptr);
+@@ -12435,4 +12599,5 @@
+           }
+           side_init_traj = side_init_mjo.getTraj();
++          traceTopologyAudit134("TIMED_SEED", &result, &side_init_traj);
+           const Eigen::VectorXd final_side_durations =
+               side_init_traj.getDurations();
+@@ -12750,4 +12915,10 @@
+                 initializer_contract.success &&
+                 feasible_initializer_class == CandidateSafetyClass::ABSOLUTE_SAFE;
++            traceTopologyAudit134("SEED_ELIGIBILITY", &result, nullptr,
++                std::string("static=") + std::to_string(initializer_static_ok) +
++                ";dynamics=" + std::to_string(initializer_dynamics_ok) +
++                ";sfc=" + std::to_string(initializer_local_sfc_ok) +
++                ";class=" + candidateSafetyClassName(feasible_initializer_class),
++                static_cast<int>(feasible_initializer_available));
+             if (feasible_initializer_available)
+             {
+@@ -12802,4 +12973,9 @@
+             result.minco_diagnostics = ploy_traj_opt_->getLastOptimizationDiagnostics();
+             minco_status = ploy_traj_opt_->getLastCandidateFinalStatusReason();
++            {
++              const auto audit_solver_traj = ploy_traj_opt_->getMinJerkOpt().getTraj();
++              traceTopologyAudit134(result.success ? "SOLVER_OK" : "SOLVER_FAILED",
++                  &result, &audit_solver_traj, minco_status);
++            }
+             // Feedback116:LOS soft-plane 遥测(SEMI_HARD 模式下 slack>0 的
+             // SIDE 不再以 LOS_PLANE_SCP_FAILED 死亡,这里给出逐候选证据)。
+@@ -13350,4 +13526,6 @@
+ 
+ 
++        const auto audit_nominal_traj = nominal_result.min_jerk_opt.getTraj();
++        traceTopologyAudit134("NOMINAL_CONTEXT", &nominal_result, &audit_nominal_traj);
+         const auto attempt_side = [&](const int side, const bool mandatory_supply) {
+           if (preserve_active_observation_side)
+@@ -13364,4 +13542,6 @@
+           if (std::isfinite(planning_deadline_wall_) && wall_remaining < 0.02)
+           {
++            traceTopologyAudit134("SIDE_BUDGET_SKIP", &nominal_result, nullptr,
++                side > 0 ? "SIDE_PLUS" : "SIDE_MINUS");
+             if (side > 0)
+               plus_attempted = true;

@@ -1,0 +1,45 @@
+WINDOW_UNIQUE 541 NOMINAL 189 SIDE 352
+STAGES_UNIQUE {'CERTIFICATE_REJECT': 34, 'COMMITTED': 97, 'COMMIT_FAILED': 11, 'COMPARATOR_LOSS': 48, 'COMPARATOR_WIN': 146, 'FINAL_INPUT': 375, 'FINAL_INPUT_FAILED': 62, 'HANDOFF_REJECT': 47, 'JOINT_SEED': 388, 'NOMINAL_CONTEXT': 182, 'PREFLIGHT_REJECT': 100, 'PREINIT_REJECT': 86, 'PRE_TIMING_SEED': 266, 'RAW_SEED_ATTEMPT': 352, 'SEED_ELIGIBILITY': 266, 'SELECTED': 108, 'SIDE_BUDGET_SKIP': 6, 'SIDE_DISPATCH': 352, 'SOLVER_FAILED': 82, 'SOLVER_OK': 184, 'TIMED_SEED': 266}
+FIRST_REJECT {'CERTIFICATE_REJECT': 34, 'COMMIT_FAILED': 11, 'FINAL_INPUT_FAILED': 62, 'HANDOFF_REJECT': 47, 'PREFLIGHT_REJECT': 100, 'PREINIT_REJECT': 86, nan: 201}
+REJECT_REASON {'DYNAMICS_FAIL': 85, 'HARD_DYNAMIC_COLLISION_FAIL': 1, 'MISSED_FROZEN_ACTIVATION': 47, 'NO_STATIC_FEASIBLE_SIDE': 86, 'static map t=0.133333 occupancy=1 pos=30.8123 1.52459 1.42172': 1, 'static map t=0.166667 occupancy=1 pos= 30.812 1.52583 1.42192': 1, 'static map t=0.2 occupancy=1 pos=30.8045 1.51456 1.42162': 1, 'static map t=0.2 occupancy=1 pos=30.8212 1.52993 1.42238': 1, 'static map t=0.233333 occupancy=1 pos=30.8058 1.51674 1.42188': 1, 'static map t=0.233333 occupancy=1 pos=30.8202 1.52712 1.42257': 1, 'static map t=0.266667 occupancy=1 pos=30.8168  1.5234 1.42274': 1, 'static map t=0.3 occupancy=1 pos=30.8069 1.49648 1.42215': 1, 'static map t=0.3 occupancy=1 pos=30.8119  1.5139 1.42249': 2, 'static map t=0.3 occupancy=1 pos=30.8154 1.50246 1.42256': 1, 'static map t=0.333333 occupancy=1 pos=30.8224 1.49941 1.42323': 1, 'static map t=1.16667 occupancy=1 pos=-1.43182  2.39834  1.49974': 1, 'static map t=1.36667 occupancy=1 pos= 18.4088 0.664534  1.30976': 1, nan: 308}
+SOLVER_REASON {'DYNAMICS_MODEL_MISMATCH_TRUST_EXHAUSTED': 2, 'P_TRUST_TOO_SMALL': 1, nan: 538}
+COMPARATOR_REASON {'C3_HIGHER': 6, 'D3_LOWER': 23, 'K2_BASELINE_UNAVAILABLE': 4, 'K2_GATE_REJECT_CANDIDATE': 1, 'OPPONENT_C3_HIGHER': 9, 'OPPONENT_D3_LOWER': 20, 'OPPONENT_SIDE_PREFERENCE_HOLD': 2, nan: 129}
+WRITER 0 0.2656849740000009 RECORDS 4325
+WRITER 1 0.16629756500000026 RECORDS 2894
+WRITER 2 0.19323841199999992 RECORDS 3048
+IDENTITY_CHANGED_WITHOUT_FALLBACK []
+BUDGET_SKIPS_FULL 16 EP_UNIQUE 12
+LOS_PAIR 138 PVA_PRE_SAFE 138 BROKEN 93 FATES {'HANDOFF_REJECT': 8, 'PREFLIGHT_REJECT': 85}
+QUALIFIED_SEED 20 COLLAPSED 17
+QUALIFIED_SEED_WITHIN_SUPPORT episode  candidate   batch_s  sustained_recovery_time  batch_cert_end  collapsed     first_reject
+   u1e1         35  6.997150                 8.727150        9.137150       True              NaN
+   u1e2         77 10.073018                11.723018       12.213018       True              NaN
+   u1e2         80 10.324142                11.774142       12.464142       True PREFLIGHT_REJECT
+   u1e2         83 10.600268                11.850268       12.740268       True PREFLIGHT_REJECT
+   u1e3        167 24.496408                26.193743       26.643743       True              NaN
+   u1e5        531 63.024984                64.727536       65.167536       True              NaN
+   u1e5        534 63.312545                64.812545       65.452545       True              NaN
+   u1e5        540 63.617092                64.897092       65.757092      False PREFLIGHT_REJECT
+   u3e1        151 34.492649                36.119463       36.659463      False              NaN
+   u3e1        154 34.771920                36.183832       36.933832       True              NaN
+   u3e3        406 72.410794                73.990904       74.550904       True              NaN
+GEOM_FINAL 105 PVA 81 HARD 60 CERT 34
+CERT_SIDE_GOOD episode  candidate       kind  selected  committed  executed  trajectory_id  execution_begin  execution_end  sustained_recovery_time  checked_until  body_static_clearance  body_dynamic_clearance
+   u1e1         38 SIDE_MINUS      True       True      True           28.0         7.404016       7.673391                 8.714576       9.394576               0.720785                6.132177
+   u1e1         43  SIDE_PLUS     False      False     False            NaN              NaN            NaN                 8.775172       9.835172               0.882832                6.409131
+   u1e1         44 SIDE_MINUS      True       True      True           30.0         7.873900       7.969268                 8.765172       9.835172               0.844094                6.336048
+   u1e2         95 SIDE_MINUS     False      False     False            NaN              NaN            NaN                11.908227      13.838227               0.914880                4.330215
+   u1e3        173 SIDE_MINUS      True       True      True           91.0        25.202846      25.435620                26.200277      27.180277               0.653956                3.955268
+   u3e1        148  SIDE_PLUS     False      False     False            NaN              NaN            NaN                35.767077      36.127077               0.240133                3.051238
+   u3e1        150 SIDE_MINUS      True       True      True          123.0        34.677241      34.935525                36.359463      36.659463               0.714663                3.720427
+   u3e1        151  SIDE_PLUS     False      False     False            NaN              NaN            NaN                36.099463      36.659463               0.466210                3.312558
+   u3e1        153 SIDE_MINUS     False      False     False            NaN              NaN            NaN                36.353832      36.933832               0.767969                3.580309
+   u3e1        154  SIDE_PLUS      True       True      True          124.0        34.971546      35.203324                36.323832      36.933832               0.773693                3.343847
+   u3e2        385  SIDE_PLUS      True       True      True          252.0        70.674754      70.907617                71.392755      72.662755               0.200756                1.236601
+   u3e3        409  SIDE_PLUS      True       True      True          259.0        72.835517      73.107612                73.994970      74.824970               0.685586                2.283054
+   u3e3        412  SIDE_PLUS      True       True      True          260.0        73.135845      73.968070                74.074537      75.104537               0.717830                2.352352
+   u3e3        471 SIDE_MINUS     False      False     False            NaN              NaN            NaN                74.076796      75.966796               1.158417                2.615930
+   u3e3        472  SIDE_PLUS      True       True      True          261.0        74.003700      74.202682                74.076796      75.966796               1.158417                2.615930
+BATCH_GAP 0 352 max 0.579357385635376 p99 0.47844040393829346
+BATCH_GAP 1 370 max 0.8474259376525879 p99 0.4454505920410148
+BATCH_GAP 2 310 max 0.5500319004058838 p99 0.30278452873229983

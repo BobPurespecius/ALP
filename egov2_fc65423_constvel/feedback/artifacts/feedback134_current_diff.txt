@@ -1,0 +1,477 @@
+--- 
++++ 
+@@ -1450,6 +1450,99 @@
+         executable_candidate_seen_this_batch_);
+   }
+ 
++
++  // Feedback134: opt-in diagnostic payload capture. No geometry evaluation,
++  // solver calls, new gates, or writes to planner/candidate state occur here.
++  void EGOPlannerManager::traceTopologyAudit134(
++      const char *stage, const CandidateResult *candidate,
++      const poly_traj::Trajectory *trajectory, const std::string &reason,
++      int related_id, double comparison_begin, double comparison_end) const
++  {
++    static const char *directory = std::getenv("ALP_TOPOLOGY_AUDIT_DIR");
++    if (!directory || !*directory || geometry_target_v_.norm() < 0.1) return;
++    static std::ofstream output(std::string(directory) + "/candidate_drone_" +
++        std::to_string(pp_.drone_id) + ".jsonl", std::ios::app);
++    if (!output) return;
++    const auto started = std::chrono::steady_clock::now();
++    static double cumulative_us = 0.0;
++    std::ostringstream o;
++    o << std::setprecision(17);
++    const auto number = [&](double x) { if (std::isfinite(x)) o << x; else o << "null"; };
++    const auto vector = [&](const Eigen::Vector3d &v) {
++      o << '['; for (int i=0;i<3;++i) { if(i) o<<',';number(v(i)); } o << ']';
++    };
++    o << "{\"stage\":" << std::quoted(stage) << ",\"reason\":" << std::quoted(reason)
++      << ",\"drone\":" << pp_.drone_id << ",\"world\":";
++    number(ros::Time::now().toSec()); o << ",\"batch\":";number(local_planning_started_);
++    o << ",\"activation\":";number(local_activation_time_);
++    o << ",\"wall_remaining\":";number(planning_deadline_wall_-ros::WallTime::now().toSec());
++    o << ",\"event\":" << k3_event_.escalation_id << ",\"event_active\":" << k3_event_.active
++      << ",\"cycle\":" << k3_event_.cycle_count << ",\"related_id\":" << related_id;
++    o << ",\"comparison_begin\":";number(comparison_begin);
++    o << ",\"comparison_end\":";number(comparison_end);
++    o << ",\"self_yaw\":";number(visibility_odom_[pp_.drone_id].yaw);
++    o << ",\"self_yaw_rate\":";number(visibility_odom_[pp_.drone_id].yaw_rate);
++    o << ",\"self_odom_stamp\":";number(visibility_odom_[pp_.drone_id].stamp);
++    o << ",\"target_epoch\":";number(geometry_target_stamp_);
++    o << ",\"target\":";vector(geometry_target_p_);o << ",\"target_v\":";vector(geometry_target_v_);
++    o << ",\"baseline_valid\":" << k3_baseline_valid_ << ",\"baseline_k2\":";number(k3_baseline_window_k2_);
++    o << ",\"baseline_c3\":";number(k3_baseline_window_c3_);o << ",\"baseline_d3\":";number(k3_baseline_window_d3_);
++    o << ",\"writer_cumulative_us\":";number(cumulative_us);
++    if (candidate) {
++      const auto &c=*candidate; const auto &f=c.conflict;
++      o << ",\"candidate\":" << c.candidate_id << ",\"kind\":" << int(c.kind)
++        << ",\"success\":" << c.success << ",\"revision\":" << c.execution_revision
++        << ",\"hash\":" << c.validated_payload_hash << ",\"fallback\":" << c.feasible_initializer_fallback
++        << ",\"class\":" << int(c.safety_class) << ",\"static_valid\":" << c.static_valid
++        << ",\"dynamics_valid\":" << c.dynamics_valid << ",\"swarm_valid\":" << c.swarm_valid
++        << ",\"astar\":" << c.astar_used << ",\"sfc\":" << c.local_sfc_used
++        << ",\"mask\":" << f.reason_mask << ",\"blocker\":" << f.obstacle_identity
++        << ",\"motion\":" << int(f.obstacle_motion) << ",\"los_blocker\":" << f.los_obstacle_identity
++        << ",\"los_motion\":" << int(f.los_obstacle_motion);
++      o << ",\"blocker_p\":";vector(f.obstacle_position);
++      o << ",\"los_blocker_p\":";vector(f.los_obstacle_position);
++      o << ",\"los_effective_radius\":";number(f.los_obstacle_effective_radius);
++      o << ",\"los_primitive_type\":" << f.los_primitive_type
++        << ",\"los_enter_rel\":";number(c.los_occlusion_enter_time);
++      o << ",\"los_exit_rel\":";number(c.los_occlusion_exit_time);
++      o << ",\"los_plane_created\":" << c.los_observation_plane_created
++        << ",\"los_seed_reached_side\":" << c.los_reached_side;
++      o << ",\"frame_forward\":";vector(f.frame_forward);o << ",\"frame_right\":";vector(f.frame_right);
++      o << ",\"witness_target\":";vector(f.target_position);o << ",\"witness_observer\":";vector(f.observer_position);
++      o << ",\"los_first_risk_world\":";number(f.los_first_risk_world_time);
++      o << ",\"checked_until\":";number(c.checked_until);
++      o << ",\"k3_valid\":" << c.k3_window.valid << ",\"K2\":";number(c.k3_window.k2);
++      o << ",\"C3\":";number(c.k3_window.c3);o << ",\"D3\":";number(c.k3_window.d3);
++      o << ",\"self_had_binary_loss\":" << c.k3_window.self_had_binary_loss
++        << ",\"all3_had_binary_loss\":" << c.k3_window.all3_had_binary_loss;
++      o << ",\"self_first_binary_recovery_world\":";
++      number(c.k3_window.self_first_binary_recovery_world_time);
++      o << ",\"self_persistent_binary_recovery_world\":";
++      number(c.k3_window.self_persistent_binary_recovery_world_time);
++      o << ",\"all3_first_binary_recovery_world\":";
++      number(c.k3_window.all3_first_binary_recovery_world_time);
++      o << ",\"all3_persistent_binary_recovery_world\":";
++      number(c.k3_window.all3_persistent_binary_recovery_world_time);
++      o << ",\"max_v\":";number(c.max_velocity);o << ",\"max_a\":";number(c.max_acceleration);
++      o << ",\"max_j\":";number(c.max_jerk);
++    }
++    if (trajectory) {
++      o << ",\"poly_hash\":" << trajectoryPayloadHash(*trajectory) << ",\"pieces\":[";
++      for(int i=0;i<trajectory->getPieceNum();++i) {
++        if(i) o<<',';
++        o<<'[';number((*trajectory)[i].getDuration());
++        const auto &a=(*trajectory)[i].getCoeffMat();
++        for(int row=0;row<3;++row) for(int col=0;col<6;++col) {o<<',';number(a(row,col));}
++        o<<']';
++      }
++      o << ']';
++    }
++    o << "}\n";
++    output << o.str();
++    cumulative_us += std::chrono::duration<double,std::micro>(
++        std::chrono::steady_clock::now()-started).count();
++  }
++
+   void EGOPlannerManager::finishPlanningBatch(double wall_started)
+   {
+     const double wall=ros::WallTime::now().toSec(),now=ros::Time::now().toSec();
+@@ -1483,6 +1576,16 @@
+       std::vector<CandidateSetOutput> &sets,bool touch_goal,double head_threshold,int &selected_set)
+   {
+     selected_set=-1;
++    for (const auto &audit_set : sets) for (const auto &audit_candidate : audit_set.candidates) {
++      if (audit_candidate.success) {
++        const auto audit_traj = audit_candidate.min_jerk_opt.getTraj();
++        traceTopologyAudit134("FINAL_INPUT", &audit_candidate, &audit_traj);
++      } else traceTopologyAudit134("FINAL_INPUT_FAILED", &audit_candidate);
++      if (audit_candidate.joint_seed_valid) {
++        const auto audit_seed = audit_candidate.joint_seed.getTraj();
++        traceTopologyAudit134("JOINT_SEED", &audit_candidate, &audit_seed);
++      }
++    }
+     // FROZEN-ACTIVATION contract: the batch's only activation was fixed in
+     // prepareFutureActivation BEFORE any candidate was generated, and every
+     // candidate already carries the matching head P/V/A, target epoch and
+@@ -1600,6 +1703,7 @@
+         {
+           ROS_WARN("[coverage-quality] event=QUALITY_SEARCH_ABORTED_FOR_DEADLINE drone=%d reserved_candidate=%d t_planning_deadline=%.9f",
+               pp_.drone_id,reserved_first_safe->candidate_id,planning_deadline_ros_);
++          traceTopologyAudit134("FINALIZE_DEADLINE_STOP", &candidate, nullptr, "QUALITY_SEARCH_ABORTED_FOR_DEADLINE");
+           deadline_stopped_quality=true;
+           break;
+         }
+@@ -1627,6 +1731,7 @@
+             trajectoryPayloadHash(prepared.getTraj());
+         if(!validateLocalHandoffWindow(candidate_activation,&handoff_reason))
+         {
++          traceTopologyAudit134("HANDOFF_REJECT", &candidate, nullptr, handoff_reason);
+           ROS_INFO("[moving-rehead-reject] drone=%d candidate=%d reason=%s",
+               pp_.drone_id,candidate.candidate_id,handoff_reason.c_str());
+           continue;
+@@ -1663,6 +1768,7 @@
+         if(t.getTotalDuration() < rolling_coverage &&
+            std::max({t.getMaxVelRate(),t.getVel(0).norm(),
+                      t.getVel(t.getTotalDuration()).norm()}) < 0.2) {
++          traceTopologyAudit134("STATIONARY_REJECT", &candidate);
+           ROS_INFO("[moving-candidate-reject] drone=%d candidate=%d reason=SHORT_STATIONARY_HYPOTHESIS duration=%.6f required=%.6f",
+               pp_.drone_id,candidate.candidate_id,t.getTotalDuration(),rolling_coverage);
+           continue;
+@@ -1675,6 +1781,7 @@
+             checkActiveHandoff(prepared.getTraj(),activation,candidateKindName(candidate.kind),true) &&
+             validateExecutionTrajectory(prepared.getTraj(),activation,touch_goal,reason);
+         if(!safe) {
++          traceTopologyAudit134("PREFLIGHT_REJECT", &candidate, nullptr, reason);
+           ROS_INFO("[local-geometry-candidate] drone=%d candidate=%d hypothesis=%d safe=0 reason=%s",
+               pp_.drone_id,candidate.candidate_id,sets[i].hypothesis_id,reason.c_str());continue;
+         }
+@@ -1682,6 +1789,7 @@
+             prepared.getTraj(), activation, touch_goal);
+         if (!std::isfinite(checked_until) ||
+             checked_until <= activation + 1.0e-6) {
++          traceTopologyAudit134("CERTIFICATE_REJECT", &candidate);
+           ROS_WARN("[CANDIDATE_CERTIFICATE] candidate=%d status=UNKNOWN "
+                    "reason=MISSING_MAP_PREDICTION_OR_PEER activation=%.9f",
+                    candidate.candidate_id, activation);
+@@ -1897,6 +2005,9 @@
+             k3_decision_reason = "ORIGINAL_ORDER";
+           }
+         }
++        traceTopologyAudit134(candidate_better ? "COMPARATOR_WIN" : "COMPARATOR_LOSS",
++            &candidate, nullptr, k3_decision_reason, best ? best->candidate_id : -1,
++            k3_comparison_begin, k3_comparison_end);
+         if(candidate_better)
+         {
+           if(!k3_decision_reason.empty())
+@@ -2023,9 +2134,13 @@
+         if (c3_improved) ++k3_event_.c3_improved_cycles;
+         if (d3_improved) ++k3_event_.d3_improved_cycles;
+       }
++      traceTopologyAudit134("SELECTED", best, nullptr, k3_selected_reason, -1,
++          k3_comparison_begin, k3_comparison_end);
+       const auto status=finalizeTopologyCandidate(*best,sets[selected_set].nominal_risk,
+           sets[selected_set].nominal_obstacle_id,touch_goal,head_threshold,sets[selected_set].planning_epoch,
+           false,"LOCAL_GEOMETRY_PRESERVATION_OR_RECOVERY");
++      traceTopologyAudit134(status == TopologyProcessStatus::COMMITTED ? "COMMITTED" : "COMMIT_FAILED",
++          best, nullptr, "", traj_.local_traj.traj_id, k3_comparison_begin, k3_comparison_end);
+       // Feedback117 (§10): global SIDE commit stage of the candidate
+       // lifecycle (K3-scoped progress counting stays separate below).
+       if (status == TopologyProcessStatus::COMMITTED &&
+@@ -9509,8 +9624,10 @@
+         nominal_result.conflict.los_obstacle_motion = ConflictObstacleMotion::STATIC;
+         nominal_result.conflict.los_primitive_type =
+             static_visibility_witness.primitive_type;
+-        nominal_result.conflict.los_obstacle_position =
+-            static_visibility_witness.primitive_center;
++      nominal_result.conflict.los_obstacle_position =
++          static_visibility_witness.primitive_center;
++      nominal_result.conflict.los_obstacle_effective_radius =
++          static_visibility_witness.effective_radius;
+         const Eigen::Vector2d static_los_target_xy = raw_static_los_blocked
+             ? Eigen::Vector2d(raw_static_target.head<2>())
+             : Eigen::Vector2d(static_query_target.head<2>());
+@@ -9699,6 +9816,8 @@
+           nominal_result.conflict.radius =
+               0.5 * std::max(raw_dynamic_scale.x(), raw_dynamic_scale.y()) +
+               visibility_occlusion_margin_;
++          nominal_result.conflict.los_obstacle_effective_radius =
++              nominal_result.conflict.radius;
+         }
+       }
+       const bool spatial_visibility_trigger =
+@@ -10026,6 +10145,130 @@
+               return length;
+             };
+ 
++        struct BlockerTopologyGeometry
++        {
++          bool valid{false};
++          int blocker_id{-1};
++          int blocker_motion{0};
++          double side_at_conflict{std::numeric_limits<double>::quiet_NaN()};
++          double side_score{std::numeric_limits<double>::quiet_NaN()};
++          double min_shadow_clearance{std::numeric_limits<double>::quiet_NaN()};
++          double shadow_exit_time{-1.0};
++          int side_crossings{0};
++        };
++        // Physical diagnosis only: sample the already available polynomial
++        // against the conflict's production LOS frame and blocker prediction.
++        // The finite target-to-UAV segment clearance is distance to the blocker
++        // center minus its effective radius; it does not alter optimization or
++        // any admission/comparison decision.
++        const auto blocker_topology_geometry =
++            [&](const poly_traj::Trajectory &trajectory,
++                const ConflictDescriptor &conflict,
++                const Eigen::Vector3d &target_position,
++                const Eigen::Vector3d &target_velocity,
++                const double target_epoch,
++                const double trajectory_epoch) {
++              BlockerTopologyGeometry out;
++              if (trajectory.getPieceNum() <= 0 ||
++                  !conflict.valid ||
++                  (conflict.reason_mask & CONFLICT_LOS_OCCLUSION) == 0)
++                return out;
++              const bool los_id_valid = conflict.los_obstacle_identity >= 0;
++              out.blocker_id = los_id_valid
++                  ? conflict.los_obstacle_identity : conflict.obstacle_identity;
++              const ConflictObstacleMotion motion = los_id_valid
++                  ? conflict.los_obstacle_motion : conflict.obstacle_motion;
++              out.blocker_motion = static_cast<int>(motion);
++              Eigen::Vector3d right = conflict.frame_right;
++              if (out.blocker_id < 0 || !right.allFinite() ||
++                  right.head<2>().norm() <= 1.0e-6 ||
++                  !target_position.allFinite() || !target_velocity.allFinite() ||
++                  !std::isfinite(target_epoch) || !std::isfinite(trajectory_epoch))
++                return out;
++              right.normalize();
++              const Eigen::Vector3d fixed_center = los_id_valid
++                  ? conflict.los_obstacle_position : conflict.obstacle_position;
++              const double radius = std::max(0.0, conflict.radius);
++              const double conflict_time =
++                  std::isfinite(conflict.los_conflict_time) &&
++                          conflict.los_conflict_time >= 0.0
++                      ? conflict.los_conflict_time
++                      : std::max(0.0, conflict.body_conflict_time);
++              const double duration = trajectory.getTotalDuration();
++              if (!(duration > 1.0e-6) || !std::isfinite(duration))
++                return out;
++              constexpr double kTopologySampleDt = 0.10;
++              const int sample_count = std::max(
++                  2, static_cast<int>(std::ceil(duration / kTopologySampleDt)) + 1);
++              double previous_side = std::numeric_limits<double>::quiet_NaN();
++              bool previously_in_shadow = false;
++              double weighted_side_sum = 0.0;
++              double side_weight_sum = 0.0;
++              double nearest_conflict_error = std::numeric_limits<double>::infinity();
++              out.min_shadow_clearance = std::numeric_limits<double>::infinity();
++              for (int sample = 0; sample < sample_count; ++sample)
++              {
++                const double t = duration * static_cast<double>(sample) /
++                                 static_cast<double>(sample_count - 1);
++                const double world_time = trajectory_epoch + t;
++                Eigen::Vector3d center = fixed_center;
++                if (motion == ConflictObstacleMotion::DYNAMIC && obj_predictor_ &&
++                    out.blocker_id < obj_predictor_->getObjNums() &&
++                    obj_predictor_->hasPrediction(out.blocker_id))
++                  center = obj_predictor_->evaluateConstVel(out.blocker_id, world_time);
++                if (!center.allFinite())
++                  continue;
++                const Eigen::Vector3d position = trajectory.getPos(t);
++                const Eigen::Vector3d target = localK3TargetAtWorldTime(
++                    target_position, target_velocity, target_epoch, world_time);
++                if (!position.allFinite() || !target.allFinite())
++                  continue;
++                const double side = right.dot(position - center);
++                const double conflict_error = std::abs(t - conflict_time);
++                if (conflict_error < nearest_conflict_error)
++                {
++                  nearest_conflict_error = conflict_error;
++                  out.side_at_conflict = side;
++                }
++                if (conflict_error <= 0.5)
++                {
++                  const double weight = 1.0 / ((position - center).norm() + 0.1);
++                  weighted_side_sum += weight * side;
++                  side_weight_sum += weight;
++                }
++                if (std::isfinite(previous_side) &&
++                    std::abs(previous_side) > 0.05 && std::abs(side) > 0.05 &&
++                    ((previous_side < 0.0) != (side < 0.0)))
++                  ++out.side_crossings;
++                previous_side = side;
++
++                const Eigen::Vector2d ray = position.head<2>() - target.head<2>();
++                const Eigen::Vector2d target_to_center =
++                    center.head<2>() - target.head<2>();
++                const double ray_norm2 = ray.squaredNorm();
++                const double along = ray_norm2 > 1.0e-9
++                    ? std::max(0.0, std::min(1.0,
++                          target_to_center.dot(ray) / ray_norm2))
++                    : 0.0;
++                const double shadow_clearance =
++                    (target_to_center - along * ray).norm() - radius;
++                out.min_shadow_clearance = std::min(
++                    out.min_shadow_clearance, shadow_clearance);
++                if (shadow_clearance < 0.08)
++                  previously_in_shadow = true;
++                else if (previously_in_shadow && out.shadow_exit_time < 0.0)
++                  out.shadow_exit_time = t;
++              }
++              if (!std::isfinite(out.min_shadow_clearance))
++                return BlockerTopologyGeometry();
++              out.side_score = side_weight_sum > 1.0e-9
++                  ? weighted_side_sum / side_weight_sum
++                  : out.side_at_conflict;
++              out.valid = std::isfinite(out.side_at_conflict) &&
++                          std::isfinite(out.side_score);
++              return out;
++            };
++
+         // Diagnostic only: sample the already-defined side profile against the
+         // same prediction epoch before MINCO can alter it. It has no effect on
+         // candidate generation, selection, or optimizer inputs.
+@@ -10115,6 +10358,7 @@
+           result.kind = side > 0 ? CandidateKind::SIDE_PLUS : CandidateKind::SIDE_MINUS;
+           result.prediction_epoch = planning_prediction_epoch;
+           result.conflict = nominal_result.conflict;
++          traceTopologyAudit134("SIDE_DISPATCH", &result);
+           const bool body_hard_conflict =
+               (nominal_result.conflict.reason_mask & CONFLICT_BODY_SAFETY) != 0 &&
+               (static_body_support_active ||
+@@ -10227,6 +10471,7 @@
+           // here occur before the optimizer can emit its phase=initial log.
+           const auto log_side_preinit_failure =
+               [&](const char *reason, const poly_traj::Trajectory *candidate_traj) {
++                traceTopologyAudit134("PREINIT_REJECT", &result, candidate_traj, reason);
+                 const double candidate_duration = candidate_traj != nullptr
+                                                       ? candidate_traj->getTotalDuration()
+                                                       : -1.0;
+@@ -10382,6 +10627,8 @@
+             }
+ 
+             const poly_traj::Trajectory side_init_candidate_traj = side_init_mjo.getTraj();
++            traceTopologyAudit134("RAW_SEED_ATTEMPT", &result, &side_init_candidate_traj,
++                use_observation_frame ? "OBSERVATION_FRAME" : "PATH_FRAME");
+             if (side_init_candidate_traj.getPieceNum() <= 0 ||
+                 !std::isfinite(side_init_candidate_traj.getTotalDuration()) ||
+                 side_init_candidate_traj.getTotalDuration() <= 1.0e-6)
+@@ -12402,6 +12649,7 @@
+           // fixed-boundary PVA timing initializer as FRESH and N.  The route
+           // and STATIC plane piece ids are immutable during this correction.
+           poly_traj::Trajectory side_init_traj = side_init_mjo.getTraj();
++          traceTopologyAudit134("PRE_TIMING_SEED", &result, &side_init_traj);
+           if (side_init_traj.getPieceNum() <= 0) {
+             log_side_preinit_failure("NUMERICAL_INITIALIZATION_FAILED", nullptr);
+             return;
+@@ -12434,6 +12682,7 @@
+             return;
+           }
+           side_init_traj = side_init_mjo.getTraj();
++          traceTopologyAudit134("TIMED_SEED", &result, &side_init_traj);
+           const Eigen::VectorXd final_side_durations =
+               side_init_traj.getDurations();
+           for (LocalSfcPlane &plane : local_sfc_planes) {
+@@ -12749,6 +12998,12 @@
+             feasible_initializer_available =
+                 initializer_contract.success &&
+                 feasible_initializer_class == CandidateSafetyClass::ABSOLUTE_SAFE;
++            traceTopologyAudit134("SEED_ELIGIBILITY", &result, nullptr,
++                std::string("static=") + std::to_string(initializer_static_ok) +
++                ";dynamics=" + std::to_string(initializer_dynamics_ok) +
++                ";sfc=" + std::to_string(initializer_local_sfc_ok) +
++                ";class=" + candidateSafetyClassName(feasible_initializer_class),
++                static_cast<int>(feasible_initializer_available));
+             if (feasible_initializer_available)
+             {
+               feasible_initializer_head = side_head_state;
+@@ -12801,6 +13056,53 @@
+                 std::chrono::steady_clock::now() - optimization_start).count();
+             result.minco_diagnostics = ploy_traj_opt_->getLastOptimizationDiagnostics();
+             minco_status = ploy_traj_opt_->getLastCandidateFinalStatusReason();
++            const BlockerTopologyGeometry seed_topology = blocker_topology_geometry(
++                side_init_traj, result.conflict, local_target_pt, local_target_vel,
++                planning_prediction_epoch, planning_prediction_epoch);
++            const BlockerTopologyGeometry final_topology = result.success
++                ? blocker_topology_geometry(result.min_jerk_opt.getTraj(),
++                      result.conflict, local_target_pt, local_target_vel,
++                      planning_prediction_epoch, planning_prediction_epoch)
++                : BlockerTopologyGeometry();
++            result.topology_geometry_valid = seed_topology.valid;
++            result.topology_blocker_id = seed_topology.blocker_id;
++            result.topology_blocker_motion = seed_topology.blocker_motion;
++            result.topology_seed_side_at_conflict = seed_topology.side_at_conflict;
++            result.topology_seed_side_score = seed_topology.side_score;
++            result.topology_seed_min_shadow_clearance =
++                seed_topology.min_shadow_clearance;
++            result.topology_seed_shadow_exit_time = seed_topology.shadow_exit_time;
++            result.topology_final_side_at_conflict = final_topology.side_at_conflict;
++            result.topology_final_side_score = final_topology.side_score;
++            result.topology_final_min_shadow_clearance =
++                final_topology.min_shadow_clearance;
++            result.topology_final_shadow_exit_time = final_topology.shadow_exit_time;
++            result.topology_side_crossings = final_topology.side_crossings;
++            ROS_INFO("[TOPOLOGY_FATE] phase=OPTIMIZER drone=%d candidate=%d "
++                     "event_id=%lu kind=%s blocker_id=%d blocker_motion=%d "
++                     "seed_side_at_conflict=%.6f seed_actual_side_score=%.6f "
++                     "seed_min_shadow_clearance=%.6f seed_shadow_exit=%.6f "
++                     "final_side_at_conflict=%.6f final_actual_side_score=%.6f "
++                     "final_min_shadow_clearance=%.6f final_shadow_exit=%.6f "
++                     "side_crossings=%d seed_generated=%d optimized=%d "
++                     "first_reject_stage=%s solver_status=%s",
++                pp_.drone_id, result.candidate_id,
++                static_cast<unsigned long>(k3_event_.escalation_id),
++                candidateKindName(result.kind), seed_topology.blocker_id,
++                seed_topology.blocker_motion, seed_topology.side_at_conflict,
++                seed_topology.side_score, seed_topology.min_shadow_clearance,
++                seed_topology.shadow_exit_time, final_topology.side_at_conflict,
++                final_topology.side_score, final_topology.min_shadow_clearance,
++                final_topology.shadow_exit_time, final_topology.side_crossings,
++                static_cast<int>(side_init_traj.getPieceNum() > 0),
++                static_cast<int>(result.success),
++                result.success ? "PENDING_HARD_PREFLIGHT" : "OPTIMIZER",
++                minco_status.c_str());
++            {
++              const auto audit_solver_traj = ploy_traj_opt_->getMinJerkOpt().getTraj();
++              traceTopologyAudit134(result.success ? "SOLVER_OK" : "SOLVER_FAILED",
++                  &result, &audit_solver_traj, minco_status);
++            }
+             // Feedback116:LOS soft-plane 遥测(SEMI_HARD 模式下 slack>0 的
+             // SIDE 不再以 LOS_PLANE_SCP_FAILED 死亡,这里给出逐候选证据)。
+             {
+@@ -13349,6 +13651,8 @@
+         };
+ 
+ 
++        const auto audit_nominal_traj = nominal_result.min_jerk_opt.getTraj();
++        traceTopologyAudit134("NOMINAL_CONTEXT", &nominal_result, &audit_nominal_traj);
+         const auto attempt_side = [&](const int side, const bool mandatory_supply) {
+           if (preserve_active_observation_side)
+             return;
+@@ -13363,10 +13667,23 @@
+               planning_deadline_wall_ - ros::WallTime::now().toSec();
+           if (std::isfinite(planning_deadline_wall_) && wall_remaining < 0.02)
+           {
++            traceTopologyAudit134("SIDE_BUDGET_SKIP", &nominal_result, nullptr,
++                side > 0 ? "SIDE_PLUS" : "SIDE_MINUS");
+             if (side > 0)
+               plus_attempted = true;
+             else
+               minus_attempted = true;
++            ROS_WARN("[TOPOLOGY_FATE] phase=DISPATCH drone=%d candidate=-1 "
++                     "event_id=%lu kind=%s blocker_id=%d seed_generated=0 "
++                     "actual_side=UNRESOLVED first_reject_stage=DEADLINE_STARVED "
++                     "wall_remaining=%.6f",
++                pp_.drone_id,
++                static_cast<unsigned long>(k3_event_.escalation_id),
++                side > 0 ? "SIDE_PLUS" : "SIDE_MINUS",
++                nominal_result.conflict.los_obstacle_identity >= 0
++                    ? nominal_result.conflict.los_obstacle_identity
++                    : nominal_result.conflict.obstacle_identity,
++                wall_remaining);
+             ROS_INFO("[side-budget-skip] drone=%d side=%s wall_remaining=%.4f "
+                      "reason=PIPELINE_BUDGET_EXHAUSTED",
+                 pp_.drone_id, side > 0 ? "SIDE_PLUS" : "SIDE_MINUS",

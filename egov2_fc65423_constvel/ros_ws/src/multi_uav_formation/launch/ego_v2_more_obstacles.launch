@@ -1,0 +1,379 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="map_size_x" default="30.0"/>
+  <arg name="map_size_y" default="18.0"/>
+  <arg name="map_size_z" default="4.0"/>
+  <arg name="virtual_ceil_height" default="2.9"/>
+  <arg name="obstacles_inflation" default="0.35"/>
+  <arg name="obstacle_clearance" default="0.5"/>
+  <arg name="max_vel" default="1.0"/>
+  <arg name="max_acc" default="1.5"/>
+  <arg name="max_jer" default="20.0"/>
+  <arg name="planning_horizon" default="5.0"/>
+  <arg name="traj_time_forward" default="1.0"/>
+  <arg name="moving_obj_num" default="5"/>
+  <arg name="use_time_aware_moving_obj_cost" default="false"/>
+  <arg name="moving_obj_clearance" default="1.1"/>
+  <arg name="moving_obj_lambda" default="0.5"/>
+  <arg name="moving_obj_prediction_horizon" default="2.0"/>
+  <arg name="moving_obj_time_decay_tau" default="1.8"/>
+  <arg name="moving_obj_max_grad" default="3.0"/>
+  <arg name="swarm_clearance" default="0.5"/>
+  <arg name="tracking_error_replan_threshold" default="0.5"/>
+  <arg name="tracking_velocity_error_replan_threshold" default="0.5"/>
+  <arg name="drone_count" default="5"/>
+  <arg name="point_num" default="1"/>
+  <arg name="preset_start_delay_step" default="0.0"/>
+  <arg name="route_point0_x" default="0.0"/>
+  <arg name="route_point0_y" default="0.0"/>
+  <arg name="route_point0_z" default="1.2"/>
+  <arg name="route_point1_x" default="0.0"/>
+  <arg name="route_point1_y" default="0.0"/>
+  <arg name="route_point1_z" default="1.2"/>
+  <arg name="route_point2_x" default="0.0"/>
+  <arg name="route_point2_y" default="0.0"/>
+  <arg name="route_point2_z" default="1.2"/>
+  <arg name="route_point3_x" default="0.0"/>
+  <arg name="route_point3_y" default="0.0"/>
+  <arg name="route_point3_z" default="1.2"/>
+  <arg name="goal0_x" default="10.0"/>
+  <arg name="goal0_y" default="-4.8"/>
+  <arg name="goal0_z" default="1.2"/>
+  <arg name="goal1_x" default="10.0"/>
+  <arg name="goal1_y" default="-2.4"/>
+  <arg name="goal1_z" default="1.2"/>
+  <arg name="goal2_x" default="10.0"/>
+  <arg name="goal2_y" default="0.0"/>
+  <arg name="goal2_z" default="1.2"/>
+  <arg name="goal3_x" default="10.0"/>
+  <arg name="goal3_y" default="2.4"/>
+  <arg name="goal3_z" default="1.2"/>
+  <arg name="goal4_x" default="10.0"/>
+  <arg name="goal4_y" default="4.8"/>
+  <arg name="goal4_z" default="1.2"/>
+
+  <include file="$(find ego_planner)/launch/advanced_param.xml">
+    <arg name="drone_id" value="0"/>
+    <arg name="broadcast_traj_send_topic" value="/broadcast_traj_v2"/>
+    <arg name="broadcast_traj_recv_topic" value="/broadcast_traj_v2"/>
+    <arg name="map_size_x_" value="$(arg map_size_x)"/>
+    <arg name="map_size_y_" value="$(arg map_size_y)"/>
+    <arg name="map_size_z_" value="$(arg map_size_z)"/>
+    <arg name="virtual_ceil_height" value="$(arg virtual_ceil_height)"/>
+    <arg name="obstacles_inflation" value="$(arg obstacles_inflation)"/>
+    <arg name="obstacle_clearance" value="$(arg obstacle_clearance)"/>
+    <arg name="odometry_topic" value="visual_slam/odom"/>
+    <arg name="obj_num_set" value="$(arg moving_obj_num)"/>
+    <arg name="use_time_aware_moving_obj_cost" value="$(arg use_time_aware_moving_obj_cost)"/>
+    <arg name="moving_obj_clearance" value="$(arg moving_obj_clearance)"/>
+    <arg name="moving_obj_lambda" value="$(arg moving_obj_lambda)"/>
+    <arg name="moving_obj_prediction_horizon" value="$(arg moving_obj_prediction_horizon)"/>
+    <arg name="moving_obj_time_decay_tau" value="$(arg moving_obj_time_decay_tau)"/>
+    <arg name="moving_obj_max_grad" value="$(arg moving_obj_max_grad)"/>
+    <arg name="camera_pose_topic" value="pcl_render_node/camera_pose"/>
+    <arg name="depth_topic" value="pcl_render_node/depth"/>
+    <arg name="cloud_topic" value="pcl_render_node/cloud"/>
+    <arg name="cx" value="321.04638671875"/>
+    <arg name="cy" value="243.44969177246094"/>
+    <arg name="fx" value="387.229248046875"/>
+    <arg name="fy" value="387.229248046875"/>
+    <arg name="max_vel" value="$(arg max_vel)"/>
+    <arg name="max_acc" value="$(arg max_acc)"/>
+    <arg name="max_jer" value="$(arg max_jer)"/>
+    <arg name="planning_horizon" value="$(arg planning_horizon)"/>
+    <arg name="use_distinctive_trajs" value="true"/>
+    <arg name="realworld_experiment" value="true"/>
+    <arg name="sequential_start" value="true"/>
+    <arg name="flight_type" value="2"/>
+    <arg name="preset_start_delay_step" value="$(arg preset_start_delay_step)"/>
+    <arg name="point_num" value="$(arg point_num)"/>
+    <arg name="point0_x" value="$(eval arg('goal0_x') if int(arg('point_num')) == 1 else arg('route_point0_x'))"/>
+    <arg name="point0_y" value="$(eval arg('goal0_y') if int(arg('point_num')) == 1 else arg('route_point0_y'))"/>
+    <arg name="point0_z" value="$(eval arg('goal0_z') if int(arg('point_num')) == 1 else arg('route_point0_z'))"/>
+    <arg name="point1_x" value="$(eval arg('goal0_x') if int(arg('point_num')) == 2 else arg('route_point1_x'))"/>
+    <arg name="point1_y" value="$(eval arg('goal0_y') if int(arg('point_num')) == 2 else arg('route_point1_y'))"/>
+    <arg name="point1_z" value="$(eval arg('goal0_z') if int(arg('point_num')) == 2 else arg('route_point1_z'))"/>
+    <arg name="point2_x" value="$(eval arg('goal0_x') if int(arg('point_num')) == 3 else arg('route_point2_x'))"/>
+    <arg name="point2_y" value="$(eval arg('goal0_y') if int(arg('point_num')) == 3 else arg('route_point2_y'))"/>
+    <arg name="point2_z" value="$(eval arg('goal0_z') if int(arg('point_num')) == 3 else arg('route_point2_z'))"/>
+    <arg name="point3_x" value="$(eval arg('goal0_x') if int(arg('point_num')) == 4 else arg('route_point3_x'))"/>
+    <arg name="point3_y" value="$(eval arg('goal0_y') if int(arg('point_num')) == 4 else arg('route_point3_y'))"/>
+    <arg name="point3_z" value="$(eval arg('goal0_z') if int(arg('point_num')) == 4 else arg('route_point3_z'))"/>
+    <arg name="point4_x" value="$(arg goal0_x)"/>
+    <arg name="point4_y" value="$(arg goal0_y)"/>
+    <arg name="point4_z" value="$(arg goal0_z)"/>
+    <arg name="relative_tracking_x" value="0.0"/>
+    <arg name="relative_tracking_y" value="0.0"/>
+    <arg name="relative_tracking_z" value="0.0"/>
+    <arg name="swarm_clearance" value="$(arg swarm_clearance)"/>
+    <arg name="tracking_error_replan_threshold" value="$(arg tracking_error_replan_threshold)"/>
+    <arg name="tracking_velocity_error_replan_threshold" value="$(arg tracking_velocity_error_replan_threshold)"/>
+  </include>
+
+  <node pkg="ego_planner" name="drone_0_traj_server" type="traj_server" output="screen" launch-prefix="$(find multi_uav_formation)/scripts/ego_with_opencv.sh">
+    <env name="LD_LIBRARY_PATH" value="/usr/local/lib:$(env LD_LIBRARY_PATH)"/>
+    <remap from="/position_cmd" to="/drone_0_planning/pos_cmd"/>
+    <remap from="~planning/trajectory" to="/drone_0_planning/trajectory"/>
+    <param name="traj_server/time_forward" value="$(arg traj_time_forward)" type="double"/>
+  </node>
+
+  <include file="$(find ego_planner)/launch/advanced_param.xml" if="$(eval int(arg('drone_count')) > 1)">
+    <arg name="drone_id" value="1"/>
+    <arg name="broadcast_traj_send_topic" value="/broadcast_traj_v2"/>
+    <arg name="broadcast_traj_recv_topic" value="/broadcast_traj_v2"/>
+    <arg name="map_size_x_" value="$(arg map_size_x)"/>
+    <arg name="map_size_y_" value="$(arg map_size_y)"/>
+    <arg name="map_size_z_" value="$(arg map_size_z)"/>
+    <arg name="virtual_ceil_height" value="$(arg virtual_ceil_height)"/>
+    <arg name="obstacles_inflation" value="$(arg obstacles_inflation)"/>
+    <arg name="obstacle_clearance" value="$(arg obstacle_clearance)"/>
+    <arg name="odometry_topic" value="visual_slam/odom"/>
+    <arg name="obj_num_set" value="$(arg moving_obj_num)"/>
+    <arg name="use_time_aware_moving_obj_cost" value="$(arg use_time_aware_moving_obj_cost)"/>
+    <arg name="moving_obj_clearance" value="$(arg moving_obj_clearance)"/>
+    <arg name="moving_obj_lambda" value="$(arg moving_obj_lambda)"/>
+    <arg name="moving_obj_prediction_horizon" value="$(arg moving_obj_prediction_horizon)"/>
+    <arg name="moving_obj_time_decay_tau" value="$(arg moving_obj_time_decay_tau)"/>
+    <arg name="moving_obj_max_grad" value="$(arg moving_obj_max_grad)"/>
+    <arg name="camera_pose_topic" value="pcl_render_node/camera_pose"/>
+    <arg name="depth_topic" value="pcl_render_node/depth"/>
+    <arg name="cloud_topic" value="pcl_render_node/cloud"/>
+    <arg name="cx" value="321.04638671875"/>
+    <arg name="cy" value="243.44969177246094"/>
+    <arg name="fx" value="387.229248046875"/>
+    <arg name="fy" value="387.229248046875"/>
+    <arg name="max_vel" value="$(arg max_vel)"/>
+    <arg name="max_acc" value="$(arg max_acc)"/>
+    <arg name="max_jer" value="$(arg max_jer)"/>
+    <arg name="planning_horizon" value="$(arg planning_horizon)"/>
+    <arg name="use_distinctive_trajs" value="true"/>
+    <arg name="realworld_experiment" value="true"/>
+    <arg name="sequential_start" value="true"/>
+    <arg name="flight_type" value="2"/>
+    <arg name="preset_start_delay_step" value="$(arg preset_start_delay_step)"/>
+    <arg name="point_num" value="$(arg point_num)"/>
+    <arg name="point0_x" value="$(eval arg('goal1_x') if int(arg('point_num')) == 1 else arg('route_point0_x'))"/>
+    <arg name="point0_y" value="$(eval arg('goal1_y') if int(arg('point_num')) == 1 else arg('route_point0_y'))"/>
+    <arg name="point0_z" value="$(eval arg('goal1_z') if int(arg('point_num')) == 1 else arg('route_point0_z'))"/>
+    <arg name="point1_x" value="$(eval arg('goal1_x') if int(arg('point_num')) == 2 else arg('route_point1_x'))"/>
+    <arg name="point1_y" value="$(eval arg('goal1_y') if int(arg('point_num')) == 2 else arg('route_point1_y'))"/>
+    <arg name="point1_z" value="$(eval arg('goal1_z') if int(arg('point_num')) == 2 else arg('route_point1_z'))"/>
+    <arg name="point2_x" value="$(eval arg('goal1_x') if int(arg('point_num')) == 3 else arg('route_point2_x'))"/>
+    <arg name="point2_y" value="$(eval arg('goal1_y') if int(arg('point_num')) == 3 else arg('route_point2_y'))"/>
+    <arg name="point2_z" value="$(eval arg('goal1_z') if int(arg('point_num')) == 3 else arg('route_point2_z'))"/>
+    <arg name="point3_x" value="$(eval arg('goal1_x') if int(arg('point_num')) == 4 else arg('route_point3_x'))"/>
+    <arg name="point3_y" value="$(eval arg('goal1_y') if int(arg('point_num')) == 4 else arg('route_point3_y'))"/>
+    <arg name="point3_z" value="$(eval arg('goal1_z') if int(arg('point_num')) == 4 else arg('route_point3_z'))"/>
+    <arg name="point4_x" value="$(arg goal1_x)"/>
+    <arg name="point4_y" value="$(arg goal1_y)"/>
+    <arg name="point4_z" value="$(arg goal1_z)"/>
+    <arg name="relative_tracking_x" value="0.0"/>
+    <arg name="relative_tracking_y" value="0.0"/>
+    <arg name="relative_tracking_z" value="0.0"/>
+    <arg name="swarm_clearance" value="$(arg swarm_clearance)"/>
+    <arg name="tracking_error_replan_threshold" value="$(arg tracking_error_replan_threshold)"/>
+    <arg name="tracking_velocity_error_replan_threshold" value="$(arg tracking_velocity_error_replan_threshold)"/>
+  </include>
+
+  <node pkg="ego_planner" name="drone_1_traj_server" type="traj_server" output="screen" launch-prefix="$(find multi_uav_formation)/scripts/ego_with_opencv.sh" if="$(eval int(arg('drone_count')) > 1)">
+    <env name="LD_LIBRARY_PATH" value="/usr/local/lib:$(env LD_LIBRARY_PATH)"/>
+    <remap from="/position_cmd" to="/drone_1_planning/pos_cmd"/>
+    <remap from="~planning/trajectory" to="/drone_1_planning/trajectory"/>
+    <param name="traj_server/time_forward" value="$(arg traj_time_forward)" type="double"/>
+  </node>
+
+  <include file="$(find ego_planner)/launch/advanced_param.xml" if="$(eval int(arg('drone_count')) > 2)">
+    <arg name="drone_id" value="2"/>
+    <arg name="broadcast_traj_send_topic" value="/broadcast_traj_v2"/>
+    <arg name="broadcast_traj_recv_topic" value="/broadcast_traj_v2"/>
+    <arg name="map_size_x_" value="$(arg map_size_x)"/>
+    <arg name="map_size_y_" value="$(arg map_size_y)"/>
+    <arg name="map_size_z_" value="$(arg map_size_z)"/>
+    <arg name="virtual_ceil_height" value="$(arg virtual_ceil_height)"/>
+    <arg name="obstacles_inflation" value="$(arg obstacles_inflation)"/>
+    <arg name="obstacle_clearance" value="$(arg obstacle_clearance)"/>
+    <arg name="odometry_topic" value="visual_slam/odom"/>
+    <arg name="obj_num_set" value="$(arg moving_obj_num)"/>
+    <arg name="use_time_aware_moving_obj_cost" value="$(arg use_time_aware_moving_obj_cost)"/>
+    <arg name="moving_obj_clearance" value="$(arg moving_obj_clearance)"/>
+    <arg name="moving_obj_lambda" value="$(arg moving_obj_lambda)"/>
+    <arg name="moving_obj_prediction_horizon" value="$(arg moving_obj_prediction_horizon)"/>
+    <arg name="moving_obj_time_decay_tau" value="$(arg moving_obj_time_decay_tau)"/>
+    <arg name="moving_obj_max_grad" value="$(arg moving_obj_max_grad)"/>
+    <arg name="camera_pose_topic" value="pcl_render_node/camera_pose"/>
+    <arg name="depth_topic" value="pcl_render_node/depth"/>
+    <arg name="cloud_topic" value="pcl_render_node/cloud"/>
+    <arg name="cx" value="321.04638671875"/>
+    <arg name="cy" value="243.44969177246094"/>
+    <arg name="fx" value="387.229248046875"/>
+    <arg name="fy" value="387.229248046875"/>
+    <arg name="max_vel" value="$(arg max_vel)"/>
+    <arg name="max_acc" value="$(arg max_acc)"/>
+    <arg name="max_jer" value="$(arg max_jer)"/>
+    <arg name="planning_horizon" value="$(arg planning_horizon)"/>
+    <arg name="use_distinctive_trajs" value="true"/>
+    <arg name="realworld_experiment" value="true"/>
+    <arg name="sequential_start" value="true"/>
+    <arg name="flight_type" value="2"/>
+    <arg name="preset_start_delay_step" value="$(arg preset_start_delay_step)"/>
+    <arg name="point_num" value="$(arg point_num)"/>
+    <arg name="point0_x" value="$(eval arg('goal2_x') if int(arg('point_num')) == 1 else arg('route_point0_x'))"/>
+    <arg name="point0_y" value="$(eval arg('goal2_y') if int(arg('point_num')) == 1 else arg('route_point0_y'))"/>
+    <arg name="point0_z" value="$(eval arg('goal2_z') if int(arg('point_num')) == 1 else arg('route_point0_z'))"/>
+    <arg name="point1_x" value="$(eval arg('goal2_x') if int(arg('point_num')) == 2 else arg('route_point1_x'))"/>
+    <arg name="point1_y" value="$(eval arg('goal2_y') if int(arg('point_num')) == 2 else arg('route_point1_y'))"/>
+    <arg name="point1_z" value="$(eval arg('goal2_z') if int(arg('point_num')) == 2 else arg('route_point1_z'))"/>
+    <arg name="point2_x" value="$(eval arg('goal2_x') if int(arg('point_num')) == 3 else arg('route_point2_x'))"/>
+    <arg name="point2_y" value="$(eval arg('goal2_y') if int(arg('point_num')) == 3 else arg('route_point2_y'))"/>
+    <arg name="point2_z" value="$(eval arg('goal2_z') if int(arg('point_num')) == 3 else arg('route_point2_z'))"/>
+    <arg name="point3_x" value="$(eval arg('goal2_x') if int(arg('point_num')) == 4 else arg('route_point3_x'))"/>
+    <arg name="point3_y" value="$(eval arg('goal2_y') if int(arg('point_num')) == 4 else arg('route_point3_y'))"/>
+    <arg name="point3_z" value="$(eval arg('goal2_z') if int(arg('point_num')) == 4 else arg('route_point3_z'))"/>
+    <arg name="point4_x" value="$(arg goal2_x)"/>
+    <arg name="point4_y" value="$(arg goal2_y)"/>
+    <arg name="point4_z" value="$(arg goal2_z)"/>
+    <arg name="relative_tracking_x" value="0.0"/>
+    <arg name="relative_tracking_y" value="0.0"/>
+    <arg name="relative_tracking_z" value="0.0"/>
+    <arg name="swarm_clearance" value="$(arg swarm_clearance)"/>
+    <arg name="tracking_error_replan_threshold" value="$(arg tracking_error_replan_threshold)"/>
+    <arg name="tracking_velocity_error_replan_threshold" value="$(arg tracking_velocity_error_replan_threshold)"/>
+  </include>
+
+  <node pkg="ego_planner" name="drone_2_traj_server" type="traj_server" output="screen" launch-prefix="$(find multi_uav_formation)/scripts/ego_with_opencv.sh" if="$(eval int(arg('drone_count')) > 2)">
+    <env name="LD_LIBRARY_PATH" value="/usr/local/lib:$(env LD_LIBRARY_PATH)"/>
+    <remap from="/position_cmd" to="/drone_2_planning/pos_cmd"/>
+    <remap from="~planning/trajectory" to="/drone_2_planning/trajectory"/>
+    <param name="traj_server/time_forward" value="$(arg traj_time_forward)" type="double"/>
+  </node>
+
+  <include file="$(find ego_planner)/launch/advanced_param.xml" if="$(eval int(arg('drone_count')) > 3)">
+    <arg name="drone_id" value="3"/>
+    <arg name="broadcast_traj_send_topic" value="/broadcast_traj_v2"/>
+    <arg name="broadcast_traj_recv_topic" value="/broadcast_traj_v2"/>
+    <arg name="map_size_x_" value="$(arg map_size_x)"/>
+    <arg name="map_size_y_" value="$(arg map_size_y)"/>
+    <arg name="map_size_z_" value="$(arg map_size_z)"/>
+    <arg name="virtual_ceil_height" value="$(arg virtual_ceil_height)"/>
+    <arg name="obstacles_inflation" value="$(arg obstacles_inflation)"/>
+    <arg name="obstacle_clearance" value="$(arg obstacle_clearance)"/>
+    <arg name="odometry_topic" value="visual_slam/odom"/>
+    <arg name="obj_num_set" value="$(arg moving_obj_num)"/>
+    <arg name="use_time_aware_moving_obj_cost" value="$(arg use_time_aware_moving_obj_cost)"/>
+    <arg name="moving_obj_clearance" value="$(arg moving_obj_clearance)"/>
+    <arg name="moving_obj_lambda" value="$(arg moving_obj_lambda)"/>
+    <arg name="moving_obj_prediction_horizon" value="$(arg moving_obj_prediction_horizon)"/>
+    <arg name="moving_obj_time_decay_tau" value="$(arg moving_obj_time_decay_tau)"/>
+    <arg name="moving_obj_max_grad" value="$(arg moving_obj_max_grad)"/>
+    <arg name="camera_pose_topic" value="pcl_render_node/camera_pose"/>
+    <arg name="depth_topic" value="pcl_render_node/depth"/>
+    <arg name="cloud_topic" value="pcl_render_node/cloud"/>
+    <arg name="cx" value="321.04638671875"/>
+    <arg name="cy" value="243.44969177246094"/>
+    <arg name="fx" value="387.229248046875"/>
+    <arg name="fy" value="387.229248046875"/>
+    <arg name="max_vel" value="$(arg max_vel)"/>
+    <arg name="max_acc" value="$(arg max_acc)"/>
+    <arg name="max_jer" value="$(arg max_jer)"/>
+    <arg name="planning_horizon" value="$(arg planning_horizon)"/>
+    <arg name="use_distinctive_trajs" value="true"/>
+    <arg name="realworld_experiment" value="true"/>
+    <arg name="sequential_start" value="true"/>
+    <arg name="flight_type" value="2"/>
+    <arg name="preset_start_delay_step" value="$(arg preset_start_delay_step)"/>
+    <arg name="point_num" value="$(arg point_num)"/>
+    <arg name="point0_x" value="$(eval arg('goal3_x') if int(arg('point_num')) == 1 else arg('route_point0_x'))"/>
+    <arg name="point0_y" value="$(eval arg('goal3_y') if int(arg('point_num')) == 1 else arg('route_point0_y'))"/>
+    <arg name="point0_z" value="$(eval arg('goal3_z') if int(arg('point_num')) == 1 else arg('route_point0_z'))"/>
+    <arg name="point1_x" value="$(eval arg('goal3_x') if int(arg('point_num')) == 2 else arg('route_point1_x'))"/>
+    <arg name="point1_y" value="$(eval arg('goal3_y') if int(arg('point_num')) == 2 else arg('route_point1_y'))"/>
+    <arg name="point1_z" value="$(eval arg('goal3_z') if int(arg('point_num')) == 2 else arg('route_point1_z'))"/>
+    <arg name="point2_x" value="$(eval arg('goal3_x') if int(arg('point_num')) == 3 else arg('route_point2_x'))"/>
+    <arg name="point2_y" value="$(eval arg('goal3_y') if int(arg('point_num')) == 3 else arg('route_point2_y'))"/>
+    <arg name="point2_z" value="$(eval arg('goal3_z') if int(arg('point_num')) == 3 else arg('route_point2_z'))"/>
+    <arg name="point3_x" value="$(eval arg('goal3_x') if int(arg('point_num')) == 4 else arg('route_point3_x'))"/>
+    <arg name="point3_y" value="$(eval arg('goal3_y') if int(arg('point_num')) == 4 else arg('route_point3_y'))"/>
+    <arg name="point3_z" value="$(eval arg('goal3_z') if int(arg('point_num')) == 4 else arg('route_point3_z'))"/>
+    <arg name="point4_x" value="$(arg goal3_x)"/>
+    <arg name="point4_y" value="$(arg goal3_y)"/>
+    <arg name="point4_z" value="$(arg goal3_z)"/>
+    <arg name="relative_tracking_x" value="0.0"/>
+    <arg name="relative_tracking_y" value="0.0"/>
+    <arg name="relative_tracking_z" value="0.0"/>
+    <arg name="swarm_clearance" value="$(arg swarm_clearance)"/>
+    <arg name="tracking_error_replan_threshold" value="$(arg tracking_error_replan_threshold)"/>
+    <arg name="tracking_velocity_error_replan_threshold" value="$(arg tracking_velocity_error_replan_threshold)"/>
+  </include>
+
+  <node pkg="ego_planner" name="drone_3_traj_server" type="traj_server" output="screen" launch-prefix="$(find multi_uav_formation)/scripts/ego_with_opencv.sh" if="$(eval int(arg('drone_count')) > 3)">
+    <env name="LD_LIBRARY_PATH" value="/usr/local/lib:$(env LD_LIBRARY_PATH)"/>
+    <remap from="/position_cmd" to="/drone_3_planning/pos_cmd"/>
+    <remap from="~planning/trajectory" to="/drone_3_planning/trajectory"/>
+    <param name="traj_server/time_forward" value="$(arg traj_time_forward)" type="double"/>
+  </node>
+
+  <include file="$(find ego_planner)/launch/advanced_param.xml" if="$(eval int(arg('drone_count')) > 4)">
+    <arg name="drone_id" value="4"/>
+    <arg name="broadcast_traj_send_topic" value="/broadcast_traj_v2"/>
+    <arg name="broadcast_traj_recv_topic" value="/broadcast_traj_v2"/>
+    <arg name="map_size_x_" value="$(arg map_size_x)"/>
+    <arg name="map_size_y_" value="$(arg map_size_y)"/>
+    <arg name="map_size_z_" value="$(arg map_size_z)"/>
+    <arg name="virtual_ceil_height" value="$(arg virtual_ceil_height)"/>
+    <arg name="obstacles_inflation" value="$(arg obstacles_inflation)"/>
+    <arg name="obstacle_clearance" value="$(arg obstacle_clearance)"/>
+    <arg name="odometry_topic" value="visual_slam/odom"/>
+    <arg name="obj_num_set" value="$(arg moving_obj_num)"/>
+    <arg name="use_time_aware_moving_obj_cost" value="$(arg use_time_aware_moving_obj_cost)"/>
+    <arg name="moving_obj_clearance" value="$(arg moving_obj_clearance)"/>
+    <arg name="moving_obj_lambda" value="$(arg moving_obj_lambda)"/>
+    <arg name="moving_obj_prediction_horizon" value="$(arg moving_obj_prediction_horizon)"/>
+    <arg name="moving_obj_time_decay_tau" value="$(arg moving_obj_time_decay_tau)"/>
+    <arg name="moving_obj_max_grad" value="$(arg moving_obj_max_grad)"/>
+    <arg name="camera_pose_topic" value="pcl_render_node/camera_pose"/>
+    <arg name="depth_topic" value="pcl_render_node/depth"/>
+    <arg name="cloud_topic" value="pcl_render_node/cloud"/>
+    <arg name="cx" value="321.04638671875"/>
+    <arg name="cy" value="243.44969177246094"/>
+    <arg name="fx" value="387.229248046875"/>
+    <arg name="fy" value="387.229248046875"/>
+    <arg name="max_vel" value="$(arg max_vel)"/>
+    <arg name="max_acc" value="$(arg max_acc)"/>
+    <arg name="max_jer" value="$(arg max_jer)"/>
+    <arg name="planning_horizon" value="$(arg planning_horizon)"/>
+    <arg name="use_distinctive_trajs" value="true"/>
+    <arg name="realworld_experiment" value="true"/>
+    <arg name="sequential_start" value="true"/>
+    <arg name="flight_type" value="2"/>
+    <arg name="preset_start_delay_step" value="$(arg preset_start_delay_step)"/>
+    <arg name="point_num" value="$(arg point_num)"/>
+    <arg name="point0_x" value="$(eval arg('goal4_x') if int(arg('point_num')) == 1 else arg('route_point0_x'))"/>
+    <arg name="point0_y" value="$(eval arg('goal4_y') if int(arg('point_num')) == 1 else arg('route_point0_y'))"/>
+    <arg name="point0_z" value="$(eval arg('goal4_z') if int(arg('point_num')) == 1 else arg('route_point0_z'))"/>
+    <arg name="point1_x" value="$(eval arg('goal4_x') if int(arg('point_num')) == 2 else arg('route_point1_x'))"/>
+    <arg name="point1_y" value="$(eval arg('goal4_y') if int(arg('point_num')) == 2 else arg('route_point1_y'))"/>
+    <arg name="point1_z" value="$(eval arg('goal4_z') if int(arg('point_num')) == 2 else arg('route_point1_z'))"/>
+    <arg name="point2_x" value="$(eval arg('goal4_x') if int(arg('point_num')) == 3 else arg('route_point2_x'))"/>
+    <arg name="point2_y" value="$(eval arg('goal4_y') if int(arg('point_num')) == 3 else arg('route_point2_y'))"/>
+    <arg name="point2_z" value="$(eval arg('goal4_z') if int(arg('point_num')) == 3 else arg('route_point2_z'))"/>
+    <arg name="point3_x" value="$(eval arg('goal4_x') if int(arg('point_num')) == 4 else arg('route_point3_x'))"/>
+    <arg name="point3_y" value="$(eval arg('goal4_y') if int(arg('point_num')) == 4 else arg('route_point3_y'))"/>
+    <arg name="point3_z" value="$(eval arg('goal4_z') if int(arg('point_num')) == 4 else arg('route_point3_z'))"/>
+    <arg name="point4_x" value="$(arg goal4_x)"/>
+    <arg name="point4_y" value="$(arg goal4_y)"/>
+    <arg name="point4_z" value="$(arg goal4_z)"/>
+    <arg name="relative_tracking_x" value="0.0"/>
+    <arg name="relative_tracking_y" value="0.0"/>
+    <arg name="relative_tracking_z" value="0.0"/>
+    <arg name="swarm_clearance" value="$(arg swarm_clearance)"/>
+    <arg name="tracking_error_replan_threshold" value="$(arg tracking_error_replan_threshold)"/>
+    <arg name="tracking_velocity_error_replan_threshold" value="$(arg tracking_velocity_error_replan_threshold)"/>
+  </include>
+
+  <node pkg="ego_planner" name="drone_4_traj_server" type="traj_server" output="screen" launch-prefix="$(find multi_uav_formation)/scripts/ego_with_opencv.sh" if="$(eval int(arg('drone_count')) > 4)">
+    <env name="LD_LIBRARY_PATH" value="/usr/local/lib:$(env LD_LIBRARY_PATH)"/>
+    <remap from="/position_cmd" to="/drone_4_planning/pos_cmd"/>
+    <remap from="~planning/trajectory" to="/drone_4_planning/trajectory"/>
+    <param name="traj_server/time_forward" value="$(arg traj_time_forward)" type="double"/>
+  </node>
+</launch>

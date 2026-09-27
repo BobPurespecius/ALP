@@ -1,0 +1,14 @@
+--- before/planner_manager.h
++++ ros_ws/src/EGO-Planner-v2/swarm-playground/tracking_ws/src/planner/plan_manage/include/plan_manage/planner_manager.h
+@@ -759,6 +759,11 @@
+     TrajContainer traj_;
+ 
+   private:
++    // Optional, read-only audit sink; never consumed by planning decisions.
++    void traceTopologyAudit134(const char *stage, const CandidateResult *candidate,
++        const poly_traj::Trajectory *trajectory = nullptr,
++        const std::string &reason = "", int related_id = -1,
++        double comparison_begin = 0.0, double comparison_end = 0.0) const;
+     trajectory_lifecycle::State currentStateAt(double stamp) const;
+     LocalGeometryPolicy geometry_policy_;
+     unsigned long active_reference_id_{0};

@@ -1,0 +1,876 @@
+{
+  "number": 3,
+  "leaders": 1,
+  "head": 1,
+  "velocityVectorENU": [
+    0.2,
+    0.0,
+    0.0
+  ],
+  "formationTime": 190,
+  "useGazeboTruthForFeedback": true,
+  "safety": {
+    "xMin": -39.0,
+    "xMax": 39.0,
+    "yMin": -13.5,
+    "yMax": 13.5,
+    "minHeight": 0.15,
+    "maxHeight": 4.5
+  },
+  "mavrosLocalOffsetENU": [
+    [
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "takeoffPointENU": [
+    [
+      -35.2,
+      -1.0,
+      1.5
+    ],
+    [
+      -35.2,
+      0.0,
+      1.5
+    ],
+    [
+      -35.2,
+      1.0,
+      1.5
+    ]
+  ],
+  "preparePointENU": [
+    [
+      -35.2,
+      -1.0,
+      1.5
+    ],
+    [
+      -35.2,
+      0.0,
+      1.5
+    ],
+    [
+      -35.2,
+      1.0,
+      1.5
+    ]
+  ],
+  "targetTracking": {
+    "mode": "waypoints",
+    "speed": 0.928,
+    "takeoffHeight": 1.5,
+    "targetHeight": 1.5,
+    "useWaypointZ": false,
+    "lockEgoTrackingHeight": true,
+    "trackMaxControlZ": 1.5,
+    "waypointsENU": [
+      [
+        -33.0,
+        0.0,
+        1.5
+      ],
+      [
+        -29.0,
+        1.2,
+        1.5
+      ],
+      [
+        -25.0,
+        2.9,
+        1.5
+      ],
+      [
+        -21.0,
+        3.5,
+        1.5
+      ],
+      [
+        -18.5,
+        4.0,
+        1.5
+      ],
+      [
+        -16.0,
+        3.7,
+        1.5
+      ],
+      [
+        -12.0,
+        2.25,
+        1.5
+      ],
+      [
+        -11.0,
+        2.25,
+        1.5
+      ],
+      [
+        -9.7,
+        2.3,
+        1.5
+      ],
+      [
+        -7.9,
+        1.635641,
+        1.5
+      ],
+      [
+        -6.3,
+        -1.135641,
+        1.5
+      ],
+      [
+        -2.0,
+        -0.25,
+        1.5
+      ],
+      [
+        0.2,
+        -0.960641,
+        1.5
+      ],
+      [
+        1.8,
+        1.810641,
+        1.5
+      ],
+      [
+        7.0,
+        1.75,
+        1.5
+      ],
+      [
+        11.0,
+        2.25,
+        1.5
+      ],
+      [
+        15.0,
+        2.25,
+        1.5
+      ],
+      [
+        17.5,
+        2.75,
+        1.5
+      ],
+      [
+        18.5,
+        2.0,
+        1.5
+      ],
+      [
+        22.5,
+        -1.0,
+        1.5
+      ],
+      [
+        25.7,
+        0.867692,
+        1.5
+      ],
+      [
+        26.7,
+        -0.864359,
+        1.5
+      ],
+      [
+        28.3,
+        -3.635641,
+        1.5
+      ],
+      [
+        32.5,
+        0.25,
+        1.5
+      ],
+      [
+        33.5,
+        0.5,
+        1.5
+      ],
+      [
+        36.0,
+        0.0,
+        1.5
+      ]
+    ]
+  },
+  "obstacleColorRGBA": [
+    0.08,
+    0.55,
+    0.16,
+    0.92
+  ],
+  "obstacleData": {
+    "0": {
+      "modelName": "long_forest_cylinder_00",
+      "centerENU": [
+        -26.09,
+        1.58
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "1": {
+      "modelName": "long_forest_cylinder_01",
+      "centerENU": [
+        -25.94,
+        -0.65
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "2": {
+      "modelName": "long_forest_cylinder_02",
+      "centerENU": [
+        -18.65,
+        6.9
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "3": {
+      "modelName": "long_forest_cylinder_03",
+      "centerENU": [
+        -17.75,
+        3.13
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "4": {
+      "modelName": "long_forest_cylinder_04",
+      "centerENU": [
+        -9.5,
+        4.29
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "5": {
+      "modelName": "long_forest_cylinder_05",
+      "centerENU": [
+        -9.15,
+        0.9
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "6": {
+      "modelName": "long_forest_cylinder_06",
+      "centerENU": [
+        -1.51,
+        1.77
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "7": {
+      "modelName": "long_forest_cylinder_07",
+      "centerENU": [
+        -1.51,
+        -1.75
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "8": {
+      "modelName": "long_forest_cylinder_08",
+      "centerENU": [
+        10.0,
+        6.8
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "9": {
+      "modelName": "long_forest_cylinder_09",
+      "centerENU": [
+        7.42,
+        -0.4
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "10": {
+      "modelName": "long_forest_cylinder_10",
+      "centerENU": [
+        16.03,
+        4.45
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "11": {
+      "modelName": "long_forest_cylinder_11",
+      "centerENU": [
+        16.5,
+        -5.8
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "12": {
+      "modelName": "long_forest_cylinder_12",
+      "centerENU": [
+        25.06,
+        5.8
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "13": {
+      "modelName": "long_forest_cylinder_13",
+      "centerENU": [
+        24.44,
+        1.71
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "14": {
+      "modelName": "long_forest_cylinder_14",
+      "centerENU": [
+        31.23,
+        2.69
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "15": {
+      "modelName": "long_forest_cylinder_15",
+      "centerENU": [
+        31.5,
+        -4.8
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "16": {
+      "modelName": "long_forest_cylinder_16",
+      "centerENU": [
+        -20.85,
+        0.0
+      ],
+      "radius": 0.5,
+      "height": 3.6
+    },
+    "17": {
+      "modelName": "long_forest_cylinder_17",
+      "centerENU": [
+        -11.95,
+        5.34
+      ],
+      "radius": 0.5,
+      "height": 3.6
+    },
+    "18": {
+      "modelName": "long_forest_cylinder_18",
+      "centerENU": [
+        -6.23,
+        -3.75
+      ],
+      "radius": 0.5,
+      "height": 3.6
+    },
+    "19": {
+      "modelName": "long_forest_cylinder_19",
+      "centerENU": [
+        2.69,
+        5.15
+      ],
+      "radius": 0.5,
+      "height": 3.6
+    },
+    "20": {
+      "modelName": "long_forest_cylinder_20",
+      "centerENU": [
+        12.31,
+        -1.02
+      ],
+      "radius": 0.5,
+      "height": 3.6
+    },
+    "21": {
+      "modelName": "long_forest_cylinder_21",
+      "centerENU": [
+        20.27,
+        6.21
+      ],
+      "radius": 0.5,
+      "height": 3.6
+    },
+    "22": {
+      "modelName": "long_forest_cylinder_22",
+      "centerENU": [
+        28.0,
+        -5.2
+      ],
+      "radius": 0.5,
+      "height": 3.6
+    },
+    "23": {
+      "modelName": "long_forest_cylinder_23",
+      "centerENU": [
+        34.27,
+        3.78
+      ],
+      "radius": 0.5,
+      "height": 3.6
+    },
+    "24": {
+      "modelName": "long_forest_cylinder_24",
+      "centerENU": [
+        -31.0,
+        -3.8
+      ],
+      "radius": 0.55,
+      "height": 3.6
+    },
+    "25": {
+      "modelName": "long_forest_cylinder_25",
+      "centerENU": [
+        -29.0,
+        5.5
+      ],
+      "radius": 0.55,
+      "height": 3.6
+    },
+    "26": {
+      "modelName": "long_forest_cylinder_26",
+      "centerENU": [
+        -23.0,
+        -3.5
+      ],
+      "radius": 0.55,
+      "height": 3.6
+    },
+    "27": {
+      "modelName": "long_forest_cylinder_27",
+      "centerENU": [
+        -14.0,
+        7.2
+      ],
+      "radius": 0.55,
+      "height": 3.6
+    },
+    "28": {
+      "modelName": "long_forest_cylinder_28",
+      "centerENU": [
+        -10.0,
+        -3.0
+      ],
+      "radius": 0.55,
+      "height": 3.6
+    },
+    "29": {
+      "modelName": "long_forest_cylinder_29",
+      "centerENU": [
+        -5.0,
+        5.2
+      ],
+      "radius": 0.55,
+      "height": 3.6
+    },
+    "30": {
+      "modelName": "long_forest_cylinder_30",
+      "centerENU": [
+        1.0,
+        5.0
+      ],
+      "radius": 0.55,
+      "height": 3.6
+    },
+    "31": {
+      "modelName": "long_forest_cylinder_31",
+      "centerENU": [
+        5.0,
+        -3.2
+      ],
+      "radius": 0.55,
+      "height": 3.6
+    },
+    "32": {
+      "modelName": "long_forest_cylinder_32",
+      "centerENU": [
+        12.0,
+        -3.0
+      ],
+      "radius": 0.55,
+      "height": 3.6
+    },
+    "33": {
+      "modelName": "long_forest_cylinder_33",
+      "centerENU": [
+        19.0,
+        -3.2
+      ],
+      "radius": 0.55,
+      "height": 3.6
+    },
+    "34": {
+      "modelName": "long_forest_cylinder_34",
+      "centerENU": [
+        27.0,
+        5.7
+      ],
+      "radius": 0.55,
+      "height": 3.6
+    },
+    "35": {
+      "modelName": "long_forest_cylinder_35",
+      "centerENU": [
+        34.0,
+        5.8
+      ],
+      "radius": 0.55,
+      "height": 3.6
+    },
+    "36": {
+      "modelName": "visibility_V1_band_0",
+      "centerENU": [
+        -8.192,
+        0.582554
+      ],
+      "radius": 0.38,
+      "height": 3.6
+    },
+    "37": {
+      "modelName": "visibility_V1_band_1",
+      "centerENU": [
+        -7.936,
+        0.139149
+      ],
+      "radius": 0.38,
+      "height": 3.6
+    },
+    "38": {
+      "modelName": "visibility_V1_band_2",
+      "centerENU": [
+        -7.68,
+        -0.304256
+      ],
+      "radius": 0.38,
+      "height": 3.6
+    },
+    "39": {
+      "modelName": "visibility_V1_band_3",
+      "centerENU": [
+        -7.424,
+        -0.747662
+      ],
+      "radius": 0.38,
+      "height": 3.6
+    },
+    "40": {
+      "modelName": "visibility_V2_band_0",
+      "centerENU": [
+        -0.092,
+        0.092446
+      ],
+      "radius": 0.38,
+      "height": 3.6
+    },
+    "41": {
+      "modelName": "visibility_V2_band_1",
+      "centerENU": [
+        0.164,
+        0.535851
+      ],
+      "radius": 0.38,
+      "height": 3.6
+    },
+    "42": {
+      "modelName": "visibility_V2_band_2",
+      "centerENU": [
+        0.42,
+        0.979256
+      ],
+      "radius": 0.38,
+      "height": 3.6
+    },
+    "43": {
+      "modelName": "visibility_V2_band_3",
+      "centerENU": [
+        0.676,
+        1.422662
+      ],
+      "radius": 0.38,
+      "height": 3.6
+    },
+    "44": {
+      "modelName": "visibility_V3_band_0",
+      "centerENU": [
+        26.408,
+        -1.917446
+      ],
+      "radius": 0.38,
+      "height": 3.6
+    },
+    "45": {
+      "modelName": "visibility_V3_band_1",
+      "centerENU": [
+        26.664,
+        -2.360851
+      ],
+      "radius": 0.38,
+      "height": 3.6
+    },
+    "46": {
+      "modelName": "visibility_V3_band_2",
+      "centerENU": [
+        26.92,
+        -2.804256
+      ],
+      "radius": 0.38,
+      "height": 3.6
+    },
+    "47": {
+      "modelName": "visibility_V3_band_3",
+      "centerENU": [
+        27.176,
+        -3.247662
+      ],
+      "radius": 0.38,
+      "height": 3.6
+    }
+  },
+  "egoPlanner": {
+    "enabled": true,
+    "mapSizeENU": [
+      82.0,
+      28.0,
+      5.0
+    ],
+    "goalsENU": [
+      [
+        34.55,
+        -0.85,
+        1.5
+      ],
+      [
+        34.3,
+        0.0,
+        1.5
+      ],
+      [
+        34.55,
+        0.85,
+        1.5
+      ]
+    ],
+    "maxVel": 1.2,
+    "maxAcc": 1.8,
+    "planningHorizon": 6.5,
+    "obstacleInflation": 0.35,
+    "plannerObstacleClearance": 0.5,
+    "swarmClearance": 0.5,
+    "cloudResolution": 0.22,
+    "cloudPublishPeriod": 0.5,
+    "obstacleHeight": 3.6,
+    "obstacleClearance": 0.6,
+    "earlyAvoidanceEnabled": false,
+    "movingObstacleTimeAwareCostEnabled": false,
+    "movingObstaclePredictionHorizon": 3.0,
+    "movingObstaclePredictionDt": 0.5,
+    "movingObstaclePredictionRadiusGrowth": 0.04,
+    "movingObstaclePredictionMaxExtraRadius": 0.18
+  },
+  "movingObstacleData": {
+    "0": {
+      "modelName": "dynamic_gate_V1",
+      "centerENU": [
+        -5.761307,
+        -1.02469
+      ],
+      "radius": 0.28,
+      "height": 3.6,
+      "axisENU": [
+        0.866025,
+        0.5
+      ],
+      "amplitude": 1.0,
+      "period": 12.0,
+      "phase": -19.55672
+    },
+    "1": {
+      "modelName": "dynamic_gate_V2",
+      "centerENU": [
+        2.349963,
+        1.804227
+      ],
+      "radius": 0.28,
+      "height": 3.6,
+      "axisENU": [
+        -0.866025,
+        0.5
+      ],
+      "amplitude": 1.0,
+      "period": 12.0,
+      "phase": -25.200194
+    },
+    "2": {
+      "modelName": "dynamic_gate_V3",
+      "centerENU": [
+        29.569749,
+        -2.762135
+      ],
+      "radius": 0.28,
+      "height": 3.6,
+      "axisENU": [
+        0.866025,
+        0.5
+      ],
+      "amplitude": 1.0,
+      "period": 12.566371,
+      "phase": -42.721763
+    }
+  },
+  "nMovingObstacle": 3,
+  "dynamicGateDesign": {
+    "source_scene": "long_cylinder_forest_dynamic_gates_v2.json",
+    "design_basis": "target route + configured fixed formation offsets + theoretical LOS; no method trajectory used",
+    "formation_offsets_xy": {
+      "UAV1": [
+        -1.5,
+        -0.85
+      ],
+      "UAV2": [
+        -1.7,
+        0.0
+      ],
+      "UAV3": [
+        -1.5,
+        0.85
+      ]
+    },
+    "los_margin_m": 0.15,
+    "uav_inflated_radius_m": 0.65,
+    "gates": [
+      {
+        "id": "V1",
+        "type": "CROSSING",
+        "visibility_open_side": "LEFT",
+        "intended_topology": "LEFT",
+        "route_segment_index": 9,
+        "center": [
+          -7.148,
+          0.333138
+        ],
+        "dynamic_center": [
+          -5.761307,
+          -1.02469
+        ],
+        "t": [
+          0.5,
+          -0.866025
+        ],
+        "n": [
+          0.866025,
+          0.5
+        ],
+        "encounter_time": 30.055877,
+        "uav_corridor_event_time": 34.700583,
+        "dynamic_route_encounter_time": 32.500583,
+        "phase_motion_clock_event_time": 37.350583,
+        "occlusion_band": [
+          "visibility_V1_band_0",
+          "visibility_V1_band_1",
+          "visibility_V1_band_2",
+          "visibility_V1_band_3"
+        ]
+      },
+      {
+        "id": "V2",
+        "type": "CROSSING",
+        "visibility_open_side": "RIGHT",
+        "intended_topology": "RIGHT",
+        "route_segment_index": 12,
+        "center": [
+          0.952,
+          0.341862
+        ],
+        "dynamic_center": [
+          2.349963,
+          1.804227
+        ],
+        "t": [
+          0.5,
+          0.866025
+        ],
+        "n": [
+          -0.866025,
+          0.5
+        ],
+        "encounter_time": 40.834119,
+        "uav_corridor_event_time": 45.478825,
+        "dynamic_route_encounter_time": 43.278825,
+        "phase_motion_clock_event_time": 48.128825,
+        "occlusion_band": [
+          "visibility_V2_band_0",
+          "visibility_V2_band_1",
+          "visibility_V2_band_2",
+          "visibility_V2_band_3"
+        ]
+      },
+      {
+        "id": "V3",
+        "type": "DWELL_VISIBILITY",
+        "visibility_open_side": "LEFT",
+        "intended_topology": "LEFT",
+        "route_segment_index": 21,
+        "center": [
+          27.452,
+          -2.166862
+        ],
+        "dynamic_center": [
+          28.703724,
+          -3.262135
+        ],
+        "t": [
+          0.5,
+          -0.866025
+        ],
+        "n": [
+          0.866025,
+          0.5
+        ],
+        "encounter_time": 74.507231,
+        "uav_corridor_event_time": 79.651937,
+        "dynamic_route_encounter_time": 76.951937,
+        "phase_motion_clock_event_time": 82.301937,
+        "occlusion_band": [
+          "visibility_V3_band_0",
+          "visibility_V3_band_1",
+          "visibility_V3_band_2",
+          "visibility_V3_band_3"
+        ]
+      }
+    ]
+  },
+  "sceneRevision": {
+    "visibility_stress_v2": {
+      "local_diagonal_target_legs": [
+        9,
+        12,
+        21
+      ],
+      "occlusion_band_pillars_per_gate": 4,
+      "planner_and_controller_unchanged": true
+    }
+  }
+}

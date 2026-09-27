@@ -1,0 +1,256 @@
+MUSK more_obstacles 与 EGO-Swarm 集成说明
+========================================
+
+日期：2026-05-19
+
+目标
+----
+在 MUSK 中新增 more_obstacles 场景，并调用已有的 EGO-Swarm / EGO-Planner
+代码作为局部路径规划器。MUSK 仍然负责 PX4/Gazebo/MAVROS 启动、状态机、
+起飞、准备点、日志记录以及向飞控发送控制指令。EGO-Swarm 接收里程计和障碍物
+点云，为每架无人机规划到指定目标点的路径，并发布 PositionCommand，随后由
+MUSK 转换为速度控制命令。
+
+
+主要仿真思路
+------------
+1. more_obstacles.json 定义：
+   - 3 架无人机。
+   - 起飞点和准备点。
+   - 多个圆柱障碍物。
+   - 每架无人机一个最终目标点，位于 egoPlanner.goalsENU 中。
+
+2. SingleRun.py 使用 MUSK 原有状态机启动每架无人机：
+   INIT -> TAKEOFF -> PREPARE -> GUIDANCE -> BACK -> LAND -> END。
+
+3. 运行过程中，SingleRun.py 发布 EGO 需要的输入：
+   - /drone_i_visual_slam/odom
+   - /drone_i_pcl_render_node/cloud
+
+4. ego_more_obstacles.launch 为 drone_0、drone_1、drone_2 启动 EGO planner。
+   EGO 消费这些 odom/cloud 话题，并朝 launch 文件中配置的目标点规划。
+
+5. EGO traj_server 发布：
+   - /drone_i_planning/pos_cmd
+
+6. SingleRun.py 订阅这些 PositionCommand，并将它们转换为 MUSK/PX4 可执行的
+   速度控制命令。
+
+7. Gazebo world 文件也定义了同一批圆柱，并且它们是真实的 Gazebo collision
+   物体。RViz 中的圆柱只是可视化 marker，真正能产生物理碰撞的是 Gazebo world
+   里的 collision 模型。
+
+8. MUSK 内部还加了一层轻量几何避障保护，作为最后保险。它会在 TAKEOFF、
+   PREPARE、GUIDANCE fallback 和 BACK 阶段，把速度命令从圆柱安全半径内推开。
+
+简言之：路径不是手写的。目标点是固定设置的，但局部路径生成和避障由
+EGO-Swarm/EGO-Planner 完成。
+
+
+新增文件
+--------
+1. guidance/ros_ws/src/multi_uav_formation/scenes/more_obstacles.json
+   新增场景文件，包含 3 架无人机、多个圆柱障碍物和 EGO planner 配置。
+
+2. guidance/ros_ws/src/multi_uav_formation/launch/ego_more_obstacles.launch
+   为 drone_0、drone_1、drone_2 启动 EGO planner 和 traj_server。
+   它将 EGO 的话题映射到 MUSK 桥接层使用的话题名，并向 EGO 子进程注入
+   OpenCV 3.4 动态库路径。
+
+3. guidance/ros_ws/src/multi_uav_formation/worlds/more_obstacles.world
+   more_obstacles 场景使用的 Gazebo world。它包含与场景 JSON 相同的 8 个圆柱，
+   但这里是带 collision 和 visual 几何体的静态 Gazebo 模型。它和 RViz marker
+   是两套东西。
+
+4. guidance/ros_ws/setup_runtime_env.sh
+   tmux 窗口使用的运行环境辅助脚本。它会探测并设置：
+   - ROS Noetic
+   - MUSK 工作空间
+   - 嵌套的 ego-planner 工作空间
+   - PX4 / Gazebo SITL 路径
+   - EGO 和 Gazebo 所需的 LD_LIBRARY_PATH
+
+5. guidance/ros_ws/src/multi_uav_formation/scripts/ego_with_opencv.sh
+   EGO 二进制的启动 wrapper，用作 roslaunch 的 launch-prefix。
+   它会在执行 ego_planner_node 或 traj_server 前导出 LD_LIBRARY_PATH，
+   确保动态链接器能找到 OpenCV 3.4。
+
+6. guidance/ros_ws/third_party/opencv-3.4/lib/
+   放置 OpenCV 3.4 共享库，供 Docker 容器内的 EGO 二进制使用。
+   这样不再依赖容器内部是否存在 /usr/local/lib 中的 OpenCV 3.4。
+
+7. guidance/ros_ws/src/ego-planner/CATKIN_IGNORE
+   防止父级 MUSK catkin 工作空间递归编译嵌套的 EGO 工作空间。
+   EGO 在运行时通过自己的 devel 空间 source 使用。
+
+
+修改文件
+--------
+1. guidance/ros_ws/src/multi_uav_formation/multi_uav_formation/SingleRun.py
+   增加 EGO 桥接逻辑：
+   - 从场景 JSON 中读取 egoPlanner 配置。
+   - 发布 EGO 里程计话题 /drone_i_visual_slam/odom。
+   - 将圆柱障碍物采样为 PointCloud2，并发布到
+     /drone_i_pcl_render_node/cloud。
+   - 当无人机进入 GUIDANCE 状态后发布 /traj_start_trigger。
+   - 订阅 /drone_i_planning/pos_cmd。
+   - 将 quadrotor_msgs/PositionCommand 转换为 MUSK 速度控制。
+   - 如果 EGO 消息不可用，则回退到原来的 MUSK guidance 行为。
+   - odom/cloud 现在会在所有状态发布，不再只限于 GUIDANCE，避免 EGO 在
+     起飞或准备阶段一直停留在 "no odom"。
+   - 增加 projectVelocityAwayFromObstacles()，作为围绕场景圆柱的本地几何
+     避障保护。
+   - TAKEOFF、PREPARE、GUIDANCE fallback、leader 直线跟踪 fallback 和 BACK
+     阶段的速度命令都会经过该保护。
+   - 当该保护修改速度时，会打印 "Obstacle guard adjusted velocity ..."。
+
+2. guidance/ros_ws/multi_uav_formation.sh
+   更新 tmux 窗口启动逻辑：
+   - 在多个可能路径中查找 EGO setup.bash。
+   - 每个新建 pane 都使用 setup_runtime_env.sh。
+   - 只在 more_obstacles 场景中启动 ego_more_obstacles.launch。
+   - 不再因为旧的 EGO setup 路径缺失而中止普通 MUSK 窗口启动。
+
+3. guidance/ros_ws/tmuxinator.yml
+   更新 pane 命令：
+   - 使用 setup_runtime_env.sh，而不是只依赖 /tmp/setup_environment.sh。
+   - 让 Gazebo、MAVROS、rosbag 和 SingleRun 窗口使用同一套运行环境。
+   - 当 scene=more_obstacles 时，向 multi_uav_mavros_sitl.launch 传入：
+     world:=$(rospack find multi_uav_formation)/worlds/more_obstacles.world
+     这样 Gazebo 会加载真正带 collision 的圆柱障碍物。
+
+4. guidance/ros_ws/src/multi_uav_formation/multi_uav_formation/models/P230/P230.py
+   修改 fcu_url 获取方式：
+   - 原来 rospy.get_param('/uavX/mavros/fcu_url') 在 MAVROS 尚未启动时会
+     抛出 KeyError。
+   - 现在会等待该参数出现，并以节流方式打印 warning。
+
+5. guidance/ros_ws/src/ego-planner/src/planner/plan_manage/launch/advanced_param.xml
+   更新 EGO planner 节点：
+   - 增加 realworld_experiment 参数支持。
+   - 增加 LD_LIBRARY_PATH 环境注入。
+   - 增加 ego_with_opencv.sh 作为 launch-prefix wrapper。
+
+
+已解决的运行问题
+----------------
+1. EGO setup 路径错误
+   原脚本查找的是 /app/ego-planner/devel/setup.bash。实际挂载路径为：
+   /app/guidance/ros_ws/src/ego-planner/devel/setup.bash。
+
+2. 父级 catkin 工作空间误编译 EGO
+   MUSK 的父级 catkin build 会尝试编译 plan_env、path_searching 等 EGO 包，
+   导致 VTK/PCL/OpenNI 相关 warning 和配置失败。CATKIN_IGNORE 已阻止这种行为。
+
+3. ROS 包查找失败
+   setup_runtime_env.sh 确保 rospack 能找到：
+   - multi_uav_formation
+   - ego_planner
+   - px4
+   - mavlink_sitl_gazebo
+
+4. MAVROS fcu_url KeyError
+   P230 现在会等待 /uavX/mavros/fcu_url，而不是直接崩溃。
+
+5. EGO OpenCV 3.4 动态库缺失
+   EGO 是按 OpenCV 3.4 编译的，而 ROS Noetic 环境中也有 OpenCV 4.2。
+   通过 bundled OpenCV 3.4 动态库和 ego_with_opencv.sh，修复了如下缺库问题：
+   - libopencv_core.so.3.4
+   - libopencv_imgcodecs.so.3.4
+   - libopencv_imgproc.so.3.4
+
+6. EGO 启动阶段出现 "no odom"
+   SingleRun.py 现在会在所有状态持续发布 EGO odometry/cloud。
+   EGO 在 GUIDANCE 前仍可能打印 "wait for goal or trigger"，这是正常的；
+   但只要 SingleRun 正常运行，就不应长期停留在 "no odom"。
+
+7. RViz 中只有可视化障碍物
+   原来的圆柱显示只是 RViz marker 层。RViz marker 不会和 PX4/Gazebo 模型碰撞。
+   more_obstacles.world 现在加入了匹配的 Gazebo collision 圆柱，并且 tmuxinator.yml
+   会在 more_obstacles 场景下加载这个 world。
+
+8. EGO 开始前的 MUSK 直线控制
+   EGO 只有进入 GUIDANCE 后才开始给无人机发控制命令。TAKEOFF 和 PREPARE 原来使用
+   MUSK 的直接目标点控制，所以无人机可能在 EGO 接管前穿过障碍物。现在这些点控/线控
+   速度命令都会经过本地障碍物保护。
+
+
+EGO 终端输出预期
+----------------
+启动阶段正常输出：
+   wait for goal or trigger
+   [FSM]: state: INIT
+
+含义：EGO 节点已存活，正在等待 trigger。trigger 会在 MUSK 进入 GUIDANCE
+状态后由 SingleRun.py 发布。
+
+不应长期出现：
+   no odom
+
+如果 "no odom" 持续出现，需要检查 SingleRun.py 是否运行，以及如下话题是否存在：
+   /drone_0_visual_slam/odom
+
+
+干净启动方式
+------------
+在主机上：
+   cd ~/musk
+   ./docker/run_docker.sh
+
+在容器中：
+   cd /app/guidance/ros_ws
+   ls -l src/multi_uav_formation/scripts/ego_with_opencv.sh
+   ls -l third_party/opencv-3.4/lib/libopencv_core.so.3.4
+   ls -l third_party/opencv-3.4/lib/libopencv_imgcodecs.so.3.4
+   tmuxinator start -p tmuxinator.yml scene=more_obstacles
+
+
+容器内常用检查命令
+------------------
+检查 ROS 是否能找到相关包：
+   source ./setup_runtime_env.sh
+   rospack find multi_uav_formation
+   rospack find ego_planner
+   rospack find px4
+   rospack find mavlink_sitl_gazebo
+
+检查 OpenCV 3.4 动态库是否存在：
+   ls third_party/opencv-3.4/lib/libopencv*.so.3.4
+
+检查 EGO 输入话题是否发布：
+   rostopic list | grep drone_0_visual_slam
+   rostopic echo -n 1 /drone_0_visual_slam/odom
+
+检查进入 GUIDANCE 后 EGO 是否输出控制命令：
+   rostopic echo -n 1 /drone_0_planning/pos_cmd
+
+检查 Gazebo 是否使用了带物理障碍物的 world：
+   roslaunch --files multi_uav_formation multi_uav_mavros_sitl.launch world:=$(rospack find multi_uav_formation)/worlds/more_obstacles.world
+
+障碍物保护生效时，SingleRun 窗口中可能看到：
+   EGO target pos = ...
+   Obstacle guard adjusted velocity to ...
+
+
+重要注意事项
+------------
+1. /app/guidance/ros_ws 只存在于 Docker 容器内。主机上的对应路径是：
+   ~/musk/guidance/ros_ws。
+
+2. 如果新文件在主机上可见，但在 /app/guidance/ros_ws 下不可见，说明容器没有
+   通过 docker/run_docker.sh 启动，或者使用的是旧容器/旧 session。
+
+3. 修改代码或 launch 后需要重启 tmux。已有 tmux pane 会保留旧环境和旧 Python
+   进程。
+
+4. 如果 EGO 节点又报其它 libopencv_*.so.3.4 缺失，将对应 OpenCV 3.4 动态库复制到：
+   guidance/ros_ws/third_party/opencv-3.4/lib/
+   当前配置已经包含常见的 OpenCV 3.4 动态库。
+
+5. 如果只是在 RViz 里看到无人机穿过圆柱，不能直接说明 Gazebo 碰撞失败。
+   RViz 圆柱只是可视化 marker。要看 Gazebo 窗口里是否存在 more_obstacles.world
+   加载出来的物理圆柱模型。
+
+6. Gazebo 中的 Fuel 下载失败、"TM: Time jump detected" 等 warning 通常不是穿障碍
+   的直接原因。关键检查项是：Gazebo 是否加载 more_obstacles.world，EGO 是否发布
+   /drone_i_planning/pos_cmd，以及 SingleRun 是否打印 EGO/障碍物保护相关输出。

@@ -1,0 +1,31 @@
+<launch>
+
+  <arg name="drone_id" default="6"/>
+
+  <node pkg="odom_correction" name="drone_$(arg drone_id)_uwb_correction" type="uwb_correction" output="screen">
+  
+    <remap from="~my_odom" to="/vins_estimator/imu_propagate"/>
+    <remap from="~corr_odom" to="/corrected_imu_propagate_odom"/>
+    <remap from="~nlink_linktrack_nodeframe3" to="/nlink_linktrack_nodeframe3"/>
+
+    <param name="self_id" value="$(arg drone_id)"/>
+    <param name="max_odom_uwb_dist_error" value="1.0"/>
+    <param name="min_odom_distance" value="0.1"/>
+    <param name="filter_factor" value="0.01"/>
+    <param name="max_drift_change_rate" value="0.005"/>
+
+    <param name="fixed_anchor_num" value="0" type="int"/>
+    <rosparam param="fixed_anchor_id_pos_0">[13, 4.94,-3.2, 2.26]</rosparam>
+    <rosparam param="fixed_anchor_id_pos_1">[14, 4.98,-3.2, 0.25]</rosparam>
+    <rosparam param="fixed_anchor_id_pos_2">[15, 4.9, 2.13, 2.24]</rosparam>
+    <rosparam param="fixed_anchor_id_pos_3">[16, 4.92, 2.16, 0.28]</rosparam>
+    <rosparam param="fixed_anchor_id_pos_4">[17, -6.14, 0.36, 2.20]</rosparam>
+    <rosparam param="fixed_anchor_id_pos_5">[18, -6.15, 0.37, 0.19]</rosparam>
+    <!-- <rosparam param="fixed_anchor_id_pos_6">[16, 0,-1, 0.5]</rosparam>
+    <rosparam param="fixed_anchor_id_pos_7">[17, 0, 0, 0.5]</rosparam> -->
+
+  </node>
+
+  <include file="$(find nlink_parser)/launch/linktrack.launch"/>
+
+</launch>

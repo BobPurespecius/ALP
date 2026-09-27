@@ -1,0 +1,272 @@
+MUSK more_obstacles + EGO-Swarm integration notes
+=================================================
+
+Date: 2026-05-19
+
+Goal
+----
+Add a more_obstacles scenario to MUSK and use the existing EGO-Swarm /
+EGO-Planner code as the local path planner. MUSK remains responsible for
+launching PX4/Gazebo/MAVROS, state transitions, takeoff, prepare points,
+logging, and sending control commands. EGO-Swarm receives odometry and obstacle
+point clouds, plans to per-UAV goal points, and publishes PositionCommand
+messages that MUSK converts into velocity commands.
+
+
+Main simulation idea
+--------------------
+1. more_obstacles.json defines:
+   - 3 UAVs.
+   - takeoff points and prepare points.
+   - multiple cylindrical obstacles.
+   - one final goal point per UAV under egoPlanner.goalsENU.
+
+2. SingleRun.py starts each UAV with the normal MUSK state machine:
+   INIT -> TAKEOFF -> PREPARE -> GUIDANCE -> BACK -> LAND -> END.
+
+3. During the run, SingleRun.py publishes EGO-compatible inputs:
+   - /drone_i_visual_slam/odom
+   - /drone_i_pcl_render_node/cloud
+
+4. EGO planner is launched for drone_0, drone_1, and drone_2. It consumes those
+   odometry/cloud topics and plans toward the goal points configured in
+   ego_more_obstacles.launch.
+
+5. EGO traj_server publishes:
+   - /drone_i_planning/pos_cmd
+
+6. SingleRun.py subscribes to those PositionCommand messages and converts them
+   into MUSK/PX4 velocity control commands.
+
+7. A Gazebo world file also defines the same cylinders as physical collision
+   objects. RViz markers are only visualization; Gazebo collision models are
+   what can physically block the simulated UAVs.
+
+8. A lightweight geometric obstacle guard is applied inside MUSK as a final
+   safety layer. It adjusts velocity commands away from the configured cylinder
+   safety radius during TAKEOFF, PREPARE, GUIDANCE fallback, and BACK.
+
+In short: the path is not hand-written. The goal points are fixed, but local
+path generation and obstacle avoidance are handled by EGO-Swarm/EGO-Planner.
+
+
+Files added
+-----------
+1. guidance/ros_ws/src/multi_uav_formation/scenes/more_obstacles.json
+   New scenario with 3 UAVs, several cylinder obstacles, and EGO planner config.
+
+2. guidance/ros_ws/src/multi_uav_formation/launch/ego_more_obstacles.launch
+   Launches EGO planner and traj_server for drone_0, drone_1, and drone_2.
+   It maps EGO topics to the MUSK bridge topic names and injects OpenCV 3.4
+   library paths into EGO child processes.
+
+3. guidance/ros_ws/src/multi_uav_formation/worlds/more_obstacles.world
+   Gazebo world for the more_obstacles scenario. It contains the same eight
+   cylinders as the scene JSON, but as static Gazebo models with collision and
+   visual geometry. This is separate from RViz visualization markers.
+
+4. guidance/ros_ws/setup_runtime_env.sh
+   Runtime environment helper for tmux panes. It detects and sets up:
+   - ROS Noetic
+   - MUSK workspace
+   - nested ego-planner workspace
+   - PX4 / Gazebo SITL paths
+   - LD_LIBRARY_PATH entries needed by EGO and Gazebo
+
+5. guidance/ros_ws/src/multi_uav_formation/scripts/ego_with_opencv.sh
+   Wrapper used as roslaunch launch-prefix for EGO binaries. It exports
+   LD_LIBRARY_PATH before exec'ing ego_planner_node or traj_server, so the
+   dynamic linker can find OpenCV 3.4.
+
+6. guidance/ros_ws/third_party/opencv-3.4/lib/
+   Bundled OpenCV 3.4 shared libraries used by EGO binaries inside the Docker
+   container. This avoids depending on /usr/local/lib inside the container.
+
+7. guidance/ros_ws/src/ego-planner/CATKIN_IGNORE
+   Prevents the parent MUSK catkin workspace from recursively building the
+   nested EGO workspace. EGO is sourced at runtime from its own devel space.
+
+
+Files modified
+--------------
+1. guidance/ros_ws/src/multi_uav_formation/multi_uav_formation/SingleRun.py
+   Added EGO bridge logic:
+   - Loads egoPlanner config from scene JSON.
+   - Publishes EGO odometry topic /drone_i_visual_slam/odom.
+   - Converts cylinder obstacles to PointCloud2 and publishes
+     /drone_i_pcl_render_node/cloud.
+   - Publishes /traj_start_trigger once the UAV enters GUIDANCE.
+   - Subscribes to /drone_i_planning/pos_cmd.
+   - Converts quadrotor_msgs/PositionCommand into MUSK velocity control.
+   - Falls back to the original MUSK guidance behavior if EGO messages are not
+     available.
+   - Publishes odometry/cloud during all states, not only GUIDANCE, so EGO does
+     not stay in "no odom" while the UAV is still taking off or preparing.
+   - Adds projectVelocityAwayFromObstacles() as a local geometric obstacle
+     guard around the scene cylinders.
+   - Routes TAKEOFF, PREPARE, GUIDANCE fallback, leader line-following fallback,
+     and BACK velocity commands through the guard.
+   - Prints "Obstacle guard adjusted velocity ..." when the guard changes a
+     command.
+
+2. guidance/ros_ws/multi_uav_formation.sh
+   Updated tmux pane launch behavior:
+   - Finds EGO setup.bash in likely paths.
+   - Uses setup_runtime_env.sh for every spawned pane.
+   - Starts ego_more_obstacles.launch only for more_obstacles.
+   - Does not abort the normal MUSK windows just because an old EGO setup path
+     is missing.
+
+3. guidance/ros_ws/tmuxinator.yml
+   Updated pane commands:
+   - Uses setup_runtime_env.sh instead of relying only on /tmp/setup_environment.sh.
+   - Keeps Gazebo, MAVROS, rosbag, and SingleRun panes in the same runtime
+     environment.
+   - For scene=more_obstacles, passes
+     world:=$(rospack find multi_uav_formation)/worlds/more_obstacles.world
+     into multi_uav_mavros_sitl.launch so Gazebo loads real cylinder collision
+     objects.
+
+4. guidance/ros_ws/src/multi_uav_formation/multi_uav_formation/models/P230/P230.py
+   Changed fcu_url lookup:
+   - Previously rospy.get_param('/uavX/mavros/fcu_url') could raise KeyError
+     if MAVROS had not started yet.
+   - Now it waits and logs a throttled warning until MAVROS publishes the
+     parameter.
+
+5. guidance/ros_ws/src/ego-planner/src/planner/plan_manage/launch/advanced_param.xml
+   Updated EGO planner node:
+   - Added realworld_experiment arg support.
+   - Added LD_LIBRARY_PATH env injection.
+   - Added launch-prefix wrapper ego_with_opencv.sh.
+
+
+Runtime problems fixed
+----------------------
+1. Wrong EGO setup path
+   Original script looked for /app/ego-planner/devel/setup.bash. The actual
+   mounted path is /app/guidance/ros_ws/src/ego-planner/devel/setup.bash.
+
+2. Parent catkin workspace accidentally building EGO
+   The parent MUSK catkin build tried to build plan_env, path_searching, etc.
+   This caused VTK/PCL/OpenNI warnings and configure failures. CATKIN_IGNORE
+   prevents that.
+
+3. ROS package lookup failures
+   setup_runtime_env.sh ensures rospack can find:
+   - multi_uav_formation
+   - ego_planner
+   - px4
+   - mavlink_sitl_gazebo
+
+4. MAVROS fcu_url KeyError
+   P230 now waits for /uavX/mavros/fcu_url instead of crashing.
+
+5. EGO OpenCV 3.4 shared library failures
+   EGO was built against OpenCV 3.4 while ROS Noetic also provides OpenCV 4.2.
+   Bundled OpenCV 3.4 libraries and ego_with_opencv.sh fix missing libraries
+   such as:
+   - libopencv_core.so.3.4
+   - libopencv_imgcodecs.so.3.4
+   - libopencv_imgproc.so.3.4
+
+6. EGO "no odom" during startup
+   SingleRun.py now publishes EGO odometry/cloud in all states. EGO may still
+   print "wait for goal or trigger" before GUIDANCE, which is expected, but it
+   should not stay on "no odom" once SingleRun is running.
+
+7. RViz-only obstacles
+   The original cylinder display was only an RViz marker layer. RViz markers do
+   not collide with PX4/Gazebo models. more_obstacles.world now adds matching
+   Gazebo collision cylinders, and tmuxinator.yml loads that world for the
+   more_obstacles scene.
+
+8. Straight-line MUSK commands before EGO starts
+   EGO only starts commanding the UAVs after GUIDANCE begins. TAKEOFF and
+   PREPARE previously used direct MUSK point control, so a UAV could pass
+   through an obstacle before EGO took over. Those point/line velocity commands
+   now pass through the local obstacle guard.
+
+
+Expected EGO terminal behavior
+------------------------------
+Normal during startup:
+   wait for goal or trigger
+   [FSM]: state: INIT
+
+This means EGO is alive and waiting for the trigger. The trigger is published
+by SingleRun.py when MUSK enters GUIDANCE.
+
+Not expected for a long time:
+   no odom
+
+If "no odom" continues, check that SingleRun.py is running and that topics such
+as /drone_0_visual_slam/odom exist.
+
+
+How to start cleanly
+--------------------
+On the host:
+   cd ~/musk
+   ./docker/run_docker.sh
+
+Inside the container:
+   cd /app/guidance/ros_ws
+   ls -l src/multi_uav_formation/scripts/ego_with_opencv.sh
+   ls -l third_party/opencv-3.4/lib/libopencv_core.so.3.4
+   ls -l third_party/opencv-3.4/lib/libopencv_imgcodecs.so.3.4
+   tmuxinator start -p tmuxinator.yml scene=more_obstacles
+
+
+Useful checks inside the container
+----------------------------------
+Check that ROS can find packages:
+   source ./setup_runtime_env.sh
+   rospack find multi_uav_formation
+   rospack find ego_planner
+   rospack find px4
+   rospack find mavlink_sitl_gazebo
+
+Check that OpenCV 3.4 libraries exist:
+   ls third_party/opencv-3.4/lib/libopencv*.so.3.4
+
+Check that EGO topics are being published:
+   rostopic list | grep drone_0_visual_slam
+   rostopic echo -n 1 /drone_0_visual_slam/odom
+
+Check that EGO commands are being produced after GUIDANCE:
+   rostopic echo -n 1 /drone_0_planning/pos_cmd
+
+Check that Gazebo is using the physical obstacle world:
+   roslaunch --files multi_uav_formation multi_uav_mavros_sitl.launch world:=$(rospack find multi_uav_formation)/worlds/more_obstacles.world
+
+Expected SingleRun messages when obstacle protection is active:
+   EGO target pos = ...
+   Obstacle guard adjusted velocity to ...
+
+
+Important notes
+---------------
+1. /app/guidance/ros_ws exists only inside Docker. On the host the same files
+   are under ~/musk/guidance/ros_ws.
+
+2. If a new file is visible on the host but not under /app/guidance/ros_ws,
+   the container was not started with docker/run_docker.sh or is an old
+   container/session.
+
+3. Restart tmux after code or launch changes. Existing tmux panes keep their
+   old environment and old Python processes.
+
+4. If EGO nodes die with another missing libopencv_*.so.3.4 message, copy the
+   matching OpenCV 3.4 library into:
+   guidance/ros_ws/third_party/opencv-3.4/lib/
+   The current setup already includes the common OpenCV 3.4 libraries.
+
+5. Seeing a UAV pass through a cylinder in RViz does not prove Gazebo collision
+   failed. RViz cylinders are visualization markers only. Check the Gazebo
+   window for the physical cylinder models from more_obstacles.world.
+
+6. Gazebo warnings such as failed Fuel downloads or "TM: Time jump detected"
+   are usually not the direct cause of obstacle pass-through. The key checks are:
+   Gazebo loaded more_obstacles.world, EGO publishes /drone_i_planning/pos_cmd,
+   and SingleRun prints EGO/obstacle-guard messages.

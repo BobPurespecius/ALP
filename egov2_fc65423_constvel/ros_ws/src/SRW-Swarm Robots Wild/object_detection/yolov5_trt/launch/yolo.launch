@@ -1,0 +1,8 @@
+<launch>
+
+	<node pkg="yolov5_trt" type="yolov5" name="yolov5trt" output="screen">
+		<param name="if_pub_image" value="true"/>
+	</node>
+
+</launch>
+

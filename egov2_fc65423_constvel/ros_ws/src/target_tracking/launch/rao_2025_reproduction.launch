@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="config" default="$(find target_tracking)/config/rao_2025_reproduction.yaml"/>
+  <arg name="rviz" default="true"/>
+  <arg name="csv_path" default="/tmp/rao_2025_reproduction.csv"/>
+  <arg name="duration" default="0.0"/>
+
+  <node pkg="target_tracking" type="rao_2025_reproduction.py" name="rao_2025_reproduction" output="screen" required="true">
+    <rosparam command="load" file="$(arg config)"/>
+    <param name="csv_path" value="$(arg csv_path)"/>
+    <param name="duration" value="$(arg duration)"/>
+  </node>
+
+  <node if="$(arg rviz)" pkg="rviz" type="rviz" name="rao_2025_rviz"
+        args="-d $(find target_tracking)/rviz/rao_2025_reproduction.rviz" output="screen"/>
+</launch>

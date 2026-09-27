@@ -75,6 +75,22 @@ namespace ego_planner
         visitor(piece, sample, samples_per_piece, alpha, piece_time,
                 vel, acc, jerk);
       }
+      // Jerk peaks live between uniform samples.  Adding the exact stationary
+      // points of |jerk|^2 keeps the QP rows, the SCP acceptance summaries and
+      // the final hard kernel predicate on one and the same physical truth;
+      // without them a payload could pass the solver lattice and still fail
+      // the kernel by double-digit percent on the same quantity.
+      for (const double alpha : traj[piece].getJerStationaryAlphas())
+      {
+        const double piece_time = duration * alpha;
+        const Eigen::Vector3d vel = traj[piece].getVel(piece_time);
+        const Eigen::Vector3d acc = traj[piece].getAcc(piece_time);
+        const Eigen::Vector3d jerk = traj[piece].getJer(piece_time);
+        if (!vel.allFinite() || !acc.allFinite() || !jerk.allFinite())
+          return false;
+        visitor(piece, -1, samples_per_piece, alpha, piece_time,
+                vel, acc, jerk);
+      }
     }
     return true;
   }
@@ -460,13 +476,14 @@ namespace ego_planner
   SCPQPSolveResult PolyTrajOptimizer::solveExecutionQPWithSlack(
       const Eigen::VectorXd &g, const Eigen::MatrixXd &A,
       const Eigen::VectorXd &lo, const Eigen::VectorXd &hi,
-      const double hessian_diagonal, const int soft_rows,
+      const Eigen::VectorXd &hessian_diagonal, const int soft_rows,
       const double slack_w1, const double slack_w2,
       double &slack_max, double &slack_sum) const
   {
     slack_max = 0.0;
     slack_sum = 0.0;
-    if (!std::isfinite(hessian_diagonal) || hessian_diagonal <= 0.0 ||
+    if (hessian_diagonal.size() != g.size() || !hessian_diagonal.allFinite() ||
+        (hessian_diagonal.array() <= 0.0).any() ||
         A.rows() == 0 || soft_rows <= 0 || (slack_w1 <= 0.0 && slack_w2 <= 0.0))
       return solveExecutionQP(g, A, lo, hi, hessian_diagonal);
     const int n = static_cast<int>(g.size());
@@ -498,11 +515,12 @@ namespace ego_planner
     for (int k = 0; k < soft_rows; ++k)
     {
       g2(n + k) = slack_w1;
-      A2(m + k, n + k) += slack_w2;              // ξ_k >= 0 行上不动;二次项在 P
+      A2(m + k, n + k) = 1.0;                    // ξ_k >= 0;二次项只在 Hessian
     }
-    Eigen::VectorXd h2 = Eigen::VectorXd::Constant(n2, hessian_diagonal);
+    Eigen::VectorXd h2 = Eigen::VectorXd::Ones(n2);
+    h2.head(n) = hessian_diagonal;
     for (int k = 0; k < soft_rows; ++k)
-      h2(n + k) = slack_w2 > 0.0 ? slack_w2 : hessian_diagonal;
+      h2(n + k) = slack_w2 > 0.0 ? slack_w2 : 1.0;
     // 无 slack 行的 Hessian 与原问题一致;slack 变量自带 w2 曲率。
     const SCPQPSolveResult qp2 = solveExecutionQP(g2, A2, lo2, hi2, h2);
     if (qp2.success && qp2.step.size() == n2)
@@ -724,7 +742,8 @@ namespace ego_planner
       const double slack_w1 = 0.5 * slack_w2 * 1.0e-3;  // 微小 L1 项,推动压零
       const SCPQPSolveResult qp = solveExecutionQPWithSlack(
           Eigen::VectorXd::Zero(position_dim), A, lower, upper,
-          1.0, /*soft_rows=*/constraint_rows, slack_w1, slack_w2,
+          Eigen::VectorXd::Ones(position_dim), /*soft_rows=*/constraint_rows,
+          slack_w1, slack_w2,
           slack_max, slack_sum);
       ++last_los_soft_plane_telemetry_.iteration_count;
       last_los_soft_plane_telemetry_.sample_count += constraint_rows;
@@ -1397,6 +1416,24 @@ namespace ego_planner
   {
     const bool team_scp = team_contract_scp_active_ &&
                           team_visibility_contract_.active;
+    last_los_soft_plane_telemetry_ = LosSoftPlaneTelemetry();
+    const bool side_region_active =
+        candidate_side_bias_enabled_ && candidate_side_region_enabled_ &&
+        (gradient_audit_candidate_ == "SIDE_PLUS" ||
+         gradient_audit_candidate_ == "SIDE_MINUS") &&
+        (!team_scp ||
+         team_visibility_contract_.requested_mode != TeamSCPMode::TEAM_T_ONLY);
+    if (side_region_active && !candidate_side_topology_reference_valid_)
+    {
+      last_candidate_final_status_reason_ = "SIDE_TOPOLOGY_REFERENCE_MISSING";
+      ROS_ERROR("[SIDE_TOPOLOGY_REFERENCE] candidate_type=%s valid=0 "
+                "reason=FROZEN_FINAL_SEED_MISSING",
+                gradient_audit_candidate_.c_str());
+      return false;
+    }
+    int side_region_hard_rows_total = 0;
+    double side_region_seed_violation = 0.0;
+    double side_region_final_violation = 0.0;
     // Feedback119: corridor-contract telemetry for the manager counters
     // (CORRIDOR_SCP_INFEASIBLE / CONTINUOUS_CORRIDOR_VIOLATION).  Filled by
     // the terminal logger below on every exit path.
@@ -1959,8 +1996,7 @@ namespace ego_planner
     };
 
     const auto maxTeamSideViolation = [&](const poly_traj::Trajectory &trajectory) {
-      if (!team_scp || !candidate_side_bias_enabled_ ||
-          !candidate_side_region_enabled_ || trajectory.getPieceNum() <= 0)
+      if (!side_region_active || trajectory.getPieceNum() <= 0)
         return 0.0;
       double violation = 0.0;
       constexpr int kSamples = 41;
@@ -1975,6 +2011,33 @@ namespace ego_planner
                 trajectory.getPos(progress * trajectory.getTotalDuration()))));
       }
       return violation;
+    };
+    side_region_seed_violation = maxTeamSideViolation(jerkOpt_.getTraj());
+    const auto losSoftCost = [&](const poly_traj::Trajectory &trajectory) {
+      double cost = 0.0;
+      if (trajectory.getPieceNum() <= 0)
+        return cost;
+      for (const LocalSfcPlane &plane : candidate_local_sfc_planes_)
+      {
+        if (plane.source != LocalSfcPlane::LOS_OBSERVATION_SIDE ||
+            !plane.normal.allFinite() || !plane.point.allFinite() ||
+            !std::isfinite(plane.clearance) || plane.normal.norm() < 1.0e-6)
+          continue;
+        const double begin = std::max(0.0, plane.active_start);
+        const double end = std::min(trajectory.getTotalDuration(), plane.active_end);
+        if (!std::isfinite(begin) || !std::isfinite(end) || end <= begin)
+          continue;
+        const Eigen::Vector3d normal = plane.normal.normalized();
+        for (int sample = 0; sample < 9; ++sample)
+        {
+          const double t = begin + (end - begin) * sample / 8.0;
+          const double deficit = std::max(0.0, plane.clearance -
+              normal.dot(trajectory.getPos(t) - plane.point));
+          cost += 0.5 * los_observation_slack_weight_ * deficit * deficit +
+                  0.5e-3 * los_observation_slack_weight_ * deficit;
+        }
+      }
+      return cost;
     };
 
     // Static audit of the Local-SFC association.  The optimizer uses one
@@ -2328,6 +2391,38 @@ namespace ego_planner
                 prediction.max_jerk_violation = std::max(
                     prediction.max_jerk_violation, pred_jerk - max_jer_);
             }
+
+            // Mirror the row lattice: the jerk stationary points of |jerk|^2
+            // are part of the dynamics rows and of the authoritative trial
+            // check, so the step prediction must see the same peaks.
+            {
+              poly_traj::CoefficientMat piece_coeff;
+              for (int k = 0; k < 6; ++k)
+                piece_coeff.col(k) = coeff.row(5 - k);
+              const poly_traj::Piece jerk_piece(duration, piece_coeff);
+              for (const double alpha_s : jerk_piece.getJerStationaryAlphas())
+              {
+                const double s1 = duration * alpha_s;
+                const double s2 = s1 * s1;
+                Eigen::Matrix<double, 6, 1> beta3;
+                beta3 << 0.0, 0.0, 0.0, 6.0, 24.0 * s1, 60.0 * s2;
+                const Eigen::Vector3d jerk = coeff.transpose() * beta3;
+                if (max_jer_ <= 0.0 || !jerk.allFinite())
+                  continue;
+                Eigen::VectorXd ds_dT = Eigen::VectorXd::Zero(piece_num_);
+                ds_dT(piece) = alpha_s;
+                const Eigen::RowVectorXd grad_sq = mincoSampleGradientWrtX(
+                    piece, s1, 2.0 * jerk, SAMPLE_JERK, ds_dT);
+                const double predicted_sq =
+                    jerk.squaredNorm() + grad_sq.dot(step);
+                const double pred_jerk =
+                    std::sqrt(std::max(0.0, predicted_sq));
+                prediction.max_jerk_value =
+                    std::max(prediction.max_jerk_value, pred_jerk);
+                prediction.max_jerk_violation = std::max(
+                    prediction.max_jerk_violation, pred_jerk - max_jer_);
+              }
+            }
           }
           prediction.max_vel_violation =
               std::max(0.0, prediction.max_vel_violation);
@@ -2383,6 +2478,24 @@ namespace ego_planner
       // so the manager can count CORRIDOR_SCP_INFEASIBLE vs deadline exits.
       last_corridor_scp_telemetry_.success = final_success;
       last_corridor_scp_telemetry_.reason = last_candidate_final_status_reason_;
+      side_region_final_violation = maxTeamSideViolation(traj);
+      const double physical_max_violation = traj.getPieceNum() > 0
+          ? std::max({0.0, corridor_violation, maxNativeStaticViolation(traj),
+                      maxDynamicBodyViolation(traj), maxSwarmViolation(traj),
+                      appendDynamicsConstraints(nullptr, nullptr).maxViolation()})
+          : std::numeric_limits<double>::infinity();
+      ROS_INFO("[LOCAL_SIDE_CONSTRAINED_SCP] candidate_id=%d kind=%s "
+               "side_region_hard_rows=%d side_region_max_violation_seed=%.6f "
+               "side_region_max_violation_final=%.6f los_slack_max=%.6f "
+               "los_slack_mean=%.6f physical_max_violation=%.6f "
+               "scp_success=%d reason=%s",
+               scp_candidate_id, gradient_audit_candidate_.c_str(),
+               side_region_hard_rows_total, side_region_seed_violation,
+               side_region_final_violation,
+               last_los_soft_plane_telemetry_.slack_max,
+               last_los_soft_plane_telemetry_.slack_mean,
+               physical_max_violation, static_cast<int>(scp_success),
+               last_candidate_final_status_reason_.c_str());
       ROS_INFO("[scp-hard-corridor-final] drone_id=%d candidate_type=%s obstacle_id=%d "
                "scp_success=%d final_success=%d reason=%s duration=%.6f "
                "max_vel=%.6f max_acc=%.6f max_jerk=%.6f dynamic_clearance=NA "
@@ -2671,13 +2784,8 @@ namespace ego_planner
       // Local SFC rows preserve the sparse A* repair geometry over its active
       // time interval. They are linearized through the same analytic MINCO
       // position Jacobian as the SIDE corridor and native static rows.
-      // Feedback117 (authority consolidation): LOS_OBSERVATION_SIDE planes
-      // are a visibility-quality authority.  They keep guiding the solution
-      // through enforceCandidateLosPlanesSCP()'s semi-hard slack QP and are
-      // never allowed to re-enter this collision-corridor hard row set,
-      // otherwise a primal-infeasible LOS row could still kill a candidate
-      // through this dormant second authority (INVARIANT 1/2 of the
-      // hard/geometry/visibility split).
+      // LOS observation planes are visibility authority. Their slack rows
+      // join the same QP below, without entering the physical hard row set.
       int los_hard_rows_skipped = 0;
       int local_sfc_constraint_count = 0;
       const size_t local_sfc_rows_begin = rows.size();
@@ -2730,14 +2838,12 @@ namespace ego_planner
         }
       }
 
-      // Zero-plane SIDE candidates still need a discrete-side authority when
-      // Team PT is allowed to move P.  Reuse exactly the existing
-      // candidateSideRegion frame and sinusoidal band; this is its hard-row
-      // form, not a fourth topology representation.
+      // The final SIDE seed is the only topology geometry authority. The
+      // hard row forbids moving inward from the seed-derived signed-lateral
+      // boundary; outward motion remains available to physical feasibility.
       int side_region_constraint_count = 0;
       const size_t side_region_rows_begin = rows.size();
-      if (team_scp && candidate_side_bias_enabled_ &&
-          candidate_side_region_enabled_)
+      if (side_region_active && position_dim > 0)
       {
         const int side_samples = std::max(5, sample_count);
         for (int sample_index = 0; sample_index < side_samples; ++sample_index)
@@ -2754,11 +2860,10 @@ namespace ego_planner
           double piece_time = 0.0;
           if (!locatePieceTime(t, piece_index, piece_time))
             continue;
-          const double desired = candidate_side_offset_ *
-                                 std::sin(M_PI * progress);
-          const double half_width = std::max(0.10, 0.25 * desired);
-          const double lower_side = std::max(0.0, desired - half_width);
-          const double upper_side = desired + half_width;
+          const double lower_side =
+              candidateSideTopologyLowerBound(progress);
+          if (!std::isfinite(lower_side) || lower_side <= 1.0e-9)
+            continue;
           const Eigen::Vector3d p = jerkOpt_.getTraj().getPos(t);
           const double signed_lateral = candidate_side_sign_ *
               (p - candidate_side_origin_).dot(candidate_side_direction_);
@@ -2776,12 +2881,9 @@ namespace ego_planner
                                      signed_lateral - lower_side,
                                      rows, upper))
             ++side_region_constraint_count;
-          if (appendLinearUpperBound(signed_row,
-                                     upper_side - signed_lateral,
-                                     rows, upper))
-            ++side_region_constraint_count;
         }
       }
+      side_region_hard_rows_total += side_region_constraint_count;
 
       int team_visibility_constraint_count = 0;
       const size_t team_visibility_rows_begin = rows.size();
@@ -2935,7 +3037,7 @@ namespace ego_planner
           TeamSCPMode mode = team_visibility_contract_.requested_mode;
           if (mode == TeamSCPMode::AUTO)
           {
-            mode = t_gradient_norm > 1.0e-8 &&
+            mode = !side_region_active && t_gradient_norm > 1.0e-8 &&
                            deficit <= team_scp_t_gain_ratio_ * t_gain_bound
                        ? TeamSCPMode::TEAM_T_ONLY
                        : TeamSCPMode::TEAM_PT;
@@ -3352,38 +3454,86 @@ namespace ego_planner
                      : 0.0);
       }
 
-      if (rows.empty())
+      // Each LOS observation is a lower-bound row with nonnegative slack.
+      // It is solved together with the physical, SFC, SIDE and trust rows;
+      // no second QP may mutate the accepted polynomial afterward.
+      std::vector<Eigen::RowVectorXd> los_soft_rows;
+      std::vector<double> los_soft_lower;
+      for (const LocalSfcPlane &plane : candidate_local_sfc_planes_)
+      {
+        if (plane.source != LocalSfcPlane::LOS_OBSERVATION_SIDE)
+          continue;
+        last_los_soft_plane_telemetry_.attempted = true;
+        if (!plane.normal.allFinite() || !plane.point.allFinite() ||
+            !std::isfinite(plane.clearance) || plane.normal.norm() < 1.0e-6)
+          continue;
+        const double begin = std::max(0.0, plane.active_start);
+        const double end = std::min(total_duration, plane.active_end);
+        if (!std::isfinite(begin) || !std::isfinite(end) || end <= begin)
+          continue;
+        const Eigen::Vector3d normal = plane.normal.normalized();
+        for (int sample = 0; sample < 9; ++sample)
+        {
+          const double t = begin + (end - begin) * sample / 8.0;
+          int piece_index = -1;
+          double piece_time = 0.0;
+          if (!locatePieceTime(t, piece_index, piece_time))
+            continue;
+          Eigen::VectorXd ds_dT = Eigen::VectorXd::Zero(piece_num_);
+          for (int i = 0; i < piece_index; ++i)
+            ds_dT(i) = -1.0;
+          const Eigen::RowVectorXd row = mincoSampleGradientWrtX(
+              piece_index, piece_time, normal, SAMPLE_POSITION, ds_dT);
+          if (!row.allFinite() || row.head(position_dim).norm() <= 1.0e-8)
+            continue;
+          const double margin = normal.dot(
+              jerkOpt_.getTraj().getPos(t) - plane.point) - plane.clearance;
+          los_soft_rows.push_back(row);
+          los_soft_lower.push_back(-margin);
+        }
+      }
+      const int los_soft_count = static_cast<int>(los_soft_rows.size());
+      if (rows.empty() && los_soft_rows.empty())
       {
         last_candidate_final_status_reason_ = "SCP_LINEARIZATION_EMPTY";
         logFinalStatus("SCP_LINEARIZATION_EMPTY", false, false, jerkOpt_.getTraj(),
                        maxViolation(jerkOpt_.getTraj()));
         return false;
       }
-      Eigen::MatrixXd A(static_cast<int>(rows.size()) + dim, dim);
+      const int hard_row_offset = los_soft_count;
+      const int trust_row_offset = hard_row_offset + static_cast<int>(rows.size());
+      Eigen::MatrixXd A(trust_row_offset + dim, dim);
       Eigen::VectorXd lower(A.rows()), upper_bound(A.rows());
+      for (int row = 0; row < los_soft_count; ++row)
+      {
+        A.row(row) = los_soft_rows[row];
+        lower(row) = los_soft_lower[row];
+        upper_bound(row) = 1.0e20;
+      }
       for (size_t row = 0; row < rows.size(); ++row)
       {
-        A.row(static_cast<int>(row)) = rows[row];
-        lower(static_cast<int>(row)) = -1.0e20;
-        upper_bound(static_cast<int>(row)) = upper[row];
+        const int index = hard_row_offset + static_cast<int>(row);
+        A.row(index) = rows[row];
+        lower(index) = -1.0e20;
+        upper_bound(index) = upper[row];
       }
       for (int column = 0; column < dim; ++column)
       {
-        A.row(static_cast<int>(rows.size()) + column).setZero();
+        A.row(trust_row_offset + column).setZero();
         double column_trust = trust_p;
         if (optimize_time && column >= position_dim)
         {
           const int time_index = column - position_dim;
-          A(static_cast<int>(rows.size()) + column, column) =
+          A(trust_row_offset + column, column) =
               realTimeJacobianAt(current_virtual_t(time_index));
           column_trust = trust_t * current_durations(time_index);
         }
         else
         {
-          A(static_cast<int>(rows.size()) + column, column) = 1.0;
+          A(trust_row_offset + column, column) = 1.0;
         }
-        lower(static_cast<int>(rows.size()) + column) = -column_trust;
-        upper_bound(static_cast<int>(rows.size()) + column) = column_trust;
+        lower(trust_row_offset + column) = -column_trust;
+        upper_bound(trust_row_offset + column) = column_trust;
       }
 
       if (iteration == 0)
@@ -3514,6 +3664,7 @@ namespace ego_planner
           : std::numeric_limits<double>::infinity();
       const double current_team_side_violation =
           maxTeamSideViolation(jerkOpt_.getTraj());
+      const double current_los_cost = losSoftCost(jerkOpt_.getTraj());
       const ScpDynamicsSummary current_dynamics_snapshot = current_dynamics;
       const Eigen::MatrixXd base_points = current_points;
       const Eigen::VectorXd base_virtual_t = current_virtual_t;
@@ -3550,14 +3701,49 @@ namespace ego_planner
               optimize_time && column >= position_dim
               ? trust_t * current_durations(column - position_dim)
                   : trust_p;
-          lower(static_cast<int>(rows.size()) + column) = -column_trust;
-          upper_bound(static_cast<int>(rows.size()) + column) = column_trust;
+          lower(trust_row_offset + column) = -column_trust;
+          upper_bound(trust_row_offset + column) = column_trust;
         }
         Eigen::VectorXd hessian = Eigen::VectorXd::Ones(dim);
         if (optimize_time)
           hessian.segment(position_dim, virtual_time_dim).setConstant(4.0);
-        const SCPQPSolveResult qp = solveExecutionQP(
-            gradient, A, lower, upper_bound, hessian);
+        double slack_max = 0.0;
+        double slack_sum = 0.0;
+        SCPQPSolveResult qp = los_soft_count > 0
+            ? solveExecutionQPWithSlack(
+                  gradient, A, lower, upper_bound, hessian, los_soft_count,
+                  0.5e-3 * los_observation_slack_weight_,
+                  los_observation_slack_weight_, slack_max, slack_sum)
+            : solveExecutionQP(gradient, A, lower, upper_bound, hessian);
+        if (los_soft_count > 0)
+        {
+          ++last_los_soft_plane_telemetry_.iteration_count;
+          last_los_soft_plane_telemetry_.sample_count += los_soft_count;
+          last_los_soft_plane_telemetry_.qp_status = qp.status_text;
+          if (qp.success)
+          {
+            last_los_soft_plane_telemetry_.qp_success = true;
+            last_los_soft_plane_telemetry_.slack_max = std::max(
+                last_los_soft_plane_telemetry_.slack_max, slack_max);
+            last_los_soft_plane_telemetry_.slack_mean =
+                slack_sum / los_soft_count;
+            if (slack_max > 1.0e-6)
+              ++last_los_soft_plane_telemetry_.slack_nonzero_count;
+          }
+          else
+          {
+            // LOS rows never veto a physically feasible candidate. Retry
+            // the identical hard set and trust box without visibility rows.
+            const Eigen::MatrixXd hard_A = A.bottomRows(A.rows() - los_soft_count);
+            const Eigen::VectorXd hard_lower = lower.tail(lower.size() - los_soft_count);
+            const Eigen::VectorXd hard_upper = upper_bound.tail(
+                upper_bound.size() - los_soft_count);
+            qp = solveExecutionQP(gradient, hard_A, hard_lower, hard_upper,
+                                  hessian);
+            last_los_soft_plane_telemetry_.qp_status =
+                "LOS_QP_FAILED_HARD_ONLY_" + qp.status_text;
+          }
+        }
         last_qp_status = qp.status_text;
         ROS_INFO("[scp-hard-corridor] iteration=%d constraint_num=%d "
                  "corridor_constraints=%d local_sfc_constraints=%d static_constraints=%d dynamics_constraints=%d "
@@ -4040,12 +4226,12 @@ namespace ego_planner
         else
           trial_agreement_class = "GOOD";
         const double current_merit =
-            current_native_cost + 1000.0 *
+            current_native_cost + current_los_cost + 1000.0 *
                 (current_violation + current_local_sfc_violation +
                  current_static_violation + current_dynamics_snapshot.maxViolation() +
                  current_dynamic_violation);
         const double trial_merit =
-            trial_native_cost + 1000.0 *
+            trial_native_cost + losSoftCost(jerkOpt_.getTraj()) + 1000.0 *
                 (trial_violation + trial_local_sfc_violation +
                  trial_static_violation + trial_dynamics.maxViolation() +
                  trial_dynamic_violation);
@@ -4058,7 +4244,7 @@ namespace ego_planner
              (trial_team_margin >=
                   team_visibility_contract_.required_margin - 2.0e-3 ||
               trial_team_margin > current_team_margin + 1.0e-4));
-        const bool team_side_ok = !team_scp ||
+        const bool team_side_ok = !side_region_active ||
             trial_team_side_violation <=
                 std::max(2.0e-3, current_team_side_violation + 1.0e-5);
         const bool static_restoration_step =
@@ -4542,6 +4728,12 @@ namespace ego_planner
                      false, false, jerkOpt_.getTraj(), final_violation);
       return false;
     }
+    if (side_region_active && final_team_side_violation > 2.0e-3)
+    {
+      logFinalStatus("SIDE_REGION_FINAL_VIOLATION", false, false,
+                     jerkOpt_.getTraj(), final_violation);
+      return false;
+    }
     if (team_scp &&
         (!std::isfinite(final_team_margin) || !final_team_binary_ok ||
          final_team_margin <
@@ -4843,12 +5035,18 @@ namespace ego_planner
     // A*-repair SIDE 候选必须走 corridor hard SCP——A* 已证明的安全几何以
     // 硬约束形式进入优化,MINCO seed 只是初值。
     bool candidate_has_static_corridor = false;
+    bool candidate_has_los_observation_plane = false;
     for (const LocalSfcPlane &plane : candidate_local_sfc_planes_)
+    {
       if (plane.source == LocalSfcPlane::STATIC_COLLISION_CORRIDOR)
-      {
         candidate_has_static_corridor = true;
-        break;
-      }
+      if (plane.source == LocalSfcPlane::LOS_OBSERVATION_SIDE)
+        candidate_has_los_observation_plane = true;
+    }
+    const bool local_side_topology_active = side_candidate &&
+        candidate_side_bias_enabled_ && candidate_side_region_enabled_;
+    const bool los_topology_active = side_candidate &&
+        candidate_has_los_observation_plane;
     /* Feedback126 §4 risk-driven dispatch: a candidate whose SEED carries a
      * real hard risk (static corridor / dynamic body / swarm / PVAJ) goes
      * straight into the constrained SCP chain instead of relying on soft
@@ -4913,7 +5111,8 @@ namespace ego_planner
     }
     const bool risk_dispatch =
         candidate_has_static_corridor || dynamic_risk || pvaj_risk ||
-        swarm_risk_adjuster;
+        swarm_risk_adjuster || local_side_topology_active ||
+        los_topology_active;
     if (risk_dispatch)
     {
       ROS_INFO(
@@ -4936,11 +5135,6 @@ namespace ego_planner
           side_candidate ? gradient_audit_candidate_.c_str() : "NOMINAL",
           drone_id_, static_cast<int>(scp_success),
           last_candidate_final_status_reason_.c_str());
-      // LOS observation planes stay a soft authority on the SCP path too:
-      // the semi-hard slack QP adjusts the converged control points and
-      // never rejects (Feedback117 invariant, same as the LBFGS path).
-      if (scp_success && !candidate_local_sfc_planes_.empty())
-        enforceCandidateLosPlanesSCP(iniState, finState, optimal_points);
       return scp_success;
     }
 
@@ -5110,13 +5304,6 @@ namespace ego_planner
 
     logDirectionalVisibilityCost();
     optimal_points = cps_.points;
-    if (flag_success && !candidate_local_sfc_planes_.empty() &&
-        !enforceCandidateLosPlanesSCP(iniState, finState, optimal_points))
-    {
-      flag_success = false;
-      last_candidate_final_status_reason_ = "LOS_PLANE_SCP_FAILED";
-    }
-
     return flag_success;
   }
 
@@ -7237,6 +7424,8 @@ namespace ego_planner
   {
     if (!candidate_side_bias_enabled_ || !candidate_side_region_enabled_)
       return 0.0;
+    if (!candidate_side_topology_reference_valid_ || !p.allFinite())
+      return std::numeric_limits<double>::infinity();
 
     const double u = std::min(1.0, std::max(0.0, progress));
     const double half_window = std::min(
@@ -7244,17 +7433,35 @@ namespace ego_planner
     if (std::abs(u - candidate_side_conflict_progress_) >= half_window)
       return 0.0;
 
-    const double desired = candidate_side_offset_ * std::sin(M_PI * u);
-    const double half_width = std::max(0.10, 0.25 * desired);
-    const double lower = std::max(0.0, desired - half_width);
-    const double upper = desired + half_width;
+    const double lower = candidateSideTopologyLowerBound(u);
+    if (!std::isfinite(lower))
+      return std::numeric_limits<double>::infinity();
+    if (lower <= 1.0e-9)
+      return 0.0;  // seed has not yet established a side at this progress
     const double signed_lateral = candidate_side_sign_ *
         (p - candidate_side_origin_).dot(candidate_side_direction_);
     if (signed_lateral < lower)
       return signed_lateral - lower;
-    if (signed_lateral > upper)
-      return signed_lateral - upper;
     return 0.0;
+  }
+
+  double PolyTrajOptimizer::candidateSideTopologyLowerBound(
+      const double progress) const
+  {
+    if (!candidate_side_topology_reference_valid_ ||
+        candidate_side_topology_reference_.getPieceNum() <= 0 ||
+        !std::isfinite(progress))
+      return std::numeric_limits<double>::quiet_NaN();
+    const double u = std::min(1.0, std::max(0.0, progress));
+    const Eigen::Vector3d seed_position =
+        candidate_side_topology_reference_.getPos(
+            u * candidate_side_topology_reference_.getTotalDuration());
+    if (!seed_position.allFinite())
+      return std::numeric_limits<double>::quiet_NaN();
+    const double signed_seed = candidate_side_sign_ *
+        (seed_position - candidate_side_origin_).dot(candidate_side_direction_);
+    const double tolerance = std::max(0.10, 0.25 * std::abs(signed_seed));
+    return std::max(0.0, signed_seed - tolerance);
   }
 
   bool PolyTrajOptimizer::candidateSideRegionGradCostP(
@@ -8748,6 +8955,8 @@ namespace ego_planner
         std::min(1.0, std::max(1.0e-3, guidance_window));
     candidate_side_region_enabled_ = enable_region_constraint;
     candidate_side_bias_enabled_ = true;
+    candidate_side_topology_reference_valid_ = false;
+    candidate_side_topology_reference_.clear();
   }
 
   void PolyTrajOptimizer::setCandidateSideBiasReference(
@@ -8775,6 +8984,33 @@ namespace ego_planner
         std::min(1.0, std::max(1.0e-3, guidance_window));
     candidate_side_region_enabled_ = enable_region_constraint;
     candidate_side_bias_enabled_ = true;
+    candidate_side_topology_reference_valid_ = false;
+    candidate_side_topology_reference_.clear();
+  }
+
+  bool PolyTrajOptimizer::setCandidateSideTopologyReference(
+      const poly_traj::Trajectory &reference)
+  {
+    candidate_side_topology_reference_valid_ = false;
+    candidate_side_topology_reference_.clear();
+    if (!candidate_side_bias_enabled_ || !candidate_side_region_enabled_ ||
+        !candidate_side_origin_.allFinite() ||
+        !candidate_side_direction_.allFinite() ||
+        candidate_side_direction_.norm() < 1.0e-6 ||
+        std::abs(candidate_side_sign_) < 0.5 ||
+        reference.getPieceNum() <= 0 ||
+        !std::isfinite(reference.getTotalDuration()) ||
+        reference.getTotalDuration() <= 1.0e-6 ||
+        !reference.getDurations().allFinite() ||
+        (reference.getDurations().array() <= 1.0e-6).any())
+      return false;
+    for (int sample = 0; sample < 41; ++sample)
+      if (!reference.getPos(reference.getTotalDuration() * sample / 40.0)
+               .allFinite())
+        return false;
+    candidate_side_topology_reference_ = reference;
+    candidate_side_topology_reference_valid_ = true;
+    return true;
   }
 
   void PolyTrajOptimizer::setCandidatePreservationReference(
@@ -8816,6 +9052,8 @@ namespace ego_planner
     candidate_side_offset_ = 0.0;
     candidate_side_conflict_progress_ = 0.5;
     candidate_side_guidance_window_ = 1.0;
+    candidate_side_topology_reference_valid_ = false;
+    candidate_side_topology_reference_.clear();
     candidate_preserve_reference_valid_ = false;
     candidate_preserve_reference_.clear();
     candidate_risk_window_valid_ = false;

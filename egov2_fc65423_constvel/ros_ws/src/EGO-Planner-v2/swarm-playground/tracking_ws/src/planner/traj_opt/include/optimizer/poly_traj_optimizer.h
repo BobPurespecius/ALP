@@ -363,6 +363,10 @@ namespace ego_planner
     double candidate_side_weight_{2.0};
     double candidate_side_conflict_progress_{0.5};
     double candidate_side_guidance_window_{1.0};
+    // Frozen after SIDE repair and PVA timing. This exact polynomial is the
+    // sole geometry authority for the one-sided topology boundary.
+    bool candidate_side_topology_reference_valid_{false};
+    poly_traj::Trajectory candidate_side_topology_reference_;
     bool candidate_preserve_reference_valid_{false};
     poly_traj::Trajectory candidate_preserve_reference_;
     bool candidate_risk_window_valid_{false};
@@ -661,6 +665,7 @@ namespace ego_planner
                                        const double guidance_window = 1.0,
                                        const bool enable_region_constraint = false);
     void setCandidatePreservationReference(const poly_traj::Trajectory &reference);
+    bool setCandidateSideTopologyReference(const poly_traj::Trajectory &reference);
     void setCandidateRiskWindow(double conflict_time, double half_window);
     void setCandidateLocalSfc(const std::vector<LocalSfcPlane> &planes);
     void clearCandidateLocalSfc(void);
@@ -949,7 +954,7 @@ namespace ego_planner
     SCPQPSolveResult solveExecutionQPWithSlack(
         const Eigen::VectorXd &g, const Eigen::MatrixXd &A,
         const Eigen::VectorXd &lo, const Eigen::VectorXd &hi,
-        double hessian_diagonal, int soft_rows, double slack_w1,
+        const Eigen::VectorXd &hessian_diagonal, int soft_rows, double slack_w1,
         double slack_w2, double &slack_max, double &slack_sum) const;
     /* 最近一次 enforceCandidateLosPlanesSCP 的 slack 遥测(Feedback116)。 */
     struct LosSoftPlaneTelemetry
@@ -1126,6 +1131,7 @@ namespace ego_planner
 
     double candidateSideRegionViolation(const double progress,
                                         const Eigen::Vector3d &p) const;
+    double candidateSideTopologyLowerBound(const double progress) const;
     /* 本轮修复（prefix 真实时间语义）：elapsed_t 是该积分点的真实绝对轨迹
      * 时间（前面所有 piece 的真实时长之和 + 该 piece 内局部时间），用于判定
      * "是否属于执行前缀"。t 仍是同一积分点的世界相对时间，用于目标/障碍预测。

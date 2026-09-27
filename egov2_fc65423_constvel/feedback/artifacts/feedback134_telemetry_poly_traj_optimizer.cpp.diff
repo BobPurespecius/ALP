@@ -1,0 +1,66 @@
+--- before/poly_traj_optimizer.cpp
++++ ros_ws/src/EGO-Planner-v2/swarm-playground/tracking_ws/src/planner/traj_opt/src/poly_traj_optimizer.cpp
+@@ -8,6 +8,9 @@
+ #include <chrono>
+ #include <cmath>
+ #include <functional>
++#include <fstream>
++#include <iomanip>
++#include <cstdlib>
+ #include <sstream>
+ #include <vector>
+ // using namespace std;
+@@ -16,6 +19,43 @@
+ {
+   namespace
+   {
++
++    // Opt-in payload snapshots around the existing LOS refinement. The
++    // destructor also records early returns; it never validates or changes it.
++    struct LosPayloadAudit134 {
++      const poly_traj::MinJerkOpt &optimizer;
++      int drone;
++      std::string kind;
++      double epoch;
++      const char *directory;
++      LosPayloadAudit134(const poly_traj::MinJerkOpt &value, int id,
++                         const std::string &candidate_kind, double start)
++          : optimizer(value), drone(id), kind(candidate_kind), epoch(start),
++            directory(std::getenv("ALP_TOPOLOGY_AUDIT_DIR")) { dump("PRE_LOS"); }
++      ~LosPayloadAudit134() { dump("POST_LOS"); }
++      void dump(const char *stage) const {
++        if (!directory || !*directory) return;
++        static std::ofstream output(std::string(directory) + "/los_drone_" +
++            std::to_string(drone) + ".jsonl", std::ios::app);
++        if (!output) return;
++        const auto trajectory=optimizer.getTraj();
++        std::ostringstream o; o << std::setprecision(17);
++        const auto number=[&](double x) {if(std::isfinite(x)) o<<x;else o<<"null";};
++        o << "{\"stage\":" << std::quoted(stage) << ",\"drone\":" << drone
++          << ",\"kind\":" << std::quoted(kind) << ",\"world\":";
++        number(ros::Time::now().toSec());o<<",\"activation\":";number(epoch);
++        o<<",\"pieces\":[";
++        for(int i=0;i<trajectory.getPieceNum();++i) {
++          if(i) o<<',';
++          o<<'[';number(trajectory[i].getDuration());
++          const auto &a=trajectory[i].getCoeffMat();
++          for(int row=0;row<3;++row) for(int col=0;col<6;++col) {o<<',';number(a(row,col));}
++          o<<']';
++        }
++        o<<"]}\n";output<<o.str();
++      }
++    };
++
+     bool staticPlaneInterval(const LocalSfcPlane &plane,
+                              const Eigen::VectorXd &durations,
+                              double &begin, double &end)
+@@ -558,6 +598,9 @@
+     last_los_soft_plane_telemetry_ = LosSoftPlaneTelemetry();
+     last_los_soft_plane_telemetry_.attempted = true;
+ 
++    const LosPayloadAudit134 audit_los(jerkOpt_, drone_id_,
++        gradient_audit_candidate_, prediction_epoch_override_enabled_
++            ? prediction_epoch_override_ : t_now_);
+     const poly_traj::Trajectory solved = jerkOpt_.getTraj();
+     const int piece_num = solved.getPieceNum();
+     auto los_max_violation = [&](const poly_traj::Trajectory &traj) {

@@ -1,0 +1,610 @@
+MUSK more_obstacles 最终思路与修改说明
+======================================
+
+本文整理当前 more_obstacles 场景的整体实现思路，以及最终保留下来的主要代码
+和配置修改。
+
+
+一、基本思路
+------------
+目标不是手写轨迹，而是在 MUSK 原有架构中接入 EGO-Planner：
+
+1. MUSK 继续负责：
+   - 启动 PX4 SITL、Gazebo、MAVROS。
+   - 管理每架无人机的状态机。
+   - 执行 INIT、TAKEOFF、PREPARE、GUIDANCE 等阶段。
+   - 接收 EGO 输出并转换成 PX4/MAVROS 可执行的控制命令。
+   - 发布 RViz 可视化和调试日志。
+
+2. EGO-Planner 负责：
+   - 接收每架无人机的 odometry。
+   - 接收由圆柱障碍物采样出的点云地图。
+   - 根据每架无人机的目标点规划路径。
+   - 输出 quadrotor_msgs/PositionCommand。
+
+3. more_obstacles 场景中：
+   - 5 架无人机从 x=-4.8 一侧起飞。
+   - y 方向分布为 -4.8、-2.4、0.0、2.4、4.8。
+   - 目标点在 x=10.0 另一侧，y 与各自起点对应。
+   - 高度统一为 1.2 m。
+   - 中间布置多根圆柱障碍物，Gazebo 中有真实 collision，RViz 中有 marker 显示。
+
+4. 控制链路：
+   Gazebo/PX4/MAVROS -> P230 -> MUSK SingleRun -> EGO odom/cloud
+   EGO pos_cmd -> SingleRun -> 速度控制 -> MAVROS setpoint_raw/local -> PX4
+
+
+二、场景配置修改
+----------------
+文件：
+guidance/ros_ws/src/multi_uav_formation/scenes/more_obstacles.json
+
+主要内容：
+- number = 5
+- leaders = 1
+- head = 1
+- takeoffPointENU / preparePointENU 扩展为 5 架。
+- egoPlanner.goalsENU 扩展为 5 个目标点。
+- maxVel、maxAcc、planningHorizon 等 EGO 参数写入 egoPlanner 字段。
+- obstacleData 中定义多根圆柱障碍物。
+- 增加 mavrosLocalOffsetENU，用于修复三号机 MAVROS local frame 与任务坐标
+  不一致的问题。
+
+当前三号机补偿：
+  raw MAVROS 初始位置约为 (0,0,z)
+  任务坐标期望为 (-4.8,0,z)
+  因此 uav3 offset = [-4.8, 0.0, 0.0]
+
+
+三、Gazebo world 修改
+--------------------
+文件：
+guidance/ros_ws/src/multi_uav_formation/worlds/more_obstacles.world
+
+作用：
+- 定义 more_obstacles 使用的 Gazebo 世界。
+- 将 JSON 中的障碍物同步为 Gazebo 静态圆柱模型。
+- 每个圆柱包含 visual 和 collision。
+
+要点：
+- RViz marker 只负责显示，不会产生物理碰撞。
+- Gazebo world 中的 collision 才是真正的物理障碍。
+
+
+四、PX4/MAVROS 五机启动
+----------------------
+文件：
+guidance/ros_ws/src/multi_uav_formation/launch/multi_uav_mavros_sitl.launch
+
+修改：
+- 从原有数量扩展到 uav1-uav5。
+- 每架无人机使用不同 namespace、ID、UDP/TCP 端口。
+- spawn x/y 与 more_obstacles.json 中的起点对应。
+
+五架起点：
+  uav1: (-4.8, -4.8)
+  uav2: (-4.8, -2.4)
+  uav3: (-4.8,  0.0)
+  uav4: (-4.8,  2.4)
+  uav5: (-4.8,  4.8)
+
+
+五、EGO 五机启动
+----------------
+文件：
+guidance/ros_ws/src/multi_uav_formation/launch/ego_more_obstacles.launch
+
+修改：
+- 启动 drone_0 到 drone_4 的 EGO planner/traj_server。
+- 每个 drone 对应一个目标点。
+- 每个 drone 的目标高度统一为 1.2。
+- 使用 ego_with_opencv.sh 作为 launch-prefix，保证 EGO 节点能找到 OpenCV 3.4。
+
+话题对应关系：
+  uav1 -> drone_0
+  uav2 -> drone_1
+  uav3 -> drone_2
+  uav4 -> drone_3
+  uav5 -> drone_4
+
+
+六、SingleRun.py 修改
+--------------------
+文件：
+guidance/ros_ws/src/multi_uav_formation/multi_uav_formation/SingleRun.py
+
+SingleRun.py 是本次改动的核心。原来的 SingleRun 主要按 MUSK 自己的状态机
+做起飞、准备点、编队/引导、返航和降落；本次改写后，它变成了 MUSK 和
+EGO-Planner 之间的桥接层：上游接 PX4/MAVROS 的真实状态，下游给 EGO 提供
+odom/cloud，再把 EGO 的规划输出转换回 MAVROS 速度控制。
+
+相比原版 SingleRun.py，本次主要新增/改写了这些东西：
+- 新增 egoPlanner 配置读取：从 scene JSON 读取 enabled、goalsENU、点云分辨率、
+  触发延迟、目标容差、控制增益等参数。
+- 新增 EGO 运行状态变量：egoPlannerAvailable、egoPlannerTriggered、
+  egoGoalReached、egoLastCommand、egoGoalPointENU、egoCloudPoints 等。
+- 新增 MAVROS local 坐标补偿接入：读取 mavrosLocalOffsetENU，并传给 P230。
+- 新增 setupEgoPlannerBridge()：创建 EGO 所需的 odom/cloud/trigger publisher，
+  以及 pos_cmd subscriber。
+- 新增 egoPositionCommandCallback()：缓存 EGO traj_server 输出的
+  PositionCommand。
+- 新增 buildEgoObstacleCloud()：把 JSON 中的圆柱障碍物采样成 PointCloud2 点云。
+- 新增 publishEgoPlannerInputs()：持续向 EGO 发布当前无人机 odom 和障碍物点云。
+- 新增 publishEgoStartTrigger()：进入 GUIDANCE 后触发 EGO 开始规划。
+- 新增 projectVelocityAwayFromObstacles()：在 MUSK 层做轻量几何避障保护。
+- 新增 guardedVelocityToPointENUControl() 和 guardedConstantVelocityLineENUControl()：
+  给点目标/直线跟踪速度加障碍物保护。
+- 新增 holdCurrentPosition()：遇到安全阻断或缺少有效 EGO 指令时发送零速度保持。
+- 改写 toStepTakeoff() 和 stepTakeoff()：从直接飞向 takeoffPoint 改为就地垂直起飞。
+- 改写 toStepGuidance()：EGO 可用时切换到速度控制模式，并重置 EGO trigger/goal 状态。
+- 改写 stepPrepare()：使用 SingleRun 自己的速度闭环函数，方便统一记录和保护。
+- 改写 stepGuidance()：优先进入 EGO guidance；EGO 不可用时才走原 MUSK fallback。
+- 新增 stepEgoPlannerGuidance()：把 EGO 的 PositionCommand 转成 MAVROS 速度指令。
+- 改写目标到达逻辑：到达 egoPlanner.goalsENU 后保持最终目标点悬停，不再自动返航。
+- 改写 formationTime 超时逻辑：EGO 模式下超时不强制 BACK/LAND。
+- 改写 stepBack()：返航速度也经过障碍物保护。
+- 改写主循环 run()：每轮控制前持续发布 EGO 输入。
+
+1. 初始化阶段重写
+   - 保留原有 scene JSON 加载方式。
+   - 新增读取 egoPlanner 字段：
+     enabled、goalsENU、maxVel、maxAcc、planningHorizon、cloudResolution、
+     obstacleHeight、commandTimeout、triggerDelay、positionGain、
+     velocityGain、goalTolerance 等。
+   - 新增 egoPlannerEnabled、egoPlannerAvailable、egoPlannerTriggered、
+     egoGoalReached、egoLastCommand、egoGoalPointENU 等运行时状态变量。
+   - 从 mavrosLocalOffsetENU 读取每架无人机的 MAVROS local 坐标补偿，并传给
+     P230。这样 SingleRun 内部始终使用“任务坐标”，不直接暴露有偏移的 raw
+     MAVROS 坐标。
+
+2. P230 初始化方式变化
+   - 原来：
+     P230(name=f'uav{self.number}')
+   - 现在：
+     P230(name=f'uav{self.number}', localOffsetENU=localOffsetENU)
+   - 这一步使 SingleRun、RViz、EGO 看到的是补偿后的统一 ENU 坐标。
+
+3. 新增 setupEgoPlannerBridge()
+   - 这个函数负责把 SingleRun 接到 EGO-Planner。
+   - 如果 scene JSON 中 egoPlanner.enabled=false，则不启用 EGO 桥接。
+   - 如果缺少 quadrotor_msgs、PointCloud2 等依赖，则打印信息并回退。
+   - 每架无人机按编号建立对应话题：
+     uav1 -> drone_0
+     uav2 -> drone_1
+     uav3 -> drone_2
+     uav4 -> drone_3
+     uav5 -> drone_4
+   - 发布：
+     /drone_i_visual_slam/odom
+     /drone_i_pcl_render_node/cloud
+     /traj_start_trigger
+   - 订阅：
+     /drone_i_planning/pos_cmd
+
+4. 新增 EGO 输入发布
+   - publishEgoPlannerInputs() 会把当前无人机状态发布给 EGO。
+   - odom 中的位置、速度来自 P230 补偿后的 mePositionENU/meVelocityENU。
+   - 这意味着 EGO 规划坐标、RViz 显示坐标、MUSK 控制状态机坐标保持一致。
+   - 该函数在主循环里每轮调用，而不是只在 GUIDANCE 阶段调用。
+   - 这样 EGO 不会在无人机 TAKEOFF/PREPARE 时长期处于 no odom。
+
+5. 新增障碍物点云生成
+   - buildEgoObstacleCloud() 读取 more_obstacles.json 中的 obstacleData。
+   - 每个圆柱按 cloudResolution 采样成三维点云。
+   - 点云发布到 /drone_i_pcl_render_node/cloud。
+   - EGO 用这些点云构建局部地图并进行避障。
+
+6. 新增 trigger 逻辑
+   - publishEgoStartTrigger() 在 GUIDANCE 阶段延迟 triggerDelay 后发布。
+   - 发布一次后 egoPlannerTriggered=true，避免重复触发。
+   - trigger 的位置使用当前补偿后的任务坐标。
+
+7. TAKEOFF 状态改写
+   - 原逻辑可能直接飞向 takeoffPointENU，因此如果当前位置和配置起飞点不一致，
+     起飞时会产生明显横向运动。
+   - 新逻辑在进入 TAKEOFF 时记录当前 x/y，只把 z 拉到目标高度：
+     takeoffVerticalPointENU = [current_x, current_y, target_z]
+   - stepTakeoff() 中使用 velocityToPointENUControl() 做就地垂直起飞。
+   - 所有无人机完成 TAKEOFF 后，head 才推进到 PREPARE。
+   - 这样起飞阶段不再承担横向归位任务，横向移动留给 PREPARE。
+
+8. PREPARE 状态改写
+   - PREPARE 阶段负责把无人机送到各自 preparePointENU。
+   - 使用 SingleRun 自己的 velocityToPointENUControl()，便于统一记录 self.u
+     和后续扩展避障保护。
+   - 到达 preparePointENU 且速度足够低后，标记该状态完成。
+   - head 负责等待所有无人机完成 PREPARE，再进入 GUIDANCE。
+
+9. GUIDANCE 状态改写
+   - stepGuidance() 现在先判断 EGO 是否可用。
+   - 如果 EGO 可用，进入 stepEgoPlannerGuidance()。
+   - 如果 EGO 不可用，才走原来的 MUSK fallback guidance。
+   - 这让 more_obstacles 场景优先使用 EGO-Planner，而不是继续执行原来的
+     简单直线/队形逻辑。
+
+10. 新增 stepEgoPlannerGuidance()
+   - 每轮先尝试发布 EGO trigger。
+   - 然后检查 safetyModule()。
+   - 如果最近收到的 PositionCommand 没超时，则取 EGO 输出：
+     posENU = cmd.position
+     velENU = cmd.velocity
+   - 用位置误差和速度误差生成最终速度命令：
+     controlVel = velENU
+                + positionGain * (posENU - currentPosition)
+                + velocityGain * (velENU - currentVelocity)
+   - 再经过 projectVelocityAwayFromObstacles() 做本地保护。
+   - 最后通过 P230.velocityENUControl() 发给 MAVROS。
+   - 如果 EGO 暂时没有新命令，则悬停/靠近 preparePointENU，避免盲飞。
+
+11. 目标到达与悬停逻辑
+   - 读取 egoPlanner.goalsENU 作为每架无人机最终目标。
+   - 当当前位置接近 egoGoalPointENU 且速度足够低时：
+     egoGoalReached = True
+     stateFinished = True
+   - 之后不再进入 BACK/LAND，而是持续对最终目标点做速度闭环：
+     velocityToPointENUControl(self.egoGoalPointENU, yaw)
+   - 这保证无人机穿越障碍物林后在对面对应点悬停。
+
+12. formationTime 超时逻辑改写
+   - 原始 MUSK 逻辑中，formationTime 到期后可能进入 BACK 或 LAND。
+   - more_obstacles 需求是到达目标点后悬停。
+   - 因此 EGO 模式下 formationTime 到期只打印提示，不再强制返航。
+
+13. 本地几何避障保护
+   - 新增 projectVelocityAwayFromObstacles()。
+   - 它基于 JSON 里的圆柱中心、半径和 obstacleClearance，检查当前速度是否会把
+     无人机推入障碍物安全半径。
+   - 如果会，则去掉朝向障碍物内部的速度分量，并加入少量向外推开的速度。
+   - 这不是主规划器，只是 EGO 之外的最后保护层。
+
+14. holdCurrentPosition()
+   - 新增统一的“原地保持”函数。
+   - 当 safetyModule 阻止继续飞行或缺少有效指令时，发送零速度，而不是直接
+     toStepBack()。
+   - 这样避免安全保护触发后无人机突然返航或降落。
+
+15. 主循环改写
+   - 在 run() 主循环中，每轮控制状态机前调用 publishEgoPlannerInputs()。
+   - 执行顺序变成：
+     更新日志/显示 -> 发布 EGO 输入 -> 状态机控制 -> 发送 MAVROS heartbeat/setpoint。
+   - 这样 EGO 始终能看到最新状态，MUSK 也能持续接收 EGO 输出。
+
+总结：
+SingleRun.py 的角色从“只执行 MUSK 自己的引导逻辑”改成了“状态机 + EGO 桥接 +
+控制转换 + 最终目标保持”。这也是 more_obstacles 能在 MUSK 架构里调用
+EGO-Planner 的关键。
+
+SingleRun.py 按当前代码行号逐行说明：
+
+初始化部分：
+- 第102行：提前初始化 self.message，供 addMessage() 和 print() 使用。
+- 第115行：新增 self.takeoffVerticalPointENU，用来保存“就地垂直起飞”的目标点。
+- 第116行：从 scene JSON 中读取 egoPlanner 配置字典。
+- 第117行：读取 egoPlanner.enabled，决定是否启用 EGO 桥接。
+- 第118行：读取 obstacleClearance，作为本地障碍物保护的安全余量。
+- 第119行：读取 obstacleRepulsionGain，作为障碍物保护的推离增益。
+- 第120行：初始化 egoPlannerAvailable，表示 EGO 桥接是否真正建立成功。
+- 第121行：初始化 egoPlannerTriggered，防止重复发布 EGO trigger。
+- 第122行：初始化 egoGoalReached，记录是否已经到达最终目标点。
+- 第123行：初始化 egoLastCommand，用来缓存 EGO 最新 PositionCommand。
+- 第124行：初始化 egoLastCommandTime，用来判断 EGO 指令是否超时。
+- 第125行：初始化 egoGoalPointENU，用来保存当前无人机的最终目标点。
+- 第126行：初始化 egoCloudPoints，用来保存采样后的障碍物点云。
+- 第128行：从 scene JSON 读取 mavrosLocalOffsetENU。
+- 第129行：按无人机编号取本机坐标偏移；没有配置则使用 [0,0,0]。
+- 第132行：创建 P230 时把 localOffsetENU 传入，让 P230 负责坐标映射。
+- 第134行：初始化 EGO 桥接，创建 odom/cloud/trigger/pos_cmd 相关话题。
+- 第138行：只有非 leader 且存在 obstacleData 时才创建 RViz 障碍物 marker。
+
+setupEgoPlannerBridge()：
+- 第161行：新增 setupEgoPlannerBridge() 函数。
+- 第162-163行：如果 scene 中没有启用 EGO，则直接返回，不影响普通 MUSK 场景。
+- 第165-171行：延迟导入 EGO 桥接所需消息类型，避免普通场景强依赖 EGO 消息包。
+- 第172-176行：如果导入失败，打印原因并把信息写入 self.message，然后回退。
+- 第178行：把 MUSK 的 uav 编号转为 EGO 的 drone 编号，uav1 对应 drone_0。
+- 第179-184行：保存消息类型和 point_cloud2 工具，供后续发布 odom/cloud 使用。
+- 第185行：读取 commandTimeout，用于判断 EGO PositionCommand 是否过期。
+- 第186行：读取 cloudPublishPeriod，限制点云发布频率。
+- 第187行：初始化 egoLastCloudPublishTime。
+- 第188行：读取 positionGain，用于 EGO 目标位置误差闭环。
+- 第189行：读取 velocityGain，用于 EGO 速度误差闭环。
+- 第190行：读取 goalTolerance，用于判断是否到达最终目标。
+- 第191行：读取 triggerDelay，用于延迟发布 EGO trigger。
+- 第192行：再次读取 obstacleClearance，确保桥接参数使用 egoPlanner 配置。
+- 第193行：再次读取 obstacleRepulsionGain，确保障碍物保护使用 egoPlanner 配置。
+- 第195行：读取 egoPlanner.goalsENU。
+- 第196-197行：按无人机编号取本机最终目标点。
+- 第199-203行：创建 EGO odom publisher，话题为 /drone_i_visual_slam/odom。
+- 第204-209行：创建 EGO 点云 publisher，话题为 /drone_i_pcl_render_node/cloud，并设置 latch。
+- 第210-215行：创建 EGO trigger publisher，话题为 /traj_start_trigger，并设置 latch。
+- 第216-221行：订阅 EGO 输出的 /drone_i_planning/pos_cmd。
+- 第223行：调用 buildEgoObstacleCloud()，预生成障碍物点云。
+- 第224行：标记 EGO 桥接可用。
+- 第225行：在输出信息中记录当前 drone 的 EGO 桥接已启用。
+
+EGO 指令缓存：
+- 第227行：新增 egoPositionCommandCallback()。
+- 第228行：收到 PositionCommand 后缓存到 self.egoLastCommand。
+- 第229行：记录收到该指令的时间，用于超时判断。
+
+障碍物点云生成：
+- 第231行：新增 buildEgoObstacleCloud()。
+- 第232-233行：如果场景没有 obstacleData，则返回空点云。
+- 第235行：读取点云采样分辨率 cloudResolution。
+- 第236行：读取默认障碍物高度 obstacleHeight。
+- 第237行：初始化 points 数组。
+- 第239行：遍历 JSON 中每个障碍物。
+- 第240行：读取圆柱中心 centerENU。
+- 第241行：读取圆柱半径。
+- 第242行：读取障碍物高度，未配置则用默认高度。
+- 第243行：读取 zMin，未配置则从地面 z=0 开始。
+- 第244行：把中心坐标转为浮点数。
+- 第246行：生成圆柱 x 方向采样点。
+- 第247行：生成圆柱 y 方向采样点。
+- 第248行：生成圆柱 z 方向采样点。
+- 第250-251行：遍历 x/y 采样网格。
+- 第252-253行：丢弃圆柱半径外的点。
+- 第254-255行：对有效 x/y 遍历 z，并加入三维点云。
+- 第257行：返回完整点云。
+
+EGO 输入发布：
+- 第259行：新增 publishEgoPlannerInputs()。
+- 第260-261行：EGO 未启用或桥接不可用时直接返回。
+- 第263行：读取当前 ROS 时间。
+- 第265行：创建 Odometry 消息。
+- 第266行：设置 odom 时间戳。
+- 第267行：设置 odom 坐标系为 world。
+- 第268行：设置 child_frame_id 为当前 uav 的 base_link。
+- 第269-271行：把补偿后的 self.me.mePositionENU 写入 odom 位置。
+- 第272-275行：把当前四元数写入 odom 姿态。
+- 第276-278行：把当前速度写入 odom twist。
+- 第279行：发布 odom 给 EGO。
+- 第281行：读取当前墙钟时间，用于点云发布节流。
+- 第282行：如果存在点云且达到发布周期，则准备发布。
+- 第283-285行：创建点云 header，并设置时间戳和 world 坐标系。
+- 第286行：把 xyz 点数组转换为 PointCloud2。
+- 第287行：发布点云给 EGO。
+- 第288行：更新上次点云发布时间。
+
+EGO trigger：
+- 第290行：新增 publishEgoStartTrigger()。
+- 第291-292行：EGO 未启用或桥接不可用则返回。
+- 第293-294行：如果已经触发过，则返回，避免重复 trigger。
+- 第295-296行：GUIDANCE 进入时间不足 triggerDelay 时先等待。
+- 第298行：创建 PoseStamped trigger 消息。
+- 第299行：写入 trigger 时间戳。
+- 第300行：设置 trigger 坐标系为 world。
+- 第301-303行：把当前补偿后的无人机位置写入 trigger。
+- 第304行：设置 trigger 姿态 w=1。
+- 第305行：发布 trigger。
+- 第306行：标记已经触发。
+- 第307行：记录“EGO planner start trigger published”。
+
+本地障碍物保护：
+- 第309行：新增 projectVelocityAwayFromObstacles()。
+- 第310-311行：无 obstacleData 时不修改速度，直接返回。
+- 第313行：复制输入速度，避免直接修改原对象。
+- 第314行：读取当前 x/y 位置。
+- 第315行：初始化 changed 标记。
+- 第317行：遍历每个障碍物。
+- 第318行：读取障碍物中心。
+- 第319行：读取障碍物半径。
+- 第320行：计算安全半径 radius + obstacleClearance。
+- 第321行：计算无人机相对障碍物中心的偏移。
+- 第322行：计算当前距离。
+- 第324-327行：计算从障碍物中心指向无人机的单位法向量。
+- 第329行：预测下一步 x/y 位置。
+- 第330行：计算预测位置到障碍物中心的距离。
+- 第331行：判断当前速度是否朝障碍物内部运动。
+- 第333行：如果当前已进入安全半径，或下一步将进入且正在靠近，则触发保护。
+- 第334行：计算速度在障碍物法向上的分量。
+- 第335-336行：如果速度朝障碍物内部，则去掉这部分速度。
+- 第338行：计算侵入安全半径的深度。
+- 第339行：按侵入深度加入向外推离速度。
+- 第340行：标记速度被修改。
+- 第342-343行：如果速度被修改，打印调整后的速度。
+- 第345行：返回保护后的速度。
+
+速度控制辅助函数：
+- 第347行：新增 guardedVelocityToPointENUControl()。
+- 第348行：根据目标点误差生成速度。
+- 第349-350行：有障碍物时用 projectVelocityAwayFromObstacles() 修正速度。
+- 第351行：保存当前控制量 self.u，供日志使用。
+- 第352行：通过 P230 发送速度控制。
+- 第354行：新增 velocityToPointENUControl()，用于不带障碍保护的点目标速度闭环。
+- 第355行：根据目标点误差生成速度。
+- 第356行：保存控制量 self.u。
+- 第357行：发送速度控制。
+- 第359行：新增 guardedConstantVelocityLineENUControl()。
+- 第360行：设置位置误差积分/吸引项增益 kI。
+- 第361行：设置速度误差增益 kp。
+- 第362行：生成沿直线前进并拉回目标线的速度。
+- 第363-364行：有障碍物时修正速度。
+- 第365行：保存控制量 self.u。
+- 第366行：发送速度控制。
+
+状态入口修改：
+- 第415-419行：toStepTakeoff() 中记录当前 x/y 和目标 z，形成就地垂直起飞点。
+- 第447行：进入 GUIDANCE 时重置 EGO trigger 状态。
+- 第448行：进入 GUIDANCE 时重置目标到达标志。
+- 第449-450行：EGO 可用时把 P230 切到速度控制模式。
+- 第451-452行：EGO 不可用时保留原来的加速度控制模式。
+- 第473行：新增 holdCurrentPosition()。
+- 第474行：把当前控制量置零。
+- 第475行：发送零速度控制。
+- 第476-477行：如果给了原因，则打印保持原因。
+
+TAKEOFF 修改：
+- 第500行：进入 stepTakeoff()。
+- 第501-502行：未解锁时先 arm。
+- 第503-508行：如果没有垂直起飞点，则用当前 x/y 和目标 z 生成。
+- 第509行：用速度闭环飞向垂直起飞点。
+- 第511-512行：到达垂直起飞点且速度足够低后，标记 TAKEOFF 完成。
+- 第514行：如果本机 TAKEOFF 完成，开始推进状态。
+- 第515-519行：head 等待所有无人机都完成 TAKEOFF 后进入 PREPARE。
+- 第520-524行：非 head 等待 head 进入 PREPARE 后再进入 PREPARE。
+
+PREPARE 修改：
+- 第580行：进入 stepPrepare()。
+- 第581行：打印准备点目标。
+- 第582行：改用 SingleRun.velocityToPointENUControl() 飞向 preparePointENU。
+- 第583-584行：到达准备点且速度足够低后，标记 PREPARE 完成。
+- 第586-596行：保持原来的同步逻辑，head 等全部完成，follower 等 head 进入 GUIDANCE。
+
+GUIDANCE fallback 修改：
+- 第598行：进入 stepGuidance()。
+- 第599-601行：如果 EGO 可用，直接进入 stepEgoPlannerGuidance() 并返回。
+- 第603-608行：EGO 不可用时，leader 使用 guardedConstantVelocityLineENUControl()。
+- 第610-612行：follower safetyModule 失败时不再 toStepBack()，而是 holdCurrentPosition()。
+- 第614-622行：保留原 fallback 的加速度/姿态控制逻辑。
+- 第624行：记录日志。
+- 第625-626行：fallback 超时后保持当前位置，不再直接 BACK。
+
+EGO GUIDANCE：
+- 第628行：新增 stepEgoPlannerGuidance()。
+- 第629-633行：如果已到达目标，则继续对最终目标点做速度闭环并返回。
+- 第635行：尝试发布 EGO trigger。
+- 第637-639行：安全检查失败时保持当前位置。
+- 第641-645行：判断 EGO 指令是否存在且未超时。
+- 第647行：如果 EGO 指令新鲜，则执行 EGO 控制。
+- 第648行：取出缓存的 PositionCommand。
+- 第649行：读取 EGO 目标位置。
+- 第650行：读取 EGO 目标速度。
+- 第651行：计算当前位置误差。
+- 第652行：计算当前速度误差。
+- 第653行：把 EGO 速度、位置误差反馈、速度误差反馈叠加成最终速度命令。
+- 第654行：最终速度命令再经过本地障碍物保护。
+- 第656行：把 EGO yaw 从 NED 转到 ENU。
+- 第657行：保存控制量 self.u。
+- 第658行：发送速度控制到 MAVROS。
+- 第659行：打印 EGO 目标点和实际速度命令。
+- 第660-662行：如果 EGO 指令不可用，则在 preparePointENU 附近等待。
+- 第664行：记录日志。
+- 第666行：如果配置了最终目标，则检查是否到达。
+- 第667行：使用 goalTolerance 和速度阈值判断目标到达。
+- 第668行：标记当前状态完成。
+- 第669行：设置 egoGoalReached=True。
+- 第670行：切换为最终目标点保持。
+- 第671行：打印最终目标已到达。
+- 第672行：返回，避免继续执行下面逻辑。
+- 第674-675行：formationTime 到期时只打印提示，不再返航。
+
+BACK 修改：
+- 第688行：进入 stepBack()。
+- 第689行：根据当前位置到 takeoffPointENU 的误差生成返航速度。
+- 第690-691行：有障碍物时对返航速度做保护。
+- 第692行：保存控制量 self.u。
+- 第693行：发送返航速度控制。
+- 第694行：打印返航速度命令。
+- 第695-697行：到达 takeoffPointENU 后进入 LAND，保留原逻辑。
+
+主循环修改：
+- 第786行：每轮状态机控制前调用 publishEgoPlannerInputs()。
+- 作用：让 EGO 在 TAKEOFF、PREPARE、GUIDANCE 等所有阶段持续收到 odom/cloud。
+
+
+七、P230.py 修改
+----------------
+文件：
+guidance/ros_ws/src/multi_uav_formation/multi_uav_formation/models/P230/P230.py
+
+主要修改：
+
+1. 等待 fcu_url
+   - MAVROS 参数未出现时不崩溃。
+   - 循环等待 /uavX/mavros/fcu_url。
+
+2. 支持 localOffsetENU
+   - 构造函数新增 localOffsetENU。
+   - 读 MAVROS local_position 时：
+     mePositionENU = rawPositionENU + localOffsetENU
+   - 发 position setpoint 时：
+     localSetpoint = taskPositionENU - localOffsetENU
+
+3. 保持 z 方向原始写法
+   - 不对 z 做 NED/ENU 反号转换。
+   - 避免高度控制反向导致无限上升。
+
+
+八、RViz 显示修改
+-----------------
+文件：
+guidance/ros_ws/visualize_obstacles.rviz
+
+修改：
+- 从 3 个 Pose 显示扩展到 5 个。
+- 订阅：
+  /uav_1/pose
+  /uav_2/pose
+  /uav_3/pose
+  /uav_4/pose
+  /uav_5/pose
+- 显示名称改为 UAV1 Pose 到 UAV5 Pose。
+
+作用：
+- 避免 RViz 仍按旧三机配置显示，造成误判。
+
+
+九、运行脚本与 tmux 修改
+-----------------------
+文件：
+guidance/ros_ws/multi_uav_formation.sh
+guidance/ros_ws/tmuxinator.yml
+guidance/ros_ws/setup_runtime_env.sh
+
+主要修改：
+- 统一各 pane 的运行环境。
+- scene=more_obstacles 时加载 more_obstacles.world。
+- scene=more_obstacles 时启动 ego_more_obstacles.launch。
+- 启动 debug_recorder 窗口记录仿真数据。
+- uavs 窗口显示 5 个 SingleRun pane，便于查看 uav1-uav5 的输出。
+
+
+十、调试记录器
+--------------
+文件：
+guidance/ros_ws/src/multi_uav_formation/scripts/record_debug.py
+
+作用：
+- 记录每架无人机的：
+  MAVROS local_position
+  MAVROS local_velocity
+  MAVROS setpoint_raw/local
+  EGO PositionCommand
+  MUSK 补偿后的位置 musk_pos_x/y/z
+
+修改：
+- 文件名使用真实墙钟时间：
+  uav_debug_YYYYMMDD_HHMMSS.csv
+- 避免仿真时间为 0 时总是覆盖 uav_debug_0.csv。
+- 加入 scene-file 参数，用于读取 mavrosLocalOffsetENU。
+
+
+十一、最终运行方式
+------------------
+主机：
+  cd ~/musk
+  ./docker/run_docker.sh
+
+容器：
+  cd /app/guidance/ros_ws
+  tmuxinator start -p tmuxinator.yml scene=more_obstacles
+
+如果要干净重启：
+  tmux kill-server
+  pkill -f roslaunch
+  pkill -f px4
+  pkill -f gazebo
+  cd /app/guidance/ros_ws
+  tmuxinator start -p tmuxinator.yml scene=more_obstacles
+
+
+十二、最终效果
+--------------
+- RViz 显示 5 架无人机。
+- Gazebo 中 5 架无人机从障碍物林一侧起飞。
+- 五架无人机穿越障碍物林。
+- 到达 x=10.0 一侧对应 y 位置。
+- 同一高度附近悬停。
+- 第三架无人机的 RViz 坐标与 Gazebo 物理位置一致，不再出现开局前置、
+  起飞后向后飞的问题。

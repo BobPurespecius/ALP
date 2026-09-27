@@ -625,17 +625,26 @@ namespace ego_planner
     void invalidatePendingTopology(const char *reason);
     bool checkActiveHandoff(const poly_traj::Trajectory &trajectory, double activation,
                             const char *new_source, bool log = true) const;
-    /* 把候选重新锚定到"候选就绪时刻"。若 activation 发生变化，函数内部会把
-     * local_sfc_planes 中世界时间锚定的 LOS 平面从旧锚点换算到新锚点，
-     * 保证遮挡事件的世界时间语义不漂移（任一 return 路径都生效）。
-     * reanchor_to_now=false：不再重锚定到 now+margin，而使用调用方传入的
-     * frozen activation（阶段 E：同一 batch 的全部 N/L/R 候选必须共享同一
-     * activation / 同一 predecessor 边界 / 同一目标世界时原点，之后才允许
-     * 公平比较与进 bundle）。 */
-    bool prepareLocalHandoff(poly_traj::MinJerkOpt &opt, double &activation,
+    /* REBUILD contract for foreign payloads only (Team relay anchor probe,
+     * defensive commit of a not-yet-prepared candidate): re-attaches the
+     * polynomial to the given activation boundary by rebuilding it.  Every
+     * caller must follow with its own explicit validation (checkActiveHandoff
+     * / dynamics / SFC).  The ordinary Local N/L/R production contract NEVER
+     * calls this — after generation the optimizer owns the polynomial and no
+     * post-optimization mutation authority exists (frozen-activation
+     * contract; see validateLocalHandoffWindow).  若 activation 发生变化，
+     * 函数内部会把 local_sfc_planes 中世界时间锚定的 LOS 平面从旧锚点换算
+     * 到新锚点，保证遮挡事件的世界时间语义不漂移。 */
+    bool rebuildLocalCandidateAtActivation(poly_traj::MinJerkOpt &opt, double &activation,
                              std::string *reason = nullptr,
                              std::vector<LocalSfcPlane> *local_sfc_planes = nullptr,
                              bool reanchor_to_now = true);
+    /* Validation-only handoff scheduling check for the frozen-activation
+     * contract: verifies the batch's frozen activation is still an executable
+     * boundary (not missed by a late pipeline, not beyond predecessor
+     * validated coverage).  Continuity itself is checkActiveHandoff's
+     * verdict.  This function never touches the polynomial. */
+    bool validateLocalHandoffWindow(double activation, std::string *reason) const;
     bool validateActivePrefixUntil(double until, std::string &reason) const;
     bool validateCommittedPrefixUntil(double until, std::string &reason) const;
 
@@ -1393,6 +1402,7 @@ namespace ego_planner
       double offset{0.0};
       double conflict_progress{0.5};
       double guidance_window{1.0};
+      poly_traj::Trajectory seed_trajectory;
     };
     void publishTeamReferenceAck(
         const traj_utils::TeamReferenceSchedule &schedule,

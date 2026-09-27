@@ -1,0 +1,44 @@
+# Independent Rao et al. (2025) reproduction harness.
+# This file is intentionally separate from the EGO/EGOv2 launch parameters.
+frame_id: world
+rate: 20.0
+random_seed: 2025
+duration: 0.0
+csv_path: /tmp/rao_2025_reproduction.csv
+
+scene:
+  size_x: 65.0
+  size_y: 30.0
+  size_z: 4.0
+  obstacle_count: 140
+  obstacle_radius_min: 0.25
+  obstacle_radius_max: 0.75
+  obstacle_height_min: 1.0
+  obstacle_height_max: 3.5
+  obstacle_clearance: 1.0
+
+uav:
+  initial_positions:
+    - [0.75, 1.4, 1.0]
+    - [-1.5, 0.0, 1.0]
+    - [0.75, -1.4, 1.0]
+  max_speed: 3.0
+  response_time: 1.2
+  z: 1.5
+
+target:
+  z: 1.5
+  max_speed: 2.2
+  path_half_x: 22.0
+  path_half_y: 8.0
+  angular_rate: 0.0809
+
+camera:
+  horizontal_fov_deg: 85.0
+  vertical_fov_deg: 72.0
+  min_distance: 0.5
+  max_distance: 25.0
+  los_sample_step: 0.20
+
+topics:
+  namespace: /rao_2025

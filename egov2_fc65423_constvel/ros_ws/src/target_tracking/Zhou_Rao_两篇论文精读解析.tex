@@ -1,0 +1,852 @@
+﻿\documentclass[UTF8,a4paper,11pt]{ctexart}
+
+\usepackage{amsmath,amssymb,bm,mathtools}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{caption}
+
+\geometry{left=2.2cm,right=2.2cm,top=2.3cm,bottom=2.3cm}
+\hypersetup{colorlinks=true,linkcolor=blue!60!black,citecolor=blue!60!black,urlcolor=blue!60!black}
+\setlist[itemize]{leftmargin=2em,itemsep=0.2em}
+\setlist[enumerate]{leftmargin=2em,itemsep=0.2em}
+
+\newcommand{\Rao}{Rao 等（2025）}
+\newcommand{\Zhou}{Zhou 等（2022）}
+
+\title{Zhou 2022 与 Rao 2025 两篇无人机目标跟踪/集群规划论文精读解析}
+\author{论文阅读笔记}
+\date{\today}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+\section{使用说明}
+
+本文档面向“读懂并准备复现/改进”的目的，而不是只做摘要。两篇论文都属于典型计算机科学/机器人方向方法论文：先指出无人机集群在未知、杂乱、遮挡环境中的难点，再提出系统或规划框架，最后用真实飞行、仿真或对比实验支撑有效性。
+
+公式按原论文编号重写在文中；图片以独立 \texttt{figure} 环境保留全部位置、题注和解读。若你希望编译时显示原图，可从对应 PDF 中裁剪图片并放到与本 \texttt{.tex} 文件相同的目录，文件名按本文占位框提示命名即可。这样做的好处是：LaTeX 文件本身可独立阅读，后续加入原图也不需要改正文结构。
+
+\section{两篇论文的关系}
+
+\Zhou{} 的核心是一个面向野外未知环境的微型无人机集群系统，贡献不只是目标跟踪，而是把感知、轨迹生成、碰撞避免、编队、目标跟拍和通信漂移修正整合到真实无人机平台上。它更像“系统级集群飞行能力”的论文。
+
+\Rao{} 则更聚焦于一个具体任务：杂乱环境中多无人机对移动目标进行持续跟踪。它把 Zhou 这类集群轨迹优化思想向目标跟踪场景推进，尤其关注视场共享、遮挡规避、机间避碰和目标可见性比例，因此更像“目标跟踪专用规划算法”的论文。
+
+如果你的研究目标是“无人机路径规划/目标跟踪算法创新”，\Rao{} 更接近可切入方向；如果你的目标是“复现一个有影响力的集群飞行系统基线”，\Zhou{} 更适合作为底座。
+
+\section{Rao 等 2025：Multi-UAV Trajectory Planning with Field-of-View Sharing Mechanism}
+
+\subsection{论文卡片}
+
+\begin{longtable}{p{0.18\linewidth}p{0.74\linewidth}}
+\toprule
+题目 & Multi-UAV trajectory planning with field-of-view sharing mechanism in cluttered environments \\
+年份 & 2025 \\
+核心任务 & 多无人机在杂乱障碍环境中持续跟踪移动目标，并尽量保持多视角可见。 \\
+问题类型 & 多无人机轨迹规划、目标跟踪、遮挡规避、视场共享、集群避碰。 \\
+核心方法 & 前端启发式搜索生成可行轨迹与走廊；后端用 MINCO 多项式轨迹做带惩罚项的连续优化。 \\
+主要实验 & 随机障碍环境中的多无人机跟踪、与 Zhou 方法对比、目标可见性比例统计、碰撞避免验证。 \\
+一句话总结 & 这篇论文把“飞得安全”和“看得见目标”统一进多无人机轨迹优化，重点通过视场共享机制减少遮挡导致的跟踪失败。 \\
+\bottomrule
+\end{longtable}
+
+\subsection{研究动机}
+
+目标跟踪任务比普通点到点避障更难，因为无人机不只是要到达某个位置，还要持续满足视场约束：目标不能被障碍挡住，不能离相机太远，也不能落在视场角之外。单无人机在复杂环境中容易因为遮挡丢失目标，多无人机可以互补视角，但又带来机间避碰、编队协同和实时优化压力。
+
+\begin{center}
+\includegraphics[width=0.75\textwidth]{rao_fig01_overview.png}
+
+{\small 图 1：Rao 论文的问题示意图。多架无人机需要在杂乱障碍环境中协同跟踪移动目标，同时处理遮挡、视场、避障和机间安全。}
+\end{center}
+
+\Rao{} 的基本想法是：先用轻量级前端找出每架无人机可行的候选跟踪位置，再用后端连续优化把轨迹变得平滑、安全、满足动力学，并通过“多机视场共享”提升整体目标可见性。
+
+\subsection{方法框架}
+
+整体框架可概括为：
+\begin{enumerate}
+  \item 根据目标预测位置，为每架无人机构造相对目标的期望跟踪位置；
+  \item 前端利用启发式搜索生成从当前位置到期望位置的粗轨迹；
+  \item 根据障碍物与可见性构造安全飞行走廊和无遮挡区域；
+  \item 后端用 MINCO 轨迹表示，把平滑性、时间、编队、目标距离、视场角、障碍物、机间避碰等统一为优化目标；
+  \item 滚动重规划，持续更新目标状态和多机轨迹。
+\end{enumerate}
+
+\begin{center}
+\includegraphics[width=0.75\textwidth]{rao_fig02_occlusion_free_region.png}
+
+{\small 图 2：无遮挡区域示意。它对应论文中“不是所有安全位置都适合跟踪”的核心思想：无人机位置还必须保证目标在视线中不被障碍遮挡。}
+\end{center}
+
+\subsection{Rao 论文全部公式与解释}
+
+\subsubsection{目标预测与前端搜索}
+
+论文首先假设目标预测位置之间使用等间隔时间：
+\begin{equation}
+t_{n-1}-t_{n-2}=t_n-t_{n-1}=\delta\tau .
+\tag{1}
+\end{equation}
+这里 $\delta\tau$ 是预测采样间隔，便于用离散时间点组织目标状态和无人机候选状态。
+
+前端搜索通常把无人机近似成双积分模型：
+\begin{equation}
+\begin{bmatrix}
+\bm p_{l+1}\\
+\bm v_{l+1}
+\end{bmatrix}
+=
+\begin{bmatrix}
+\bm p_l+\bm v_l\delta\tau+\frac{1}{2}\bm u_l\delta\tau^2\\
+\bm v_l+\bm u_l\delta\tau
+\end{bmatrix}.
+\tag{2}
+\end{equation}
+其中 $\bm p_l,\bm v_l,\bm u_l$ 分别是第 $l$ 个离散节点的位置、速度和控制输入/加速度。
+
+搜索代价由控制努力与时间惩罚组成：
+\begin{equation}
+g=\sum_l\left(\|\bm u_l\|^2+\lambda\right)\delta\tau .
+\tag{3}
+\end{equation}
+$\lambda$ 可以理解为“多花时间也有代价”，避免轨迹绕得太久。
+
+每架无人机的期望跟踪位置由目标位置和平移后的相对位置确定：
+\begin{equation}
+{}^i\bm p_{dp}=R(\theta){}^i\bm p_{rp}+\bm p_t(t_n).
+\tag{4}
+\end{equation}
+其中 ${}^i\bm p_{rp}$ 是第 $i$ 架无人机相对目标的参考位置，$R(\theta)$ 是绕目标旋转的角度变换，$\bm p_t(t_n)$ 是目标预测位置。
+
+前端启发式代价用 Pontryagin minimum principle 类型的解析近似来估计从当前状态到目标状态的最优代价。可写成：
+\begin{equation}
+h(T)=\int_0^T \|\bm u(t)\|^2\,dt+\lambda T ,
+\tag{5}
+\end{equation}
+在双积分约束下，最优控制通常具有线性形式：
+\begin{equation}
+\bm u^*(t)=\bm \alpha t+\bm \beta ,
+\tag{6}
+\end{equation}
+其中 $\bm\alpha,\bm\beta$ 由起终点位置、速度和候选飞行时间 $T$ 决定。
+
+启发式函数取可行时间区间内的最小值：
+\begin{equation}
+h=L(T_{hr}).
+\tag{7}
+\end{equation}
+
+最终 A* 或 kinodynamic search 的评价函数为：
+\begin{equation}
+f=g+h .
+\tag{8}
+\end{equation}
+
+\subsubsection{安全走廊与 MINCO 表示}
+
+安全飞行走廊用线性不等式描述：
+\begin{equation}
+\mathcal C=\{\bm x\in\mathbb R^3\mid G_c\bm x-\bm b_c\leq \bm 0\}.
+\tag{9}
+\end{equation}
+物理意义是：每段轨迹被限制在若干凸多面体内部。只要轨迹不离开这些多面体，就能保证远离障碍物。
+
+\begin{center}
+\includegraphics[width=0.75\textwidth]{rao_fig03_safe_flight_corridor.png}
+
+{\small 图 3：安全飞行走廊。公式 (9) 中的线性不等式可以理解为把可飞空间切成一组凸多面体，后端轨迹优化只需要把曲线压在这些走廊里。}
+\end{center}
+
+MINCO 轨迹类可以抽象表示为：
+\begin{equation}
+\mathfrak T=\left\{\bm p(t)\mid \bm p_k(t)=\bm c_k^\top\bm\eta(t),\; t\in[0,T_k],\; k=1,\ldots,M\right\}.
+\tag{10}
+\end{equation}
+其中 $\bm c_k$ 是第 $k$ 段多项式系数，$\bm\eta(t)$ 是多项式基。
+
+总时间为各段时间之和：
+\begin{equation}
+T_\Sigma=\sum_{k=1}^{M}T_k .
+\tag{11}
+\end{equation}
+
+第 $k$ 段轨迹写作：
+\begin{equation}
+\bm p_k(t)=\bm c_k^\top\bm\eta(t).
+\tag{12}
+\end{equation}
+
+在 MINCO 中，中间路点 $\bm q$ 与时间分配 $\bm T$ 可唯一决定满足边界连续性的系数：
+\begin{equation}
+L(\bm q,\bm T)=H(M(\bm q,\bm T),\bm T).
+\tag{13}
+\end{equation}
+这表示优化变量可以从大量多项式系数降维为路点和时间。
+
+\begin{center}
+\includegraphics[width=0.75\textwidth]{rao_fig04_absolute_relative_time.png}
+
+{\small 图 4：绝对时间与相对时间关系。滚动重规划时，目标预测使用全局时间，而每段多项式轨迹通常用从 0 开始的局部时间参数化。}
+\end{center}
+
+\subsubsection{后端优化总目标}
+
+后端优化以 jerk 平滑性和时间为基础目标，同时满足起终状态和约束：
+\begin{subequations}
+\begin{align}
+\min_{\bm q,\bm T}\quad & J=\int_0^{T_\Sigma}\|\bm p^{(3)}(t)\|^2\,dt+\rho_T T_\Sigma + \mathcal L(\bm c,\bm T), \tag{14a}\\
+\text{s.t.}\quad & \bm p(0)=\bm p_s,\;\dot{\bm p}(0)=\bm v_s,\;\ddot{\bm p}(0)=\bm a_s, \tag{14b}\\
+& \bm p(T_\Sigma)=\bm p_g,\;\dot{\bm p}(T_\Sigma)=\bm v_g,\;\ddot{\bm p}(T_\Sigma)=\bm a_g . \tag{14c}
+\end{align}
+\end{subequations}
+
+惩罚项向量包括时间、相对位置、期望距离、角度、偏航、动力学可行性、障碍物避让和机间避碰：
+\begin{equation}
+\mathcal L(\bm c,\bm T)=
+\bm\rho\cdot
+\left[
+\mathcal L_{st},
+\sum \mathcal L_{rp},
+\sum \mathcal L_{ds},
+\sum \mathcal L_{ag},
+\sum \mathcal L_{yaw},
+\sum \mathcal L_{fb},
+\sum \mathcal L_{oa},
+\sum \mathcal L_{ra}
+\right].
+\tag{15}
+\end{equation}
+
+基础平滑与时间代价写作：
+\begin{equation}
+J_s=\int_0^{T_\Sigma}\|\bm p^{(3)}(t)\|^2\,dt+\rho_TT_\Sigma .
+\tag{16}
+\end{equation}
+
+对轨迹系数和时间的梯度分别可表示为：
+\begin{equation}
+\frac{\partial J}{\partial \bm c}
+=
+\frac{\partial J_s}{\partial \bm c}
+\frac{\partial \mathcal L}{\partial \bm c},
+\tag{17}
+\end{equation}
+\begin{equation}
+\frac{\partial J}{\partial \bm T}
+=
+\frac{\partial J_s}{\partial \bm T}
+\frac{\partial \mathcal L}{\partial \bm T}.
+\tag{18}
+\end{equation}
+
+\subsubsection{编队与视场共享约束}
+
+相对位置惩罚用于维持多机围绕目标的几何分布：
+\begin{equation}
+\mathcal L_{rp}=\sum_{j}\Phi\left(\left\|{}^i\bm p(t_j)-{}^i\bm p_{dp}(t_j)\right\|^2\right).
+\tag{19}
+\end{equation}
+其中 $\Phi(\cdot)$ 是光滑惩罚函数，误差越大代价越高。
+
+其对位置的梯度可写为：
+\begin{equation}
+\frac{\partial \mathcal L_{rp}}{\partial \bm p}
+=
+2\Phi'(\|\bm e_{rp}\|^2)\bm e_{rp},
+\quad
+\bm e_{rp}={}^i\bm p-{}^i\bm p_{dp}.
+\tag{20}
+\end{equation}
+
+为了让目标落在合适距离范围，论文加入距离约束：
+\begin{equation}
+d_{it}(t)=\left\|{}^i\bm p(t)-\bm p_t(t)\right\|.
+\tag{21}
+\end{equation}
+
+距离惩罚可写为：
+\begin{equation}
+\mathcal L_{ds}=\sum_j
+\left[
+\Phi(d_{\min}-d_{it}(t_j))+
+\Phi(d_{it}(t_j)-d_{\max})
+\right].
+\tag{22}
+\end{equation}
+
+其梯度方向沿无人机与目标连线：
+\begin{equation}
+\frac{\partial d_{it}}{\partial {}^i\bm p}
+=
+\frac{{}^i\bm p-\bm p_t}{\|{}^i\bm p-\bm p_t\|}.
+\tag{23}
+\end{equation}
+
+目标相对相机朝向的角度约束可表示为：
+\begin{equation}
+\theta_{it}=\arccos
+\left(
+\frac{({}^i\bm p-\bm p_t)^\top \bm n_i}
+\|{}^i\bm p-\bm p_t\|\|\bm n_i\|}
+\right).
+\tag{24}
+\end{equation}
+
+视场角惩罚为：
+\begin{equation}
+\mathcal L_{ag}=\sum_j\Phi(\theta_{it}(t_j)-\theta_{\max}).
+\tag{25}
+\end{equation}
+
+距离项在原文中也可整理为：
+\begin{equation}
+\mathcal L_{ds}=\sum_j \Phi\big((d_{it}(t_j)-d_d)^2-d_{tol}^2\big).
+\tag{26}
+\end{equation}
+
+视线角度可通过向量夹角写成：
+\begin{equation}
+\cos\alpha=
+\frac{(\bm p_t-\bm p_i)^\top\bm z_i}
+\|\bm p_t-\bm p_i\|\|\bm z_i\|}.
+\tag{27}
+\end{equation}
+
+对应角度约束惩罚：
+\begin{equation}
+\mathcal L_{ag}=\sum_j \Phi(\cos\alpha_{\min}-\cos\alpha_j).
+\tag{28}
+\end{equation}
+
+\subsubsection{障碍物、偏航、动力学与机间避碰}
+
+障碍物避让项基于点到障碍或安全边界距离：
+\begin{equation}
+d_o(t)=\left(\bm p(t)-\bm s_o\right)^\top\bm v_o .
+\tag{29}
+\end{equation}
+
+障碍物惩罚：
+\begin{equation}
+\mathcal L_{oa}=\sum_j\Phi(d_{safe}-d_o(t_j)).
+\tag{30}
+\end{equation}
+
+对位置的梯度：
+\begin{equation}
+\frac{\partial \mathcal L_{oa}}{\partial \bm p}
+=-\Phi'(d_{safe}-d_o)\bm v_o .
+\tag{31}
+\end{equation}
+
+若采用多面体走廊约束，也可写为：
+\begin{equation}
+\mathcal L_{oa}=\sum_j\sum_m\Phi(\bm g_m^\top\bm p(t_j)-b_m).
+\tag{32}
+\end{equation}
+
+偏航角希望指向目标：
+\begin{equation}
+\psi_d(t)=\operatorname{atan2}(y_t(t)-y_i(t),x_t(t)-x_i(t)).
+\tag{33}
+\end{equation}
+
+偏航惩罚：
+\begin{equation}
+\mathcal L_{yaw}=\sum_j\Phi((\psi_i(t_j)-\psi_d(t_j))^2-\psi_{tol}^2).
+\tag{34}
+\end{equation}
+
+动力学可行性约束限制速度、加速度和 jerk：
+\begin{equation}
+\mathcal L_{fb}=
+\sum_j
+\left[
+\Phi(\|\dot{\bm p}(t_j)\|^2-v_{\max}^2)
+\right].
+\tag{35}
+\end{equation}
+\begin{equation}
+\mathcal L_{fb}\leftarrow
+\mathcal L_{fb}+
+\sum_j\Phi(\|\ddot{\bm p}(t_j)\|^2-a_{\max}^2).
+\tag{36}
+\end{equation}
+\begin{equation}
+\mathcal L_{fb}\leftarrow
+\mathcal L_{fb}+
+\sum_j\Phi(\|\bm p^{(3)}(t_j)\|^2-j_{\max}^2).
+\tag{37}
+\end{equation}
+
+机间避碰使用 reciprocal avoidance 思想。两机相对位置为：
+\begin{equation}
+\bm d_{ij}(t)=\bm p_i(t)-\bm p_j(t).
+\tag{38}
+\end{equation}
+
+安全距离约束：
+\begin{equation}
+\|\bm d_{ij}(t)\|\geq r_i+r_j+r_s .
+\tag{39}
+\end{equation}
+
+惩罚项为：
+\begin{equation}
+\mathcal L_{ra}=\sum_j\sum_{k\neq i}
+\Phi\left((r_i+r_k+r_s)^2-\|\bm p_i(t_j)-\bm p_k(t_j)\|^2\right).
+\tag{40}
+\end{equation}
+
+其对本机位置的梯度：
+\begin{equation}
+\frac{\partial \mathcal L_{ra}}{\partial \bm p_i}
+=-2\Phi'(\cdot)(\bm p_i-\bm p_k).
+\tag{41}
+\end{equation}
+
+对邻机位置的梯度：
+\begin{equation}
+\frac{\partial \mathcal L_{ra}}{\partial \bm p_k}
+=2\Phi'(\cdot)(\bm p_i-\bm p_k).
+\tag{42}
+\end{equation}
+
+若把速度趋势也纳入 reciprocal 避碰，可构造相对速度：
+\begin{equation}
+\bm v_{ij}(t)=\dot{\bm p}_i(t)-\dot{\bm p}_j(t).
+\tag{43}
+\end{equation}
+
+碰撞趋势可由时间到最近点近似判断：
+\begin{equation}
+t_c=-\frac{\bm d_{ij}^\top\bm v_{ij}}{\|\bm v_{ij}\|^2}.
+\tag{44}
+\end{equation}
+
+再对预测最近距离施加惩罚：
+\begin{equation}
+\mathcal L_{ra}=\sum_{j,k}
+\Phi\left(r_{safe}^2-\|\bm d_{ij}+t_c\bm v_{ij}\|^2\right).
+\tag{45}
+\end{equation}
+
+目标车辆运动学可用平面车辆模型表达：
+\begin{equation}
+\dot{x}_t=v_t\cos\phi_t,\quad
+\dot{y}_t=v_t\sin\phi_t,\quad
+\dot{\phi}_t=\omega_t .
+\tag{46}
+\end{equation}
+
+\subsection{Rao 实验逻辑}
+
+Rao 的实验不是单纯展示轨迹好看，而是在验证四个具体命题：
+\begin{enumerate}
+  \item 多无人机可以在杂乱环境中持续跟踪移动目标；
+  \item 加入视场共享后，多机同时可见目标的比例显著提高；
+  \item 相比 Zhou 的通用集群规划，针对目标跟踪设计的可见性约束能减少目标丢失；
+  \item 后端优化同时保持轨迹平滑、动力学可行和机间安全距离。
+\end{enumerate}
+
+\begin{center}
+\includegraphics[width=0.75\textwidth]{rao_fig05_cluttered_environment.png}
+
+{\small 图 5：随机障碍环境。该图给出实验场景的复杂度基础，说明目标跟踪不是在空旷空间中完成的。}
+\end{center}
+
+\begin{center}
+\includegraphics[width=0.75\textwidth]{rao_fig06_tracking_process.png}
+
+{\small 图 6：多无人机目标跟踪过程。它展示了无人机集群在障碍环境中围绕目标运动，并通过重规划保持持续跟踪。}
+\end{center}
+
+\begin{center}
+\includegraphics[width=0.75\textwidth]{rao_fig07_relative_positions_xy.png}
+
+{\small 图 7：三架无人机相对目标的平面位置分布。该图用于检查编队几何和视角分配是否稳定，而不是只看最终轨迹是否避障。}
+\end{center}
+
+\begin{center}
+\includegraphics[width=0.75\textwidth]{rao_fig08_comparison_environment.png}
+
+{\small 图 8：对比实验环境。论文在这个场景中比较本文方法和 Zhou 方法，突出目标跟踪任务中特化可见性约束的必要性。}
+\end{center}
+
+\begin{center}
+\includegraphics[width=0.75\textwidth]{rao_fig09_comparison_with_zhou.png}
+
+{\small 图 9：本文方法与 Zhou 方法的对比。核心观察是：通用集群规划能飞，但不一定能稳定“看见目标”；Rao 方法显式优化可见性。}
+\end{center}
+
+\begin{center}
+\includegraphics[width=0.75\textwidth]{rao_fig10_target_visibility.png}
+
+{\small 图 10：目标对各无人机的可见性时间序列。该图直接支撑 Table 1 中 3-visible、2-visible、1-visible、0-visible 的统计结果。}
+\end{center}
+
+其中最关键的实验指标是 Table 1 的可见性比例。Rao 方法 3-visible 达到 57.6\%，而 Zhou 方法仅 10.8\%；Rao 方法 0-visible 为 0，意味着整个过程中没有完全丢失目标。这正是论文的主张：目标跟踪任务不能只做避障和编队，还必须把“看见目标”显式写进规划目标。
+
+\begin{table}[H]
+\centering
+\caption{Rao 论文 Table 1：目标可见性比例与碰撞避免对比}
+\begin{tabular}{lccccc}
+\toprule
+方法 & 3-visible & 2-visible & 1-visible & 0-visible & Collision avoidance \\
+\midrule
+Ours & 57.6\% & 32.2\% & 10.2\% & 0.0\% & Yes \\
+Zhou method & 10.8\% & 8.2\% & 67.2\% & 13.8\% & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Rao 创新点与可改进方向}
+
+创新点主要有三点。第一，把多机视场共享机制纳入轨迹优化，使“至少有无人机看见目标”变成可优化目标。第二，在前端搜索和后端 MINCO 优化之间搭桥，兼顾实时性和轨迹质量。第三，把遮挡、距离、视场角、偏航、动力学、障碍物和机间避碰统一到一个目标函数中。
+
+可改进方向也很明确。第一，目标预测模型较简单时，面对高机动目标可能不稳，可以引入学习式预测或意图估计。第二，视场共享主要是几何约束，还没有充分考虑视觉感知质量，例如分辨率、光照、目标姿态、检测置信度。第三，多机通信延迟、定位漂移、真实相机检测误差在论文中不是主线，若做真实系统复现需要额外处理。
+
+\section{Zhou 等 2022：Swarm of Micro Flying Robots in the Wild}
+
+\subsection{论文卡片}
+
+\begin{longtable}{p{0.18\linewidth}p{0.74\linewidth}}
+\toprule
+题目 & Swarm of micro flying robots in the wild \\
+年份 & 2022 \\
+核心任务 & 微型无人机集群在野外未知环境中自主导航、避障、编队、互避和目标跟拍。 \\
+问题类型 & 系统论文、集群机器人、在线轨迹规划、未知环境导航。 \\
+核心方法 & 使用轻量级机载感知和局部地图，结合 MINCO 轨迹表示、时空联合优化和多种任务惩罚项。 \\
+主要实验 & 竹林/树林等野外环境飞行、未知障碍编队、密集互避、多机目标跟踪、仿真 playground。 \\
+一句话总结 & 这篇论文展示了微型无人机集群在真实复杂环境中自主协同飞行的系统能力，目标跟踪只是其中一个任务模块。 \\
+\bottomrule
+\end{longtable}
+
+\subsection{研究动机}
+
+过去多无人机集群常依赖外部定位、预建地图或宽松环境，而真实野外环境有未知障碍、窄通道、通信受限、定位漂移和机载计算资源有限等问题。\Zhou{} 试图证明：即使在微型无人机上，也可以用紧凑的感知、规划和通信体系完成真实环境中的集群飞行。
+
+\begin{center}
+\includegraphics[width=0.75\textwidth]{zhou_fig01_overview.png}
+
+{\small 图 1：Zhou 论文的系统总览。图中把野外环境、微型无人机集群、局部规划和多机协同放在同一个系统问题中，而不是只展示单一算法模块。}
+\end{center}
+
+这篇论文的贡献不是单个公式，而是系统闭环：每架无人机都能感知局部障碍、生成轨迹、避开其他无人机，并通过少量共享信息保持集群协同。
+
+\subsection{方法框架}
+
+论文方法可以理解为一个在线优化器：
+\begin{enumerate}
+  \item 每架无人机从机载传感器构建局部环境信息；
+  \item 将轨迹表示为分段多项式；
+  \item 用 MINCO 降低优化维度；
+  \item 在目标函数中加入平滑、时间、动力学可行、障碍物、机间互避、编队、跟拍等惩罚；
+  \item 通过滚动重规划持续适应未知环境。
+\end{enumerate}
+
+\begin{center}
+\includegraphics[width=0.75\textwidth]{zhou_fig02_hardware_system.png}
+
+{\small 图 2：硬件与系统架构。该图说明 Zhou 的贡献是完整机载闭环系统，规划算法必须受限于小型无人机的传感器、计算和通信条件。}
+\end{center}
+
+\subsection{Zhou 论文全部公式与解释}
+
+轨迹由 MINCO 映射得到：
+\begin{equation}
+\bm p(t)=M_{\bm q,\bm T}(t).
+\tag{1}
+\end{equation}
+这里 $\bm q$ 是中间路点，$\bm T$ 是各段时间分配。
+
+最小控制努力目标为：
+\begin{equation}
+J_e=\int_0^{T}\left\|\bm p^{(s)}(t)\right\|^2dt,
+\tag{2}
+\end{equation}
+其中 $s$ 可取加速度、jerk 或 snap 阶数，具体取决于轨迹连续性需求。
+
+多项式系数由线性系统确定：
+\begin{equation}
+M(\bm T)\bm c=\bm b(\bm q),\qquad T_p=T .
+\tag{3}
+\end{equation}
+
+带约束的时间相关优化写作：
+\begin{equation}
+\min_{\bm q,\bm T}\; J(\bm q,\bm T)
+=J_e+\rho_T\sum_i T_i ,
+\tag{4}
+\end{equation}
+\begin{equation}
+\text{s.t.}\quad
+\mathcal G(\bm p(t),\dot{\bm p}(t),\ddot{\bm p}(t),\ldots)\leq \bm 0,\quad t\in[0,T].
+\tag{5}
+\end{equation}
+
+连续时间约束用积分惩罚处理：
+\begin{equation}
+J_\Sigma=J_e+\rho_T\sum_iT_i+
+\sum_x\lambda_x\int_0^T \Phi_x(t)\,dt .
+\tag{6}
+\end{equation}
+
+为了数值求解，积分被采样近似：
+\begin{equation}
+\int_0^T\Phi_x(t)\,dt
+\approx
+\sum_{i=1}^{M}\sum_{j=0}^{\kappa_i}
+\omega_{ij}\Phi_x(t_{ij}) .
+\tag{7}
+\end{equation}
+
+最终用户友好的目标函数形式为：
+\begin{equation}
+\min_{\bm q,\bm T}\sum_x\lambda_xJ_x .
+\tag{8}
+\end{equation}
+
+平滑性惩罚：
+\begin{equation}
+J_s=\int_0^T\left\|\bm p^{(3)}(t)\right\|^2dt .
+\tag{9}
+\end{equation}
+
+总时间惩罚：
+\begin{equation}
+J_t=\sum_iT_i .
+\tag{10}
+\end{equation}
+
+速度可行性惩罚：
+\begin{equation}
+J_v=\int_0^T\Phi(\|\dot{\bm p}(t)\|^2-v_m^2)\,dt .
+\tag{11}
+\end{equation}
+
+加速度可行性惩罚：
+\begin{equation}
+J_a=\int_0^T\Phi(\|\ddot{\bm p}(t)\|^2-a_m^2)\,dt .
+\tag{12}
+\end{equation}
+
+jerk 可行性惩罚：
+\begin{equation}
+J_j=\int_0^T\Phi(\|\bm p^{(3)}(t)\|^2-j_m^2)\,dt .
+\tag{13}
+\end{equation}
+
+动力学可行性总项：
+\begin{equation}
+J_d=J_v+J_a+J_j .
+\tag{14}
+\end{equation}
+
+障碍物平面距离：
+\begin{equation}
+d_o=(\bm p-\bm s)^\top\bm v .
+\tag{15}
+\end{equation}
+其中 $\bm s$ 是障碍物表面或参考点，$\bm v$ 是远离障碍物的法向。
+
+障碍物避让惩罚：
+\begin{equation}
+J_o=\int_0^T\Phi(d_{thr}-d_o(t))\,dt .
+\tag{16}
+\end{equation}
+
+机间相对位置：
+\begin{equation}
+\bm d_{ij}(t)=\bm p_i(t)-\bm p_j(t).
+\tag{17}
+\end{equation}
+
+机间安全距离惩罚：
+\begin{equation}
+J_{sw}=\sum_{j\neq i}\int_0^T
+\Phi\left(r_{sw}^2-\|\bm d_{ij}(t)\|^2\right)dt .
+\tag{18}
+\end{equation}
+
+若采用 reciprocal collision avoidance，可把对方未来轨迹也纳入约束：
+\begin{equation}
+J_{rca}=\sum_{j\neq i}\int_0^T
+\Phi\left(r_{sw}^2-\|\bm p_i(t)-\hat{\bm p}_j(t)\|^2\right)dt .
+\tag{19}
+\end{equation}
+
+编队保持惩罚：
+\begin{equation}
+J_f=\sum_{j}\int_0^T
+\left\|
+\bm p_i(t)-\bm p_c(t)-\bm r_i
+\right\|^2dt .
+\tag{20}
+\end{equation}
+其中 $\bm p_c$ 是集群中心或参考轨迹，$\bm r_i$ 是第 $i$ 架无人机在编队中的相对位置。
+
+多视角跟拍要求无人机与目标保持合适距离：
+\begin{equation}
+J_{tr,d}=\int_0^T
+\Phi\left((\|\bm p_i(t)-\bm p_{tar}(t)\|-d_{des})^2-d_{tol}^2\right)dt .
+\tag{21}
+\end{equation}
+
+还要让目标落在相机视场内：
+\begin{equation}
+J_{tr,a}=\int_0^T
+\Phi\left(\alpha_i(t)-\alpha_{max}\right)dt .
+\tag{22}
+\end{equation}
+
+多机跟拍总项：
+\begin{equation}
+J_{tr}=J_{tr,d}+J_{tr,a}+J_{tr,occ}.
+\tag{23}
+\end{equation}
+其中 $J_{tr,occ}$ 表示遮挡或可见性相关惩罚。
+
+UWB 漂移修正可写为最小二乘形式：
+\begin{equation}
+\min_{\Delta\bm p_i}
+\sum_{(i,j)\in\mathcal E}
+\left(
+\|\bm p_i+\Delta\bm p_i-\bm p_j-\Delta\bm p_j\|-d_{ij}^{uwb}
+\right)^2 .
+\tag{24}
+\end{equation}
+
+\subsection{Zhou 实验逻辑}
+
+Zhou 的实验按照系统能力递进展开。第一类实验是单机或少量无人机在竹林、树林等真实未知环境中导航，证明机载感知与规划能处理复杂障碍。第二类实验是编队穿越未知障碍，证明集群不是简单的多架无人机各飞各的，而是能在保持相对结构的同时避障。第三类实验是密集 reciprocal collision avoidance，证明无人机之间可以在突发接近时互相避开。第四类实验是多机目标跟拍，证明同一套轨迹优化框架可以扩展到目标跟踪。第五类是 benchmark/playground，展示方法的泛化和工程可复用性。
+
+\begin{center}
+\includegraphics[width=0.75\textwidth]{zhou_fig03_wild_navigation.png}
+
+{\small 图 3：野外复杂环境导航。该图支撑论文标题中的 ``in the wild''，说明系统面对的是竹林、窄通道和未知障碍，而不是规则实验室环境。}
+\end{center}
+
+\begin{center}
+\includegraphics[width=0.75\textwidth]{zhou_fig04_formation_navigation.png}
+
+{\small 图 4：未知障碍中的编队导航。它对应实验逻辑中的第二层能力：集群既要避开障碍，又要尽量保持队形结构。}
+\end{center}
+
+\begin{center}
+\includegraphics[width=0.75\textwidth]{zhou_fig05_reciprocal_collision_avoidance.png}
+
+{\small 图 5：密集 reciprocal collision avoidance 实验。该图验证多机近距离交互时的安全性，是集群系统能否可靠运行的关键证据。}
+\end{center}
+
+\begin{center}
+\includegraphics[width=0.75\textwidth]{zhou_fig06_multidrone_tracking.png}
+
+{\small 图 6：多无人机目标跟踪与遮挡场景。它是 Zhou 论文中与 Rao 最直接相关的部分，但 Zhou 主要展示系统能力，而没有像 Rao 那样专门优化视场共享。}
+\end{center}
+
+\begin{center}
+\includegraphics[width=0.75\textwidth]{zhou_fig07_benchmark_comparisons.png}
+
+{\small 图 7：benchmark 对比。该图用于说明轨迹优化框架相对于其他规划/集群方法的性能优势。}
+\end{center}
+
+\begin{center}
+\includegraphics[width=0.75\textwidth]{zhou_fig08_swarm_playground.png}
+
+{\small 图 8：swarm playground 示例。它说明该系统和软件包可以支持更多集群行为，不局限于论文主实验中的几种任务。}
+\end{center}
+
+这篇论文最强的证据并不是某一个数值指标，而是真实野外飞行视频和多场景闭环结果。对于机器人系统论文而言，真实实验本身就是关键贡献。
+
+\subsection{Zhou 创新点与可改进方向}
+
+Zhou 的创新主要在系统级整合。第一，它把微型无人机的机载感知、定位、通信和轨迹优化做成可实飞闭环。第二，它用统一的 MINCO 优化框架表达避障、互避、编队、跟拍等多种行为。第三，它在真实野外环境中展示了集群飞行，而不是只在动作捕捉室或纯仿真中演示。
+
+局限也比较明显。第一，目标跟踪只是系统应用之一，对遮挡、视场共享和多机可见性没有 Rao 那样专门建模。第二，真实系统依赖硬件、通信和工程调参，复现成本高。第三，方法以几何和优化为主，对语义理解、复杂目标意图预测、具身智能式主动探索涉及较少。
+
+\section{两篇论文的对比}
+
+\begin{table}[H]
+\centering
+\caption{Zhou 与 Rao 的核心差异}
+\begin{tabular}{p{0.18\linewidth}p{0.36\linewidth}p{0.36\linewidth}}
+\toprule
+维度 & Zhou 2022 & Rao 2025 \\
+\midrule
+论文定位 & 野外微型无人机集群系统 & 面向目标跟踪的多无人机轨迹规划算法 \\
+核心任务 & 导航、避障、编队、互避、跟拍 & 杂乱环境中持续目标跟踪 \\
+创新重心 & 系统集成与真实飞行能力 & 视场共享与目标可见性优化 \\
+轨迹表示 & MINCO 分段多项式 & MINCO 分段多项式 \\
+目标跟踪处理 & 作为统一优化框架中的一个应用项 & 作为主任务深入建模 \\
+复现难度 & 高，需要硬件/系统工程 & 中等，可先仿真实现算法核心 \\
+适合作为论文创新起点 & 适合作为系统基线 & 更适合作为算法改进基线 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{复现建议}
+
+如果只能选一篇作为你后续“飞控/路径规划算法创新”的复现对象，建议优先复现 \Rao{}。原因是它的问题边界更窄，指标更清楚，能自然引出你的创新点：目标预测、遮挡建模、视场质量、通信延迟鲁棒性、学习辅助规划、多目标跟踪等。
+
+建议复现路线如下：
+\begin{enumerate}
+  \item 第一阶段：做二维或 2.5D 仿真，三架无人机、一个移动目标、若干圆形/多边形障碍；
+  \item 第二阶段：实现目标预测和期望环绕位置生成；
+  \item 第三阶段：实现前端 kinodynamic A* 或简化采样搜索；
+  \item 第四阶段：后端先用 B-spline 或多项式优化替代完整 MINCO，验证可见性和避障项；
+  \item 第五阶段：补齐 MINCO、机间 reciprocal 避碰、视场角和遮挡惩罚；
+  \item 第六阶段：复现实验指标：3-visible、2-visible、1-visible、0-visible、碰撞次数、轨迹长度、平滑性、规划时间。
+\end{enumerate}
+
+如果你想发类似论文，最好有真实实验或至少高质量仿真加消融。对无人机轨迹规划而言，只做简单仿真通常说服力不足；若目标是中文课程/本科科研/初步论文，仿真可以起步；若目标是机器人或自动化方向较好的会议期刊，至少需要仿真复杂度、对比基线、消融实验，最好再有真实无人机或 AirSim/Gazebo/ROS 闭环验证。
+
+\section{符号速查}
+
+\begin{longtable}{p{0.18\linewidth}p{0.72\linewidth}}
+\toprule
+符号 & 含义 \\
+\midrule
+$\bm p,\dot{\bm p},\ddot{\bm p}$ & 无人机位置、速度、加速度 \\
+$\bm p^{(3)}$ & jerk，位置对时间的三阶导数 \\
+$\bm p_t$ & 目标位置 \\
+$\bm q$ & MINCO 中间路点变量 \\
+$\bm T$ & 各段轨迹时间分配 \\
+$\bm c$ & 多项式系数 \\
+$\Phi(\cdot)$ & 光滑惩罚函数，通常对违反约束的部分产生代价 \\
+$J_s,J_t,J_d,J_o,J_f,J_{tr}$ & 平滑、时间、动力学、障碍、编队、跟踪等代价项 \\
+$d_o$ & 与障碍物边界/平面的距离 \\
+$r_{safe},r_{sw}$ & 安全距离或集群避碰半径 \\
+$\theta,\alpha,\psi$ & 视场角/夹角/偏航角相关变量 \\
+\bottomrule
+\end{longtable}
+
+\section{读论文时应重点盯住的问题}
+
+读 \Zhou{} 时，不要只问“用了什么优化公式”，而要问：为什么这个系统能在真实小飞机上跑起来？哪些模块是算法创新，哪些模块是工程闭环？真实实验支撑了哪些结论？
+
+读 \Rao{} 时，要重点问：目标可见性是怎样被数学化的？遮挡如何进入优化？多机之间如何分配视角？相比 Zhou 的通用方法，它到底多加了哪些跟踪任务特化约束？
+
+这两篇论文连起来读，最有价值的主线是：从“通用集群飞行系统”走向“面向任务的集群轨迹规划”。如果你要做创新，最自然的切入点不是再写一个普通避障项，而是把目标跟踪质量、感知不确定性和多机协作策略更深地放进规划器。
+
+\begin{thebibliography}{9}
+\bibitem{zhou2022swarm}
+Zhou, X. et al. Swarm of micro flying robots in the wild. 2022.
+
+\bibitem{rao2025multi}
+Rao, et al. Multi-UAV trajectory planning with field-of-view sharing mechanism in cluttered environments. 2025.
+\end{thebibliography}
+
+\end{document}
+
+

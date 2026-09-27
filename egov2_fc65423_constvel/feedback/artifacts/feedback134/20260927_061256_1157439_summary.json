@@ -1,0 +1,83 @@
+{
+  "run": "20260927_061256_1157439",
+  "epoch": 1790460783.3180294,
+  "samples": 2349,
+  "K3_sample_fraction": 0.8671775223499362,
+  "K3_time_fraction": 0.8671225874949763,
+  "K3_loss_seconds": 10.404203999999984,
+  "K2_sample_fraction": 0.9978714346530438,
+  "uav_loss_events": 11,
+  "union_loss_events": 10,
+  "union_episodes": [
+    {
+      "begin": 8.017654,
+      "end": 8.817113,
+      "seconds": 0.7994590000000006
+    },
+    {
+      "begin": 10.416955,
+      "end": 11.817811,
+      "seconds": 1.400856000000001
+    },
+    {
+      "begin": 25.051837,
+      "end": 26.38387,
+      "seconds": 1.3320330000000027
+    },
+    {
+      "begin": 34.950527,
+      "end": 35.951798,
+      "seconds": 1.0012709999999956
+    },
+    {
+      "begin": 39.683894,
+      "end": 40.283916,
+      "seconds": 0.6000219999999956
+    },
+    {
+      "begin": 43.98413,
+      "end": 44.119516,
+      "seconds": 0.1353859999999969
+    },
+    {
+      "begin": 63.784004,
+      "end": 64.983726,
+      "seconds": 1.1997220000000013
+    },
+    {
+      "begin": 70.650548,
+      "end": 72.050566,
+      "seconds": 1.4000180000000029
+    },
+    {
+      "begin": 73.350454,
+      "end": 75.850438,
+      "seconds": 2.4999839999999978
+    },
+    {
+      "begin": 75.884257,
+      "end": 75.91971,
+      "seconds": 0.03545299999998974
+    }
+  ],
+  "oracle_validation": [
+    {
+      "uav": 1,
+      "static_disagreement": 0,
+      "dynamic_disagreement": 0,
+      "n": 2349
+    },
+    {
+      "uav": 2,
+      "static_disagreement": 0,
+      "dynamic_disagreement": 0,
+      "n": 2349
+    },
+    {
+      "uav": 3,
+      "static_disagreement": 0,
+      "dynamic_disagreement": 0,
+      "n": 2349
+    }
+  ]
+}

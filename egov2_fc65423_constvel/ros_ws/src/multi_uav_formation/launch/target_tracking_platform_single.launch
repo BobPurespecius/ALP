@@ -1,0 +1,672 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="world" default="$(find multi_uav_formation)/worlds/platform_track.world"/>
+    <arg name="scene_file" default="$(find multi_uav_formation)/scenes/platform_track.json"/>
+    <arg name="enable_moving_obstacles" default="true"/>
+    <arg name="vehicle" default="neverlost_livox_pitch30"/>
+    <arg name="debug" default="false"/>
+    <arg name="verbose" default="false"/>
+    <arg name="paused" default="false"/>
+    <arg name="track_log_file" default=""/>
+    <arg name="ego_map_size_x" default="44.0"/>
+    <arg name="ego_map_size_y" default="18.0"/>
+    <arg name="ego_map_size_z" default="4.5"/>
+    <arg name="ego_max_vel" default="1.0"/>
+    <arg name="ego_max_acc" default="1.5"/>
+    <arg name="ego_max_jer" default="8.0"/>
+    <arg name="ego_planning_horizon" default="5.0"/>
+    <arg name="uav1_start_x" default="-8.8"/>
+    <arg name="uav1_start_y" default="-2.6"/>
+    <arg name="uav2_start_x" default="-8.8"/>
+    <arg name="uav2_start_y" default="0.0"/>
+    <arg name="uav3_start_x" default="-8.8"/>
+    <arg name="uav3_start_y" default="2.6"/>
+    <arg name="ego_broadcast_traj_topic" default="/target_tracking/broadcast_traj"/>
+    <arg name="planner_backend" default="egov2"/>
+    <arg name="disable_livox_ray" default="$(eval arg('planner_backend') == 'egov2')"/>
+    <arg name="ego_obstacles_inflation" default="0.35"/>
+    <arg name="ego_obstacle_clearance" default="0.50"/>
+    <arg name="ego_obstacle_clearance_soft" default="0.50"/>
+    <arg name="ego_virtual_ceil_height" default="$(eval -1.0 if arg('planner_backend') == 'egov2' else 2.9)"/>
+    <arg name="ego_package_dir" default="$(find multi_uav_formation)/../EGO-Planner-v2/swarm-playground/tracking_ws/src/planner/plan_manage"/>
+    <arg name="ego_binary_dir" default="$(find multi_uav_formation)/../EGO-Planner-v2/swarm-playground/tracking_ws/devel/lib/ego_planner"/>
+    <arg name="ego_advanced_param_file" default="$(arg ego_package_dir)/launch/advanced_param.xml"/>
+    <arg name="fov_planning_enabled" default="true"/>
+    <arg name="fov_costs_enabled" default="true"/>
+    <arg name="fov_half_angle_deg" default="42.5"/>
+    <arg name="fov_enable_candidate_goal" default="true"/>
+    <arg name="fov_enable_visible_safe_region" default="true"/>
+    <arg name="fov_enable_goal_safe_projection" default="true"/>
+    <arg name="fov_candidate_count" default="17"/>
+    <arg name="fov_candidate_angle_span_deg" default="360.0"/>
+    <arg name="fov_use_los_check" default="true"/>
+    <arg name="fov_use_angle_check" default="true"/>
+    <arg name="fov_weight" default="8.0"/>
+    <arg name="fov_distance_weight" default="2.0"/>
+    <arg name="fov_height_weight" default="1.0"/>
+    <arg name="fov_occlusion_weight" default="20.0"/>
+    <arg name="fov_los_sample_step" default="0.12"/>
+    <arg name="fov_angular_weight" default="1.0"/>
+    <arg name="fov_angular_min_angle_deg" default="30.0"/>
+    <arg name="fov_yaw_weight" default="1.0"/>
+    <arg name="fov_yaw_speed_min" default="0.15"/>
+    <arg name="fov_soft_retry_scale" default="0.0"/>
+    <arg name="fov_retry_distance_scale" default="1.25"/>
+    <arg name="object_velocity_deadband" default="0.5"/>
+    <arg name="shared_target_prediction_age" default="3.0"/>
+    <arg name="target_center_x" default="4.0"/>
+    <arg name="target_center_y" default="0.0"/>
+    <arg name="target_radius_x" default="1.8"/>
+    <arg name="target_radius_y" default="1.0"/>
+    <arg name="target_omega" default="0.18"/>
+    <arg name="target_mode" default="waypoints"/>
+    <arg name="target_speed" default="0.45"/>
+    <arg name="takeoff_height" default="1.4"/>
+    <arg name="target_height" default="1.4"/>
+    <arg name="target_waypoints_use_z" default="false"/>
+    <arg name="lock_ego_tracking_height" default="true"/>
+    <arg name="track_max_control_z" default="1.4"/>
+    <arg name="target_waypoints" default="-8.2,0.0;-6.0,0.3;-3.7,-0.2;-1.4,0.4;1.2,-0.2;3.6,0.4;6.3,-0.1;9.2,0.3;12.0,0.0;14.2,0.6;16.0,0.0;14.6,-0.5;12.2,0.4;10.0,-0.3;12.4,0.5;14.8,-0.4;16.0,0.0"/>
+    <arg name="target_segment_speeds" default=""/>
+
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="world_name" value="$(arg world)"/>
+        <arg name="debug" value="$(arg debug)"/>
+        <arg name="verbose" value="$(arg verbose)"/>
+        <arg name="paused" value="$(arg paused)"/>
+    </include>
+
+    <node if="$(arg enable_moving_obstacles)"
+          pkg="multi_uav_formation"
+          type="move_obstacles.py"
+          name="target_tracking_move_obstacles"
+          args="--scene-file $(arg scene_file) --world-file $(arg world) --rate 20.0"
+          output="screen"/>
+
+    <node pkg="multi_uav_formation"
+          type="target_state_coordinator.py"
+          name="target_state_coordinator"
+          output="screen">
+        <param name="rate" value="30.0"/>
+        <param name="frame_id" value="world"/>
+        <param name="target_mode" value="$(arg target_mode)"/>
+        <param name="target_speed" value="$(arg target_speed)"/>
+        <param name="target_height" value="$(arg target_height)"/>
+        <param name="target_waypoints" value="$(arg target_waypoints)"/>
+        <param name="target_waypoints_use_z" value="$(arg target_waypoints_use_z)" type="bool"/>
+        <param name="target_segment_speeds" value="$(arg target_segment_speeds)"/>
+        <param name="target_center_x" value="$(arg target_center_x)"/>
+        <param name="target_center_y" value="$(arg target_center_y)"/>
+        <param name="target_radius_x" value="$(arg target_radius_x)"/>
+        <param name="target_radius_y" value="$(arg target_radius_y)"/>
+        <param name="target_omega" value="$(arg target_omega)"/>
+        <param name="sharing_enabled" value="$(eval arg('planner_backend') == 'fov')" type="bool"/>
+        <param name="max_prediction_age" value="$(arg shared_target_prediction_age)"/>
+        <rosparam param="required_uavs">[uav1, uav2, uav3]</rosparam>
+        <param name="ground_truth_topic" value="/target_tracking/ground_truth"/>
+        <param name="shared_topic" value="/object_odom"/>
+        <param name="start_time_topic" value="/target_tracking/target_start_time"/>
+    </node>
+
+    <node pkg="multi_uav_formation"
+          type="gazebo_pose_bridge.py"
+          name="gazebo_pose_bridge"
+          args="--count 3 --vehicle $(arg vehicle) --frame-id world --scene-file $(arg scene_file) --marker-topic /gazebo_visualization_marker_array --publish-mavros-vision --use-truth-odom"
+          output="screen"/>
+
+    <group ns="uav1">
+        <arg name="ID" value="0"/>
+        <arg name="fcu_url" default="udp://:14540@localhost:14580"/>
+        <env name="PX4_SIM_MODEL" value="gazebo-classic_$(arg vehicle)" />
+        <arg name="mavlink_id" value="1" />
+        <arg name="sdf_cmd" default="$(find multi_uav_formation)/scripts/generate_target_tracking_sdf.py --disable-livox-ray $(arg disable_livox_ray) -- $(find mavlink_sitl_gazebo)/scripts/jinja_gen.py --stdout --mavlink_id=$(arg mavlink_id) --mavlink_udp_port=14560 --mavlink_tcp_port=4560 --gst_udp_port=5600 --video_uri=5600 --mavlink_cam_udp_port=14530 $(find mavlink_sitl_gazebo)/models/$(arg vehicle)/$(arg vehicle).sdf.jinja $(find mavlink_sitl_gazebo)"/>
+        <param command="$(arg sdf_cmd)" name="sdf_$(arg vehicle)$(arg ID)"/>
+        <node name="sitl_$(arg ID)" pkg="px4" type="px4" output="screen"
+              launch-prefix="$(find multi_uav_formation)/scripts/wait_for_gazebo_model_then_exec.py $(arg vehicle)$(arg ID) 180"
+              args="$(find px4)/build/px4_sitl_default/etc -s etc/init.d-posix/rcS -i $(arg ID) -w sitl_$(arg vehicle)_$(arg ID) -d"/>
+        <node name="vehicle_spawn" pkg="gazebo_ros" type="spawn_model" output="screen" args="-sdf -param sdf_$(arg vehicle)$(arg ID) -model $(arg vehicle)$(arg ID) -x $(arg uav1_start_x) -y $(arg uav1_start_y) -z 0 -R 0 -P 0 -Y 0"/>
+        <include file="$(find mavros)/launch/px4.launch">
+            <arg name="fcu_url" value="$(arg fcu_url)"/>
+            <arg name="gcs_url" value=""/>
+            <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
+            <arg name="tgt_component" value="1"/>
+        </include>
+    </group>
+
+    <group ns="uav2">
+        <arg name="ID" value="1"/>
+        <arg name="fcu_url" default="udp://:14541@localhost:14581"/>
+        <env name="PX4_SIM_MODEL" value="gazebo-classic_$(arg vehicle)" />
+        <arg name="mavlink_id" value="2" />
+        <arg name="sdf_cmd" default="$(find multi_uav_formation)/scripts/generate_target_tracking_sdf.py --disable-livox-ray $(arg disable_livox_ray) -- $(find mavlink_sitl_gazebo)/scripts/jinja_gen.py --stdout --mavlink_id=$(arg mavlink_id) --mavlink_udp_port=14561 --mavlink_tcp_port=4561 --gst_udp_port=5601 --video_uri=5601 --mavlink_cam_udp_port=14531 $(find mavlink_sitl_gazebo)/models/$(arg vehicle)/$(arg vehicle).sdf.jinja $(find mavlink_sitl_gazebo)"/>
+        <param command="$(arg sdf_cmd)" name="sdf_$(arg vehicle)$(arg ID)"/>
+        <node name="sitl_$(arg ID)" pkg="px4" type="px4" output="screen"
+              launch-prefix="$(find multi_uav_formation)/scripts/wait_for_gazebo_model_then_exec.py $(arg vehicle)$(arg ID) 180"
+              args="$(find px4)/build/px4_sitl_default/etc -s etc/init.d-posix/rcS -i $(arg ID) -w sitl_$(arg vehicle)_$(arg ID) -d"/>
+        <node name="vehicle_spawn" pkg="gazebo_ros" type="spawn_model" output="screen" args="-wait $(arg vehicle)0 -sdf -param sdf_$(arg vehicle)$(arg ID) -model $(arg vehicle)$(arg ID) -x $(arg uav2_start_x) -y $(arg uav2_start_y) -z 0 -R 0 -P 0 -Y 0"/>
+        <include file="$(find mavros)/launch/px4.launch">
+            <arg name="fcu_url" value="$(arg fcu_url)"/>
+            <arg name="gcs_url" value=""/>
+            <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
+            <arg name="tgt_component" value="1"/>
+        </include>
+    </group>
+
+    <group ns="uav3">
+        <arg name="ID" value="2"/>
+        <arg name="fcu_url" default="udp://:14542@localhost:14582"/>
+        <env name="PX4_SIM_MODEL" value="gazebo-classic_$(arg vehicle)" />
+        <arg name="mavlink_id" value="3" />
+        <arg name="sdf_cmd" default="$(find multi_uav_formation)/scripts/generate_target_tracking_sdf.py --disable-livox-ray $(arg disable_livox_ray) -- $(find mavlink_sitl_gazebo)/scripts/jinja_gen.py --stdout --mavlink_id=$(arg mavlink_id) --mavlink_udp_port=14562 --mavlink_tcp_port=4562 --gst_udp_port=5602 --video_uri=5602 --mavlink_cam_udp_port=14532 $(find mavlink_sitl_gazebo)/models/$(arg vehicle)/$(arg vehicle).sdf.jinja $(find mavlink_sitl_gazebo)"/>
+        <param command="$(arg sdf_cmd)" name="sdf_$(arg vehicle)$(arg ID)"/>
+        <node name="sitl_$(arg ID)" pkg="px4" type="px4" output="screen"
+              launch-prefix="$(find multi_uav_formation)/scripts/wait_for_gazebo_model_then_exec.py $(arg vehicle)$(arg ID) 180"
+              args="$(find px4)/build/px4_sitl_default/etc -s etc/init.d-posix/rcS -i $(arg ID) -w sitl_$(arg vehicle)_$(arg ID) -d"/>
+        <node name="vehicle_spawn" pkg="gazebo_ros" type="spawn_model" output="screen" args="-wait $(arg vehicle)1 -sdf -param sdf_$(arg vehicle)$(arg ID) -model $(arg vehicle)$(arg ID) -x $(arg uav3_start_x) -y $(arg uav3_start_y) -z 0 -R 0 -P 0 -Y 0"/>
+        <include file="$(find mavros)/launch/px4.launch">
+            <arg name="fcu_url" value="$(arg fcu_url)"/>
+            <arg name="gcs_url" value=""/>
+            <arg name="tgt_system" value="$(eval 1 + arg('ID'))"/>
+            <arg name="tgt_component" value="1"/>
+        </include>
+    </group>
+
+    <group if="$(eval arg('planner_backend') == 'ego' or arg('planner_backend') == 'egov2' or arg('planner_backend') == 'fov')">
+        <include file="$(arg ego_advanced_param_file)">
+            <arg name="drone_id" value="0"/>
+            <arg name="planner_launch_prefix" value="$(find multi_uav_formation)/scripts/verify_egov2_exec.py $(arg ego_package_dir) $(arg ego_binary_dir)"/>
+            <arg name="planner_required" value="true"/>
+            <arg name="broadcast_traj_send_topic" value="$(arg ego_broadcast_traj_topic)"/>
+            <arg name="broadcast_traj_recv_topic" value="$(arg ego_broadcast_traj_topic)"/>
+            <arg name="map_size_x_" value="$(arg ego_map_size_x)"/>
+            <arg name="map_size_y_" value="$(arg ego_map_size_y)"/>
+            <arg name="map_size_z_" value="$(arg ego_map_size_z)"/>
+            <arg name="odometry_topic" value="visual_slam/odom"/>
+            <arg name="obj_num_set" value="1"/>
+            <arg name="camera_pose_topic" value="pcl_render_node/camera_pose"/>
+            <arg name="depth_topic" value="pcl_render_node/depth"/>
+            <arg name="cloud_topic" value="pcl_render_node/cloud"/>
+            <arg name="cx" value="321.04638671875"/>
+            <arg name="cy" value="243.44969177246094"/>
+            <arg name="fx" value="387.229248046875"/>
+            <arg name="fy" value="387.229248046875"/>
+            <arg name="max_vel" value="$(arg ego_max_vel)"/>
+            <arg name="max_acc" value="$(arg ego_max_acc)"/>
+            <arg name="max_jer" value="$(eval -1.0 if arg('planner_backend') == 'egov2' else float(arg('ego_max_jer')))"/>
+            <arg name="planning_horizon" value="$(arg ego_planning_horizon)"/>
+            <arg name="use_distinctive_trajs" value="true"/>
+            <arg name="obstacles_inflation" value="$(arg ego_obstacles_inflation)"/>
+            <arg name="obstacle_clearance" value="$(arg ego_obstacle_clearance)"/>
+            <arg name="obstacle_clearance_soft" value="$(arg ego_obstacle_clearance_soft)"/>
+            <arg name="virtual_ceil_height" value="$(arg ego_virtual_ceil_height)"/>
+            <arg name="flight_type" value="1"/>
+            <arg name="point_num" value="1"/>
+            <arg name="point0_x" value="0.0"/>
+            <arg name="point0_y" value="0.0"/>
+            <arg name="point0_z" value="$(arg target_height)"/>
+            <arg name="point1_x" value="0.0"/>
+            <arg name="point1_y" value="0.0"/>
+            <arg name="point1_z" value="$(arg target_height)"/>
+            <arg name="point2_x" value="0.0"/>
+            <arg name="point2_y" value="0.0"/>
+            <arg name="point2_z" value="$(arg target_height)"/>
+            <arg name="point3_x" value="0.0"/>
+            <arg name="point3_y" value="0.0"/>
+            <arg name="point3_z" value="$(arg target_height)"/>
+            <arg name="point4_x" value="0.0"/>
+            <arg name="point4_y" value="0.0"/>
+            <arg name="point4_z" value="$(arg target_height)"/>
+            <arg name="relative_tracking_x" value="-1.45"/>
+            <arg name="relative_tracking_y" value="-0.85"/>
+            <arg name="relative_tracking_z" value="0.0"/>
+            <arg name="use_fov_tracking" value="$(eval arg('planner_backend') == 'fov' and str(arg('fov_planning_enabled')).lower() == 'true')"/>
+            <arg name="use_fov_costs" value="$(eval arg('planner_backend') == 'fov' and str(arg('fov_costs_enabled')).lower() == 'true')"/>
+            <arg name="fov_min_target_distance" value="1.2"/>
+            <arg name="fov_max_target_distance" value="3.2"/>
+            <arg name="fov_lookahead_time" value="5.0"/>
+            <arg name="fov_lock_tracking_height" value="$(arg lock_ego_tracking_height)"/>
+            <arg name="fov_enable_candidate_goal" value="$(arg fov_enable_candidate_goal)"/>
+            <arg name="fov_enable_visible_safe_region" value="$(arg fov_enable_visible_safe_region)"/>
+            <arg name="fov_enable_goal_safe_projection" value="$(arg fov_enable_goal_safe_projection)"/>
+            <arg name="fov_candidate_count" value="$(arg fov_candidate_count)"/>
+            <arg name="fov_candidate_angle_span_deg" value="$(arg fov_candidate_angle_span_deg)"/>
+            <arg name="fov_tracking_distance" value="1.68"/>
+            <arg name="fov_use_los_check" value="$(arg fov_use_los_check)"/>
+            <arg name="fov_use_angle_check" value="$(arg fov_use_angle_check)"/>
+            <arg name="fov_half_angle_deg" value="$(arg fov_half_angle_deg)"/>
+            <arg name="fov_weight" value="$(arg fov_weight)"/>
+            <arg name="fov_distance_weight" value="$(arg fov_distance_weight)"/>
+            <arg name="fov_height_weight" value="$(arg fov_height_weight)"/>
+            <arg name="fov_occlusion_weight" value="$(arg fov_occlusion_weight)"/>
+            <arg name="fov_los_sample_step" value="$(arg fov_los_sample_step)"/>
+            <arg name="fov_target_height" value="$(arg target_height)"/>
+            <arg name="fov_angular_weight" value="$(arg fov_angular_weight)"/>
+            <arg name="fov_angular_min_angle_deg" value="$(arg fov_angular_min_angle_deg)"/>
+            <arg name="fov_yaw_weight" value="$(arg fov_yaw_weight)"/>
+            <arg name="fov_yaw_speed_min" value="$(arg fov_yaw_speed_min)"/>
+            <arg name="fov_enable_soft_retry" value="false"/>
+            <arg name="fov_soft_retry_scale" value="$(arg fov_soft_retry_scale)"/>
+            <arg name="fov_retry_distance_scale" value="$(arg fov_retry_distance_scale)"/>
+            <arg name="object_velocity_deadband" value="$(arg object_velocity_deadband)"/>
+            <arg name="swarm_clearance" value="0.50"/>
+        </include>
+
+        <include file="$(arg ego_advanced_param_file)">
+            <arg name="drone_id" value="1"/>
+            <arg name="planner_launch_prefix" value="$(find multi_uav_formation)/scripts/verify_egov2_exec.py $(arg ego_package_dir) $(arg ego_binary_dir)"/>
+            <arg name="planner_required" value="true"/>
+            <arg name="broadcast_traj_send_topic" value="$(arg ego_broadcast_traj_topic)"/>
+            <arg name="broadcast_traj_recv_topic" value="$(arg ego_broadcast_traj_topic)"/>
+            <arg name="map_size_x_" value="$(arg ego_map_size_x)"/>
+            <arg name="map_size_y_" value="$(arg ego_map_size_y)"/>
+            <arg name="map_size_z_" value="$(arg ego_map_size_z)"/>
+            <arg name="odometry_topic" value="visual_slam/odom"/>
+            <arg name="obj_num_set" value="1"/>
+            <arg name="camera_pose_topic" value="pcl_render_node/camera_pose"/>
+            <arg name="depth_topic" value="pcl_render_node/depth"/>
+            <arg name="cloud_topic" value="pcl_render_node/cloud"/>
+            <arg name="cx" value="321.04638671875"/>
+            <arg name="cy" value="243.44969177246094"/>
+            <arg name="fx" value="387.229248046875"/>
+            <arg name="fy" value="387.229248046875"/>
+            <arg name="max_vel" value="$(arg ego_max_vel)"/>
+            <arg name="max_acc" value="$(arg ego_max_acc)"/>
+            <arg name="max_jer" value="$(eval -1.0 if arg('planner_backend') == 'egov2' else float(arg('ego_max_jer')))"/>
+            <arg name="planning_horizon" value="$(arg ego_planning_horizon)"/>
+            <arg name="use_distinctive_trajs" value="true"/>
+            <arg name="obstacles_inflation" value="$(arg ego_obstacles_inflation)"/>
+            <arg name="obstacle_clearance" value="$(arg ego_obstacle_clearance)"/>
+            <arg name="obstacle_clearance_soft" value="$(arg ego_obstacle_clearance_soft)"/>
+            <arg name="virtual_ceil_height" value="$(arg ego_virtual_ceil_height)"/>
+            <arg name="flight_type" value="1"/>
+            <arg name="point_num" value="1"/>
+            <arg name="point0_x" value="0.0"/>
+            <arg name="point0_y" value="0.0"/>
+            <arg name="point0_z" value="$(arg target_height)"/>
+            <arg name="point1_x" value="0.0"/>
+            <arg name="point1_y" value="0.0"/>
+            <arg name="point1_z" value="$(arg target_height)"/>
+            <arg name="point2_x" value="0.0"/>
+            <arg name="point2_y" value="0.0"/>
+            <arg name="point2_z" value="$(arg target_height)"/>
+            <arg name="point3_x" value="0.0"/>
+            <arg name="point3_y" value="0.0"/>
+            <arg name="point3_z" value="$(arg target_height)"/>
+            <arg name="point4_x" value="0.0"/>
+            <arg name="point4_y" value="0.0"/>
+            <arg name="point4_z" value="$(arg target_height)"/>
+            <arg name="relative_tracking_x" value="-1.70"/>
+            <arg name="relative_tracking_y" value="0.0"/>
+            <arg name="relative_tracking_z" value="0.0"/>
+            <arg name="use_fov_tracking" value="$(eval arg('planner_backend') == 'fov' and str(arg('fov_planning_enabled')).lower() == 'true')"/>
+            <arg name="use_fov_costs" value="$(eval arg('planner_backend') == 'fov' and str(arg('fov_costs_enabled')).lower() == 'true')"/>
+            <arg name="fov_min_target_distance" value="1.2"/>
+            <arg name="fov_max_target_distance" value="3.2"/>
+            <arg name="fov_lookahead_time" value="5.0"/>
+            <arg name="fov_lock_tracking_height" value="$(arg lock_ego_tracking_height)"/>
+            <arg name="fov_enable_candidate_goal" value="$(arg fov_enable_candidate_goal)"/>
+            <arg name="fov_enable_visible_safe_region" value="$(arg fov_enable_visible_safe_region)"/>
+            <arg name="fov_enable_goal_safe_projection" value="$(arg fov_enable_goal_safe_projection)"/>
+            <arg name="fov_candidate_count" value="$(arg fov_candidate_count)"/>
+            <arg name="fov_candidate_angle_span_deg" value="$(arg fov_candidate_angle_span_deg)"/>
+            <arg name="fov_tracking_distance" value="1.70"/>
+            <arg name="fov_use_los_check" value="$(arg fov_use_los_check)"/>
+            <arg name="fov_use_angle_check" value="$(arg fov_use_angle_check)"/>
+            <arg name="fov_half_angle_deg" value="$(arg fov_half_angle_deg)"/>
+            <arg name="fov_weight" value="$(arg fov_weight)"/>
+            <arg name="fov_distance_weight" value="$(arg fov_distance_weight)"/>
+            <arg name="fov_height_weight" value="$(arg fov_height_weight)"/>
+            <arg name="fov_occlusion_weight" value="$(arg fov_occlusion_weight)"/>
+            <arg name="fov_los_sample_step" value="$(arg fov_los_sample_step)"/>
+            <arg name="fov_target_height" value="$(arg target_height)"/>
+            <arg name="fov_angular_weight" value="$(arg fov_angular_weight)"/>
+            <arg name="fov_angular_min_angle_deg" value="$(arg fov_angular_min_angle_deg)"/>
+            <arg name="fov_yaw_weight" value="$(arg fov_yaw_weight)"/>
+            <arg name="fov_yaw_speed_min" value="$(arg fov_yaw_speed_min)"/>
+            <arg name="fov_enable_soft_retry" value="false"/>
+            <arg name="fov_soft_retry_scale" value="$(arg fov_soft_retry_scale)"/>
+            <arg name="fov_retry_distance_scale" value="$(arg fov_retry_distance_scale)"/>
+            <arg name="object_velocity_deadband" value="$(arg object_velocity_deadband)"/>
+            <arg name="swarm_clearance" value="0.50"/>
+        </include>
+
+        <include file="$(arg ego_advanced_param_file)">
+            <arg name="drone_id" value="2"/>
+            <arg name="planner_launch_prefix" value="$(find multi_uav_formation)/scripts/verify_egov2_exec.py $(arg ego_package_dir) $(arg ego_binary_dir)"/>
+            <arg name="planner_required" value="true"/>
+            <arg name="broadcast_traj_send_topic" value="$(arg ego_broadcast_traj_topic)"/>
+            <arg name="broadcast_traj_recv_topic" value="$(arg ego_broadcast_traj_topic)"/>
+            <arg name="map_size_x_" value="$(arg ego_map_size_x)"/>
+            <arg name="map_size_y_" value="$(arg ego_map_size_y)"/>
+            <arg name="map_size_z_" value="$(arg ego_map_size_z)"/>
+            <arg name="odometry_topic" value="visual_slam/odom"/>
+            <arg name="obj_num_set" value="1"/>
+            <arg name="camera_pose_topic" value="pcl_render_node/camera_pose"/>
+            <arg name="depth_topic" value="pcl_render_node/depth"/>
+            <arg name="cloud_topic" value="pcl_render_node/cloud"/>
+            <arg name="cx" value="321.04638671875"/>
+            <arg name="cy" value="243.44969177246094"/>
+            <arg name="fx" value="387.229248046875"/>
+            <arg name="fy" value="387.229248046875"/>
+            <arg name="max_vel" value="$(arg ego_max_vel)"/>
+            <arg name="max_acc" value="$(arg ego_max_acc)"/>
+            <arg name="max_jer" value="$(eval -1.0 if arg('planner_backend') == 'egov2' else float(arg('ego_max_jer')))"/>
+            <arg name="planning_horizon" value="$(arg ego_planning_horizon)"/>
+            <arg name="use_distinctive_trajs" value="true"/>
+            <arg name="obstacles_inflation" value="$(arg ego_obstacles_inflation)"/>
+            <arg name="obstacle_clearance" value="$(arg ego_obstacle_clearance)"/>
+            <arg name="obstacle_clearance_soft" value="$(arg ego_obstacle_clearance_soft)"/>
+            <arg name="virtual_ceil_height" value="$(arg ego_virtual_ceil_height)"/>
+            <arg name="flight_type" value="1"/>
+            <arg name="point_num" value="1"/>
+            <arg name="point0_x" value="0.0"/>
+            <arg name="point0_y" value="0.0"/>
+            <arg name="point0_z" value="$(arg target_height)"/>
+            <arg name="point1_x" value="0.0"/>
+            <arg name="point1_y" value="0.0"/>
+            <arg name="point1_z" value="$(arg target_height)"/>
+            <arg name="point2_x" value="0.0"/>
+            <arg name="point2_y" value="0.0"/>
+            <arg name="point2_z" value="$(arg target_height)"/>
+            <arg name="point3_x" value="0.0"/>
+            <arg name="point3_y" value="0.0"/>
+            <arg name="point3_z" value="$(arg target_height)"/>
+            <arg name="point4_x" value="0.0"/>
+            <arg name="point4_y" value="0.0"/>
+            <arg name="point4_z" value="$(arg target_height)"/>
+            <arg name="relative_tracking_x" value="-1.45"/>
+            <arg name="relative_tracking_y" value="0.85"/>
+            <arg name="relative_tracking_z" value="0.0"/>
+            <arg name="use_fov_tracking" value="$(eval arg('planner_backend') == 'fov' and str(arg('fov_planning_enabled')).lower() == 'true')"/>
+            <arg name="use_fov_costs" value="$(eval arg('planner_backend') == 'fov' and str(arg('fov_costs_enabled')).lower() == 'true')"/>
+            <arg name="fov_min_target_distance" value="1.2"/>
+            <arg name="fov_max_target_distance" value="3.2"/>
+            <arg name="fov_lookahead_time" value="5.0"/>
+            <arg name="fov_lock_tracking_height" value="$(arg lock_ego_tracking_height)"/>
+            <arg name="fov_enable_candidate_goal" value="$(arg fov_enable_candidate_goal)"/>
+            <arg name="fov_enable_visible_safe_region" value="$(arg fov_enable_visible_safe_region)"/>
+            <arg name="fov_enable_goal_safe_projection" value="$(arg fov_enable_goal_safe_projection)"/>
+            <arg name="fov_candidate_count" value="$(arg fov_candidate_count)"/>
+            <arg name="fov_candidate_angle_span_deg" value="$(arg fov_candidate_angle_span_deg)"/>
+            <arg name="fov_tracking_distance" value="1.68"/>
+            <arg name="fov_use_los_check" value="$(arg fov_use_los_check)"/>
+            <arg name="fov_use_angle_check" value="$(arg fov_use_angle_check)"/>
+            <arg name="fov_half_angle_deg" value="$(arg fov_half_angle_deg)"/>
+            <arg name="fov_weight" value="$(arg fov_weight)"/>
+            <arg name="fov_distance_weight" value="$(arg fov_distance_weight)"/>
+            <arg name="fov_height_weight" value="$(arg fov_height_weight)"/>
+            <arg name="fov_occlusion_weight" value="$(arg fov_occlusion_weight)"/>
+            <arg name="fov_los_sample_step" value="$(arg fov_los_sample_step)"/>
+            <arg name="fov_target_height" value="$(arg target_height)"/>
+            <arg name="fov_angular_weight" value="$(arg fov_angular_weight)"/>
+            <arg name="fov_angular_min_angle_deg" value="$(arg fov_angular_min_angle_deg)"/>
+            <arg name="fov_yaw_weight" value="$(arg fov_yaw_weight)"/>
+            <arg name="fov_yaw_speed_min" value="$(arg fov_yaw_speed_min)"/>
+            <arg name="fov_enable_soft_retry" value="false"/>
+            <arg name="fov_soft_retry_scale" value="$(arg fov_soft_retry_scale)"/>
+            <arg name="fov_retry_distance_scale" value="$(arg fov_retry_distance_scale)"/>
+            <arg name="object_velocity_deadband" value="$(arg object_velocity_deadband)"/>
+            <arg name="swarm_clearance" value="0.50"/>
+        </include>
+
+        <node pkg="ego_planner"
+              type="traj_server"
+              name="drone_0_traj_server"
+              output="screen"
+              launch-prefix="$(find multi_uav_formation)/scripts/ego_with_opencv.sh">
+            <env name="LD_LIBRARY_PATH" value="/usr/local/lib:$(env LD_LIBRARY_PATH)"/>
+            <remap from="/position_cmd" to="/drone_0_planning/pos_cmd"/>
+            <remap from="~planning/trajectory" to="/drone_0_planning/trajectory"/>
+            <param name="traj_server/time_forward" value="1.0" type="double"/>
+        </node>
+
+        <node pkg="ego_planner"
+              type="traj_server"
+              name="drone_1_traj_server"
+              output="screen"
+              launch-prefix="$(find multi_uav_formation)/scripts/ego_with_opencv.sh">
+            <env name="LD_LIBRARY_PATH" value="/usr/local/lib:$(env LD_LIBRARY_PATH)"/>
+            <remap from="/position_cmd" to="/drone_1_planning/pos_cmd"/>
+            <remap from="~planning/trajectory" to="/drone_1_planning/trajectory"/>
+            <param name="traj_server/time_forward" value="1.0" type="double"/>
+        </node>
+
+        <node pkg="ego_planner"
+              type="traj_server"
+              name="drone_2_traj_server"
+              output="screen"
+              launch-prefix="$(find multi_uav_formation)/scripts/ego_with_opencv.sh">
+            <env name="LD_LIBRARY_PATH" value="/usr/local/lib:$(env LD_LIBRARY_PATH)"/>
+            <remap from="/position_cmd" to="/drone_2_planning/pos_cmd"/>
+            <remap from="~planning/trajectory" to="/drone_2_planning/trajectory"/>
+            <param name="traj_server/time_forward" value="1.0" type="double"/>
+        </node>
+    </group>
+
+    <node pkg="multi_uav_formation"
+          type="TargetTrack.py"
+          name="target_track_uav1"
+          output="screen">
+        <param name="uav_name" value="uav1"/>
+        <param name="start_x" value="$(arg uav1_start_x)"/>
+        <param name="start_y" value="$(arg uav1_start_y)"/>
+        <param name="takeoff_height" value="$(arg takeoff_height)"/>
+        <param name="target_height" value="$(arg target_height)"/>
+        <param name="follow_distance" value="1.2"/>
+        <param name="takeoff_z_tolerance" value="0.08"/>
+        <param name="takeoff_speed_tolerance" value="0.08"/>
+        <param name="takeoff_settle_time" value="0.8"/>
+        <param name="track_position_gain_xy" value="0.65"/>
+        <param name="track_position_gain_z" value="0.45"/>
+        <param name="track_vertical_damping" value="0.45"/>
+        <param name="track_max_vel_z" value="0.25"/>
+        <param name="use_track_pose_setpoint" value="true"/>
+        <param name="track_altitude_compensation" value="true"/>
+        <param name="track_altitude_comp_gain" value="10.0"/>
+        <param name="track_altitude_comp_damping" value="1.5"/>
+        <param name="track_min_control_z" value="-1.0"/>
+        <param name="track_max_control_z" value="$(arg track_max_control_z)"/>
+        <param name="target_center_x" value="$(arg target_center_x)"/>
+        <param name="target_center_y" value="$(arg target_center_y)"/>
+        <param name="target_radius_x" value="$(arg target_radius_x)"/>
+        <param name="target_radius_y" value="$(arg target_radius_y)"/>
+        <param name="target_omega" value="$(arg target_omega)"/>
+        <param name="target_mode" value="$(arg target_mode)"/>
+        <param name="target_speed" value="$(arg target_speed)"/>
+        <param name="target_waypoints" value="$(arg target_waypoints)"/>
+        <param name="target_waypoints_use_z" value="$(arg target_waypoints_use_z)" type="bool"/>
+        <param name="target_segment_speeds" value="$(arg target_segment_speeds)"/>
+        <param name="frame_id" value="world"/>
+        <param name="show_gazebo_target" value="true" type="bool"/>
+        <param name="gazebo_target_model" value="virtual_tracking_target"/>
+        <param name="target_visual_radius" value="0.25"/>
+        <param name="track_log_file" value="$(arg track_log_file)"/>
+        <param name="use_ego_planner" value="true" type="bool"/>
+        <param name="ego_drone_id" value="0"/>
+        <param name="ego_odom_topic" value="/drone_0_visual_slam/odom"/>
+        <param name="ego_object_odom_topic" value="/object_odom"/>
+        <param name="ego_position_cmd_topic" value="/drone_0_planning/pos_cmd"/>
+        <param name="gazebo_pose_topic" value="/uav_1/gazebo_pose"/>
+        <param name="ego_cloud_topic" value="/drone_0_pcl_render_node/cloud"/>
+        <param name="scene_file" value="$(arg scene_file)"/>
+        <param name="publish_object_odom" value="false" type="bool"/>
+        <param name="fov_sharing_enabled" value="$(eval arg('planner_backend') == 'fov')" type="bool"/>
+        <param name="use_external_target_state" value="true" type="bool"/>
+        <param name="target_ground_truth_topic" value="/target_tracking/ground_truth"/>
+        <param name="target_observation_topic" value="/target_tracking/observations/uav1"/>
+        <param name="target_ready_topic" value="/target_tracking/ready/uav1"/>
+        <param name="target_start_time_topic" value="/target_tracking/target_start_time"/>
+        <param name="fov_half_angle_deg" value="$(arg fov_half_angle_deg)"/>
+        <param name="fov_max_distance" value="8.0"/>
+        <param name="fov_occlusion_margin" value="0.08"/>
+        <param name="fov_use_velocity_yaw" value="false" type="bool"/>
+        <param name="fov_velocity_yaw_weight" value="0.2"/>
+        <param name="fov_visibility_warmup" value="1.2"/>
+        <param name="publish_ego_obstacle_cloud" value="true" type="bool"/>
+        <param name="ego_command_timeout" value="1.0"/>
+        <param name="ego_position_gain" value="0.8"/>
+        <param name="ego_velocity_gain" value="0.1"/>
+        <param name="ego_max_vel_xy" value="$(arg ego_max_vel)"/>
+        <param name="ego_max_vel_z" value="0.45"/>
+        <param name="lock_ego_tracking_height" value="$(arg lock_ego_tracking_height)" type="bool"/>
+        <param name="ego_tracking_height" value="$(arg target_height)"/>
+        <param name="relative_tracking_x" value="-1.45"/>
+        <param name="relative_tracking_y" value="-0.85"/>
+        <param name="relative_tracking_z" value="0.0"/>
+        <param name="use_gazebo_truth_for_feedback" value="true" type="bool"/>
+        <param name="use_gazebo_truth_velocity" value="true" type="bool"/>
+        <param name="gazebo_velocity_alpha" value="0.35"/>
+    </node>
+
+    <node pkg="multi_uav_formation"
+          type="TargetTrack.py"
+          name="target_track_uav2"
+          output="screen">
+        <param name="uav_name" value="uav2"/>
+        <param name="start_x" value="$(arg uav2_start_x)"/>
+        <param name="start_y" value="$(arg uav2_start_y)"/>
+        <param name="takeoff_height" value="$(arg takeoff_height)"/>
+        <param name="target_height" value="$(arg target_height)"/>
+        <param name="follow_distance" value="1.2"/>
+        <param name="takeoff_z_tolerance" value="0.08"/>
+        <param name="takeoff_speed_tolerance" value="0.08"/>
+        <param name="takeoff_settle_time" value="0.8"/>
+        <param name="track_position_gain_xy" value="0.65"/>
+        <param name="track_position_gain_z" value="0.45"/>
+        <param name="track_vertical_damping" value="0.45"/>
+        <param name="track_max_vel_z" value="0.25"/>
+        <param name="use_track_pose_setpoint" value="true"/>
+        <param name="track_altitude_compensation" value="true"/>
+        <param name="track_altitude_comp_gain" value="10.0"/>
+        <param name="track_altitude_comp_damping" value="1.5"/>
+        <param name="track_min_control_z" value="-1.0"/>
+        <param name="track_max_control_z" value="$(arg track_max_control_z)"/>
+        <param name="target_center_x" value="$(arg target_center_x)"/>
+        <param name="target_center_y" value="$(arg target_center_y)"/>
+        <param name="target_radius_x" value="$(arg target_radius_x)"/>
+        <param name="target_radius_y" value="$(arg target_radius_y)"/>
+        <param name="target_omega" value="$(arg target_omega)"/>
+        <param name="target_mode" value="$(arg target_mode)"/>
+        <param name="target_speed" value="$(arg target_speed)"/>
+        <param name="target_waypoints" value="$(arg target_waypoints)"/>
+        <param name="target_waypoints_use_z" value="$(arg target_waypoints_use_z)" type="bool"/>
+        <param name="target_segment_speeds" value="$(arg target_segment_speeds)"/>
+        <param name="frame_id" value="world"/>
+        <param name="show_gazebo_target" value="false" type="bool"/>
+        <param name="gazebo_target_model" value="virtual_tracking_target"/>
+        <param name="target_visual_radius" value="0.25"/>
+        <param name="track_log_file" value="$(arg track_log_file)"/>
+        <param name="track_log_suffix" value="uav2"/>
+        <param name="use_ego_planner" value="true" type="bool"/>
+        <param name="ego_drone_id" value="1"/>
+        <param name="ego_odom_topic" value="/drone_1_visual_slam/odom"/>
+        <param name="ego_object_odom_topic" value="/object_odom"/>
+        <param name="ego_position_cmd_topic" value="/drone_1_planning/pos_cmd"/>
+        <param name="gazebo_pose_topic" value="/uav_2/gazebo_pose"/>
+        <param name="ego_cloud_topic" value="/drone_1_pcl_render_node/cloud"/>
+        <param name="scene_file" value="$(arg scene_file)"/>
+        <param name="publish_object_odom" value="false" type="bool"/>
+        <param name="fov_sharing_enabled" value="$(eval arg('planner_backend') == 'fov')" type="bool"/>
+        <param name="use_external_target_state" value="true" type="bool"/>
+        <param name="target_ground_truth_topic" value="/target_tracking/ground_truth"/>
+        <param name="target_observation_topic" value="/target_tracking/observations/uav2"/>
+        <param name="target_ready_topic" value="/target_tracking/ready/uav2"/>
+        <param name="target_start_time_topic" value="/target_tracking/target_start_time"/>
+        <param name="fov_half_angle_deg" value="$(arg fov_half_angle_deg)"/>
+        <param name="fov_max_distance" value="8.0"/>
+        <param name="fov_occlusion_margin" value="0.08"/>
+        <param name="fov_use_velocity_yaw" value="false" type="bool"/>
+        <param name="fov_velocity_yaw_weight" value="0.2"/>
+        <param name="fov_visibility_warmup" value="1.2"/>
+        <param name="publish_ego_obstacle_cloud" value="true" type="bool"/>
+        <param name="ego_command_timeout" value="1.0"/>
+        <param name="ego_position_gain" value="0.8"/>
+        <param name="ego_velocity_gain" value="0.1"/>
+        <param name="ego_max_vel_xy" value="$(arg ego_max_vel)"/>
+        <param name="ego_max_vel_z" value="0.45"/>
+        <param name="lock_ego_tracking_height" value="$(arg lock_ego_tracking_height)" type="bool"/>
+        <param name="ego_tracking_height" value="$(arg target_height)"/>
+        <param name="relative_tracking_x" value="-1.70"/>
+        <param name="relative_tracking_y" value="0.0"/>
+        <param name="relative_tracking_z" value="0.0"/>
+        <param name="use_gazebo_truth_for_feedback" value="true" type="bool"/>
+        <param name="use_gazebo_truth_velocity" value="true" type="bool"/>
+        <param name="gazebo_velocity_alpha" value="0.35"/>
+    </node>
+
+    <node pkg="multi_uav_formation"
+          type="TargetTrack.py"
+          name="target_track_uav3"
+          output="screen">
+        <param name="uav_name" value="uav3"/>
+        <param name="start_x" value="$(arg uav3_start_x)"/>
+        <param name="start_y" value="$(arg uav3_start_y)"/>
+        <param name="takeoff_height" value="$(arg takeoff_height)"/>
+        <param name="target_height" value="$(arg target_height)"/>
+        <param name="follow_distance" value="1.2"/>
+        <param name="takeoff_z_tolerance" value="0.08"/>
+        <param name="takeoff_speed_tolerance" value="0.08"/>
+        <param name="takeoff_settle_time" value="0.8"/>
+        <param name="track_position_gain_xy" value="0.65"/>
+        <param name="track_position_gain_z" value="0.45"/>
+        <param name="track_vertical_damping" value="0.45"/>
+        <param name="track_max_vel_z" value="0.25"/>
+        <param name="use_track_pose_setpoint" value="true"/>
+        <param name="track_altitude_compensation" value="true"/>
+        <param name="track_altitude_comp_gain" value="10.0"/>
+        <param name="track_altitude_comp_damping" value="1.5"/>
+        <param name="track_min_control_z" value="-1.0"/>
+        <param name="track_max_control_z" value="$(arg track_max_control_z)"/>
+        <param name="target_center_x" value="$(arg target_center_x)"/>
+        <param name="target_center_y" value="$(arg target_center_y)"/>
+        <param name="target_radius_x" value="$(arg target_radius_x)"/>
+        <param name="target_radius_y" value="$(arg target_radius_y)"/>
+        <param name="target_omega" value="$(arg target_omega)"/>
+        <param name="target_mode" value="$(arg target_mode)"/>
+        <param name="target_speed" value="$(arg target_speed)"/>
+        <param name="target_waypoints" value="$(arg target_waypoints)"/>
+        <param name="target_waypoints_use_z" value="$(arg target_waypoints_use_z)" type="bool"/>
+        <param name="target_segment_speeds" value="$(arg target_segment_speeds)"/>
+        <param name="frame_id" value="world"/>
+        <param name="show_gazebo_target" value="false" type="bool"/>
+        <param name="gazebo_target_model" value="virtual_tracking_target"/>
+        <param name="target_visual_radius" value="0.25"/>
+        <param name="track_log_file" value="$(arg track_log_file)"/>
+        <param name="track_log_suffix" value="uav3"/>
+        <param name="use_ego_planner" value="true" type="bool"/>
+        <param name="ego_drone_id" value="2"/>
+        <param name="ego_odom_topic" value="/drone_2_visual_slam/odom"/>
+        <param name="ego_object_odom_topic" value="/object_odom"/>
+        <param name="ego_position_cmd_topic" value="/drone_2_planning/pos_cmd"/>
+        <param name="gazebo_pose_topic" value="/uav_3/gazebo_pose"/>
+        <param name="ego_cloud_topic" value="/drone_2_pcl_render_node/cloud"/>
+        <param name="scene_file" value="$(arg scene_file)"/>
+        <param name="publish_object_odom" value="false" type="bool"/>
+        <param name="fov_sharing_enabled" value="$(eval arg('planner_backend') == 'fov')" type="bool"/>
+        <param name="use_external_target_state" value="true" type="bool"/>
+        <param name="target_ground_truth_topic" value="/target_tracking/ground_truth"/>
+        <param name="target_observation_topic" value="/target_tracking/observations/uav3"/>
+        <param name="target_ready_topic" value="/target_tracking/ready/uav3"/>
+        <param name="target_start_time_topic" value="/target_tracking/target_start_time"/>
+        <param name="fov_half_angle_deg" value="$(arg fov_half_angle_deg)"/>
+        <param name="fov_max_distance" value="8.0"/>
+        <param name="fov_occlusion_margin" value="0.08"/>
+        <param name="fov_use_velocity_yaw" value="false" type="bool"/>
+        <param name="fov_velocity_yaw_weight" value="0.2"/>
+        <param name="fov_visibility_warmup" value="1.2"/>
+        <param name="publish_ego_obstacle_cloud" value="true" type="bool"/>
+        <param name="ego_command_timeout" value="1.0"/>
+        <param name="ego_position_gain" value="0.8"/>
+        <param name="ego_velocity_gain" value="0.1"/>
+        <param name="ego_max_vel_xy" value="$(arg ego_max_vel)"/>
+        <param name="ego_max_vel_z" value="0.45"/>
+        <param name="lock_ego_tracking_height" value="$(arg lock_ego_tracking_height)" type="bool"/>
+        <param name="ego_tracking_height" value="$(arg target_height)"/>
+        <param name="relative_tracking_x" value="-1.45"/>
+        <param name="relative_tracking_y" value="0.85"/>
+        <param name="relative_tracking_z" value="0.0"/>
+        <param name="use_gazebo_truth_for_feedback" value="true" type="bool"/>
+        <param name="use_gazebo_truth_velocity" value="true" type="bool"/>
+        <param name="gazebo_velocity_alpha" value="0.35"/>
+    </node>
+</launch>

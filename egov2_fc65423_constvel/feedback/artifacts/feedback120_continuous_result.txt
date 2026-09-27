@@ -1,0 +1,4 @@
+piece_start=0.540000 piece_end=1.080000 world_time=0.640000
+direct_x=0.173292 correct_local_x=0.173292 production_local_x=0.092379
+corridor_x_min=0.140000 direct_violation=0.000000 production_violation=0.047621
+time_origin_bug_reproduced=1

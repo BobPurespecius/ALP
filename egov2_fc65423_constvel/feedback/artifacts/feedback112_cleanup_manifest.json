@@ -1,0 +1,404 @@
+{
+  "policy": "Completed run only; preserve full compressed roslaunch log, CSV, exit/process status, manifest.",
+  "runs": [
+    {
+      "run_id": "20260922_204715_37427",
+      "bytes_before": 23921051,
+      "bytes_after": 14955159,
+      "bytes_freed": 8965892,
+      "removed_redundant": [
+        "runner_console.log.gz",
+        "ros_home/"
+      ],
+      "full_log_retained": "roslaunch_stdout.log.gz"
+    },
+    {
+      "run_id": "20260923_003556_16718",
+      "bytes_before": 32539999,
+      "bytes_after": 19057408,
+      "bytes_freed": 13482591,
+      "removed_redundant": [
+        "runner_console.log.gz",
+        "ros_home/"
+      ],
+      "full_log_retained": "roslaunch_stdout.log.gz"
+    },
+    {
+      "run_id": "20260923_010810_43994",
+      "bytes_before": 23866734,
+      "bytes_after": 14969843,
+      "bytes_freed": 8896891,
+      "removed_redundant": [
+        "runner_console.log.gz",
+        "ros_home/"
+      ],
+      "full_log_retained": "roslaunch_stdout.log.gz"
+    },
+    {
+      "run_id": "20260923_011246_47924",
+      "bytes_before": 19586656,
+      "bytes_after": 12771807,
+      "bytes_freed": 6814849,
+      "removed_redundant": [
+        "runner_console.log.gz",
+        "ros_home/"
+      ],
+      "full_log_retained": "roslaunch_stdout.log.gz"
+    },
+    {
+      "run_id": "20260923_012329_57123",
+      "bytes_before": 24430608,
+      "bytes_after": 15245926,
+      "bytes_freed": 9184682,
+      "removed_redundant": [
+        "runner_console.log.gz",
+        "ros_home/"
+      ],
+      "full_log_retained": "roslaunch_stdout.log.gz"
+    },
+    {
+      "run_id": "20260923_012959_63413",
+      "bytes_before": 24629140,
+      "bytes_after": 15336454,
+      "bytes_freed": 9292686,
+      "removed_redundant": [
+        "runner_console.log.gz",
+        "ros_home/"
+      ],
+      "full_log_retained": "roslaunch_stdout.log.gz"
+    },
+    {
+      "run_id": "20260923_020309_72622",
+      "bytes_before": 21231216,
+      "bytes_after": 13577595,
+      "bytes_freed": 7653621,
+      "removed_redundant": [
+        "runner_console.log.gz",
+        "ros_home/"
+      ],
+      "full_log_retained": "roslaunch_stdout.log.gz"
+    },
+    {
+      "run_id": "20260923_020949_78945",
+      "bytes_before": 24438054,
+      "bytes_after": 15231926,
+      "bytes_freed": 9206128,
+      "removed_redundant": [
+        "runner_console.log.gz",
+        "ros_home/"
+      ],
+      "full_log_retained": "roslaunch_stdout.log.gz"
+    },
+    {
+      "run_id": "20260923_021544_86729",
+      "bytes_before": 24107863,
+      "bytes_after": 15072280,
+      "bytes_freed": 9035583,
+      "removed_redundant": [
+        "runner_console.log.gz",
+        "ros_home/"
+      ],
+      "full_log_retained": "roslaunch_stdout.log.gz"
+    },
+    {
+      "run_id": "20260923_024008_101630",
+      "bytes_before": 18418066,
+      "bytes_after": 12211439,
+      "bytes_freed": 6206627,
+      "removed_redundant": [
+        "runner_console.log.gz",
+        "ros_home/"
+      ],
+      "full_log_retained": "roslaunch_stdout.log.gz"
+    },
+    {
+      "run_id": "20260923_024421_109971",
+      "bytes_before": 27856166,
+      "bytes_after": 16962961,
+      "bytes_freed": 10893205,
+      "removed_redundant": [
+        "runner_console.log.gz",
+        "ros_home/"
+      ],
+      "full_log_retained": "roslaunch_stdout.log.gz"
+    },
+    {
+      "run_id": "20260923_025005_129685",
+      "bytes_before": 23240454,
+      "bytes_after": 14639881,
+      "bytes_freed": 8600573,
+      "removed_redundant": [
+        "runner_console.log.gz",
+        "ros_home/"
+      ],
+      "full_log_retained": "roslaunch_stdout.log.gz"
+    },
+    {
+      "run_id": "20260923_025538_139075",
+      "bytes_before": 25584077,
+      "bytes_after": 15808683,
+      "bytes_freed": 9775394,
+      "removed_redundant": [
+        "runner_console.log.gz",
+        "ros_home/"
+      ],
+      "full_log_retained": "roslaunch_stdout.log.gz"
+    },
+    {
+      "run_id": "20260923_124859_252874",
+      "bytes_before": 86663958,
+      "bytes_after": 46075054,
+      "bytes_freed": 40588904,
+      "removed_redundant": [
+        "runner_console.log.gz",
+        "ros_home/"
+      ],
+      "full_log_retained": "roslaunch_stdout.log.gz"
+    },
+    {
+      "run_id": "20260923_125315_270760",
+      "bytes_before": 24276960,
+      "bytes_after": 15147705,
+      "bytes_freed": 9129255,
+      "removed_redundant": [
+        "runner_console.log.gz",
+        "ros_home/"
+      ],
+      "full_log_retained": "roslaunch_stdout.log.gz"
+    },
+    {
+      "run_id": "20260923_165537_566526",
+      "bytes_before": 28788568,
+      "bytes_after": 17881338,
+      "bytes_freed": 10907230,
+      "removed_redundant": [
+        "runner_console.log.gz",
+        "ros_home/"
+      ],
+      "full_log_retained": "roslaunch_stdout.log.gz"
+    },
+    {
+      "run_id": "20260923_170933_586498",
+      "bytes_before": 28137343,
+      "bytes_after": 17512434,
+      "bytes_freed": 10624909,
+      "removed_redundant": [
+        "runner_console.log.gz",
+        "ros_home/"
+      ],
+      "full_log_retained": "roslaunch_stdout.log.gz"
+    },
+    {
+      "run_id": "20260923_182315_592619",
+      "bytes_before": 27116718,
+      "bytes_after": 17024571,
+      "bytes_freed": 10092147,
+      "removed_redundant": [
+        "runner_console.log.gz",
+        "ros_home/"
+      ],
+      "full_log_retained": "roslaunch_stdout.log.gz"
+    },
+    {
+      "run_id": "20260923_184455_597125",
+      "bytes_before": 28275433,
+      "bytes_after": 17600530,
+      "bytes_freed": 10674903,
+      "removed_redundant": [
+        "runner_console.log.gz",
+        "ros_home/"
+      ],
+      "full_log_retained": "roslaunch_stdout.log.gz"
+    },
+    {
+      "run_id": "20260923_202423_602883",
+      "bytes_before": 26920068,
+      "bytes_after": 16947411,
+      "bytes_freed": 9972657,
+      "removed_redundant": [
+        "runner_console.log.gz",
+        "ros_home/"
+      ],
+      "full_log_retained": "roslaunch_stdout.log.gz"
+    },
+    {
+      "run_id": "20260923_211317_618177",
+      "bytes_before": 27780276,
+      "bytes_after": 17370892,
+      "bytes_freed": 10409384,
+      "removed_redundant": [
+        "runner_console.log.gz",
+        "ros_home/"
+      ],
+      "full_log_retained": "roslaunch_stdout.log.gz"
+    },
+    {
+      "run_id": "20260923_214955_653704",
+      "bytes_before": 28905138,
+      "bytes_after": 17941303,
+      "bytes_freed": 10963835,
+      "removed_redundant": [
+        "runner_console.log.gz",
+        "ros_home/"
+      ],
+      "full_log_retained": "roslaunch_stdout.log.gz"
+    },
+    {
+      "run_id": "20260924_015749_761376",
+      "bytes_before": 441727662,
+      "bytes_after": 18015020,
+      "bytes_freed": 423712642,
+      "removed_redundant": [
+        "runner_console.log.gz",
+        "ros_log/",
+        "ros_home/"
+      ],
+      "full_log_retained": "roslaunch_stdout.log.gz"
+    },
+    {
+      "run_id": "20260924_021117_775967",
+      "bytes_before": 473404634,
+      "bytes_after": 18140365,
+      "bytes_freed": 455264269,
+      "removed_redundant": [
+        "runner_console.log.gz",
+        "ros_log/",
+        "ros_home/"
+      ],
+      "full_log_retained": "roslaunch_stdout.log.gz"
+    },
+    {
+      "run_id": "20260924_152923_1122393",
+      "bytes_before": 213017130,
+      "bytes_after": 9642164,
+      "bytes_freed": 203374966,
+      "removed_redundant": [
+        "runner_console.log.gz",
+        "ros_log/",
+        "ros_home/"
+      ],
+      "full_log_retained": "roslaunch_stdout.log.gz"
+    },
+    {
+      "run_id": "20260924_161801_1172559",
+      "bytes_before": 380324632,
+      "bytes_after": 15474751,
+      "bytes_freed": 364849881,
+      "removed_redundant": [
+        "runner_console.log.gz",
+        "ros_log/",
+        "ros_home/"
+      ],
+      "full_log_retained": "roslaunch_stdout.log.gz"
+    },
+    {
+      "run_id": "20260924_163326_1175833",
+      "bytes_before": 576502514,
+      "bytes_after": 17287007,
+      "bytes_freed": 559215507,
+      "removed_redundant": [
+        "runner_console.log",
+        "ros_log/",
+        "ros_home/"
+      ],
+      "full_log_retained": "roslaunch_stdout.log.gz"
+    },
+    {
+      "run_id": "20260925_001704_18368",
+      "bytes_before": 394153555,
+      "bytes_after": 15837072,
+      "bytes_freed": 378316483,
+      "removed_redundant": [
+        "runner_console.log.gz",
+        "ros_log/",
+        "ros_home/"
+      ],
+      "full_log_retained": "roslaunch_stdout.log.gz"
+    },
+    {
+      "run_id": "20260925_002351_27413",
+      "bytes_before": 387612555,
+      "bytes_after": 15780006,
+      "bytes_freed": 371832549,
+      "removed_redundant": [
+        "runner_console.log.gz",
+        "ros_log/",
+        "ros_home/"
+      ],
+      "full_log_retained": "roslaunch_stdout.log.gz"
+    },
+    {
+      "run_id": "20260925_002827_35055",
+      "bytes_before": 460724030,
+      "bytes_after": 18231023,
+      "bytes_freed": 442493007,
+      "removed_redundant": [
+        "runner_console.log.gz",
+        "ros_log/",
+        "ros_home/"
+      ],
+      "full_log_retained": "roslaunch_stdout.log.gz"
+    },
+    {
+      "run_id": "20260925_003337_46046",
+      "bytes_before": 469813405,
+      "bytes_after": 18680547,
+      "bytes_freed": 451132858,
+      "removed_redundant": [
+        "runner_console.log.gz",
+        "ros_log/",
+        "ros_home/"
+      ],
+      "full_log_retained": "roslaunch_stdout.log.gz"
+    },
+    {
+      "run_id": "20260925_111437_5455",
+      "bytes_before": 600408727,
+      "bytes_after": 17689700,
+      "bytes_freed": 582719027,
+      "removed_redundant": [
+        "runner_console.log",
+        "ros_log/",
+        "ros_home/"
+      ],
+      "full_log_retained": "roslaunch_stdout.log.gz"
+    },
+    {
+      "run_id": "20260925_124647_104062",
+      "bytes_before": 595734266,
+      "bytes_after": 17699013,
+      "bytes_freed": 578035253,
+      "removed_redundant": [
+        "runner_console.log",
+        "ros_log/",
+        "ros_home/"
+      ],
+      "full_log_retained": "roslaunch_stdout.log.gz"
+    },
+    {
+      "run_id": "20260925_130810_130608",
+      "bytes_before": 652377520,
+      "bytes_after": 18960176,
+      "bytes_freed": 633417344,
+      "removed_redundant": [
+        "runner_console.log",
+        "ros_log/",
+        "ros_home/"
+      ],
+      "full_log_retained": "roslaunch_stdout.log.gz"
+    },
+    {
+      "run_id": "20260925_131504_132764",
+      "bytes_before": 623100638,
+      "bytes_after": 18194983,
+      "bytes_freed": 604905655,
+      "removed_redundant": [
+        "runner_console.log",
+        "ros_log/",
+        "ros_home/"
+      ],
+      "full_log_retained": "roslaunch_stdout.log.gz"
+    }
+  ],
+  "total_bytes_freed": 6290641387
+}

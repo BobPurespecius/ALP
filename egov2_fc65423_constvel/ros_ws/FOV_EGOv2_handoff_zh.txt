@@ -1,0 +1,384 @@
+FOV/EGOv2 目标跟踪交接说明
+生成时间：2026-07-09
+工作区：/home/bob/ALP
+
+一、当前任务总目标
+
+用户要在现有 EGO-Planner-v2 目标跟踪链路上实现 Rao 等 2025 论文
+“Multi-UAV trajectory planning with field-of-view sharing mechanism in cluttered environments”的功能，
+并和纯 EGOv2 目标跟踪做对比。
+
+核心目标不是重写整套系统，而是：
+1. 只替换/改进规划层，尽量保留 EGOv2 的原有稳定链路。
+2. 在 EGOv2 基础上添加 FOV 相关功能，包括几何可见性、遮挡检测、多机视场共享、至少一架无人机看到目标的检测、L_ag 和 L_yaw 等。
+3. 在窄门和上下楼梯两个场景中统计成功率、跟踪误差、可见率、碰撞/进障碍情况、轨迹平滑度，并和纯 EGOv2 对比。
+4. FOV 的效果最终应该比纯 EGOv2 更好，至少不能明显更差。
+
+用户明确强调：不要使用 SRW；不要另起炉灶；不要把问题做成地图特化；不要乱改纯 EGO 模式；不要使用“槽位机制”作为主方法；不要忽略 z 轴；不要为了小问题引入一堆新机制。
+
+二、重要运行约束和用户要求
+
+1. 语言和沟通
+   - 回复和思考尽量使用中文，不要在说明中夹杂英文推理。
+   - 不要粉饰结果。如果 FOV 比 EGO 差，要直接说明。
+
+2. 仿真运行
+   - 不要关闭用户 Docker。
+   - 当前容器名：px4_noetic_dev。
+   - 用户希望一行启动，使用原来的批处理脚本：
+     ./batch_run_target_tracking.sh 场景 runs duration planner
+   - 示例：
+     ./batch_run_target_tracking.sh narrow_door 1 110 fov
+     ./batch_run_target_tracking.sh stair_climb 1 110 fov
+     ./batch_run_target_tracking.sh narrow_door 1 110 ego
+   - 如需在容器内执行：
+     docker exec px4_noetic_dev bash -lc 'cd /app/guidance/ros_ws && ./batch_run_target_tracking.sh narrow_door 1 110 fov'
+   - 编译命令：
+     docker exec px4_noetic_dev bash -lc 'cd /app/guidance/ros_ws && source /opt/ros/noetic/setup.bash && catkin_make'
+
+3. 修改边界
+   - 纯 EGO 模式不能被 FOV 改坏。
+   - 用户多次强调“保留 EGOv2 的基础，在其上添加 FOV”，不要重写 planner。
+   - 每次改动后最多少量仿真验证，避免大改大跑。
+   - 窄门和楼梯都要能跑，不能只为其中一个场景调参。
+   - 窄通道中多机逐次通过可以接受，即使机间距较近也没问题；碰撞和贴障才是大问题。
+   - 机间距用户认为 0.5m 比 1m 更合适。
+   - 用户明确问过“跟踪槽位是否是论文方法”，结论是不要把固定槽位当成 FOV 论文核心。
+
+4. 可见性要求
+   - 必须实现并统计“始终至少 1 架无人机看到目标”。
+   - 仿真中没有真实相机图像输入，所以当前可见性按几何模型处理：距离、视场角、障碍物线段遮挡。
+   - 未来可以补充遮挡代价，但默认逻辑不能让不可见时完全不发布目标。用户已经要求：FOV 和 EGO 两种模式都无论如何发布目标。
+
+三、关键文件
+
+1. 启动和参数
+   - /home/bob/ALP/guidance/ros_ws/batch_run_target_tracking.sh
+   - /home/bob/ALP/guidance/ros_ws/src/multi_uav_formation/launch/target_tracking_platform_single.launch
+   - /home/bob/ALP/guidance/ros_ws/src/EGO-Planner-v2/swarm-playground/tracking_ws/src/planner/plan_manage/launch/advanced_param.xml
+
+2. FOV/EGOv2 规划代码
+   - /home/bob/ALP/guidance/ros_ws/src/EGO-Planner-v2/swarm-playground/tracking_ws/src/planner/plan_manage/src/ego_replan_fsm.cpp
+   - /home/bob/ALP/guidance/ros_ws/src/EGO-Planner-v2/swarm-playground/tracking_ws/src/planner/traj_opt/src/poly_traj_optimizer.cpp
+   - /home/bob/ALP/guidance/ros_ws/src/EGO-Planner-v2/swarm-playground/tracking_ws/src/planner/traj_opt/include/optimizer/poly_traj_optimizer.h
+
+3. 目标跟踪桥接和日志
+   - /home/bob/ALP/guidance/ros_ws/src/multi_uav_formation/scripts/TargetTrack.py
+   - /home/bob/ALP/guidance/ros_ws/src/multi_uav_formation/scripts/analyze_target_tracking_runs.py
+
+4. 两个新场景
+   - /home/bob/ALP/guidance/ros_ws/src/multi_uav_formation/scenes/narrow_door.json
+   - /home/bob/ALP/guidance/ros_ws/src/multi_uav_formation/scenes/stair_climb.json
+
+5. 结果目录
+   - /home/bob/ALP/guidance/ros_ws/analysis/target_tracking_*
+
+四、FOV 在 EGOv2 上已经做过的主要改动
+
+1. 模式开关
+   - target_tracking_platform_single.launch 中使用 planner_backend 控制：
+     planner_backend=ego：纯 EGOv2 目标跟踪。
+     planner_backend=fov：EGOv2 + FOV 相关代价/检测。
+   - advanced_param.xml 中新增/传递 use_fov_tracking、fov_* 参数。
+
+2. 多机目标发布与可见性记录
+   - TargetTrack.py 中 FOV 模式启用 fov_sharing_enabled。
+   - 目标的 object odom 持续发布；可见性只用于记录/代价，不再阻断目标发布。
+   - 目标可见性采用几何模型：无人机位置、目标位置、yaw、视场角、最大距离、场景障碍物遮挡。
+   - analyze_target_tracking_runs.py 统计 team any visible ratio、zero visible samples、min pair distance 等。
+
+3. FOV 相对跟踪点
+   - 当前仍保留 relative_tracking 思路作为 EGOv2 的基础输入。
+   - 当前 launch 中 FOV 相对点已被调小：
+     uav1：relative_tracking_x=-1.45, relative_tracking_y=-0.50
+     uav2：relative_tracking_x=-1.70, relative_tracking_y=0.0
+     uav3：relative_tracking_x=-1.45, relative_tracking_y=+0.50
+   - 纯 EGO 仍是：
+     uav1/uav3 的 relative_tracking_y=+-0.85，uav2=0.0。
+   - 注意：最后一次把 FOV 侧向间距从 +-0.35 改到 +-0.50 后，还没有重新跑仿真验证；这是中断前最后一个小改动。
+
+4. FOV 候选目标点
+   - ego_replan_fsm.cpp 中保留 computeFOVRelativeTrackingPoint() 和 computeFOVVisibleSafeGoal()。
+   - 用户质疑“筛去不可选目标点是不是论文里的”，后来要求不要完全删，默认关闭，未来可能再用。
+   - 当前上层 launch 默认：
+     fov_enable_candidate_goal=false
+     fov_enable_visible_safe_region=false
+   - 所以当前仿真一般不启用候选目标重选，也不启用前端安全区域/安全走廊。
+
+5. 前端可见安全区域/安全走廊
+   - ego_replan_fsm.cpp 中保留 fovBuildSafeCorridorWaypoints()、fovProjectToNearestSafePoint()、fovApplySafePlanningStart()。
+   - 这部分曾尝试用于窄门，但当前实现主要是二维 x-y 搜索，z 处理有限，导致窄门/楼梯效果不稳定。
+   - 当前默认关闭：fov_enable_visible_safe_region=false。
+   - 不要直接打开它作为最终方案；如要继续，应改成真正 3D、安全且通用的前端逻辑。
+
+6. 后端 FOV 代价：目标距离约束
+   - poly_traj_optimizer.cpp 的 trackingGradCostP() 中加入 FOV 目标距离范围约束：
+     fov_min_target_distance=1.2
+     fov_max_target_distance=3.2
+     fov_distance_weight=2.0
+   - 若 fov_lock_tracking_height=true，则距离用 x-y 平面。
+   - 若 fov_lock_tracking_height=false，则距离改成 3D delta_to_target.norm()，用于楼梯场景，避免忽略 z 轴。
+
+7. 后端 FOV 代价：高度锁定
+   - 若 fov_lock_tracking_height=true，则加入高度代价，把轨迹压在 fov_target_height + relative_tracking_z 附近。
+   - advanced_param.xml 中 fov_height_weight=5000.0。
+   - 窄门场景 lockEgoTrackingHeight=true，目标高度 1.4m。
+   - 楼梯场景 lockEgoTrackingHeight=false，目标高度随 waypoint z 变化。
+
+8. 后端 FOV 代价：L_ag
+   - poly_traj_optimizer.cpp 中 angularGradCostP() 实现了多机相对目标视角分离代价。
+   - 它根据当前无人机和其他无人机相对目标的方向夹角，若夹角小于 fov_angular_min_angle_deg，则产生惩罚。
+   - 当前参数默认 fov_angular_min_angle_deg=30.0。
+   - 当前上层 launch 中 fov_angular_weight=0.0，默认不启用。
+   - 原因：之前启用较大权重会把侧边机推向窄门墙侧，明显比 EGO 差。
+
+9. 后端 FOV 代价：L_yaw
+   - poly_traj_optimizer.cpp 中 yawGradCostPV() 实现了运动方向/视线方向约束。
+   - 它让速度方向更有利于看见目标，若速度方向与目标视线夹角超出半视场角则惩罚。
+   - 当前上层 launch 中 fov_yaw_weight=0.0，默认不启用。
+   - 原因同上：窄门中会与避障/跟踪抢目标，造成贴墙和规划失败。
+
+10. 近障碍 FOV 软代价退让
+   - poly_traj_optimizer.h/cpp 新增 fovObstacleSafetyScale(p)。
+   - 若未来打开 L_ag/L_yaw，它会在采样点靠近膨胀障碍或地图外时把 L_ag/L_yaw 权重压低，避免 FOV 软代价压过避障。
+   - 当前因 L_ag/L_yaw 默认权重为 0，这个缩放函数实际不会产生影响。
+
+11. FOV soft retry
+   - ego_replan_fsm.cpp 中 callReboundReplan() 支持规划失败后重试。
+   - 当前上层参数：
+     fov_enable_soft_retry=true
+     fov_soft_retry_scale=0.0
+     fov_retry_distance_scale=1.25
+   - 含义：失败时可关闭 FOV 软代价做一次重试，尽量回退到 EGO 基础链路。
+
+五、窄门场景 narrow_door.json 描述
+
+1. 基本设置
+   - 3 架无人机。
+   - 起飞点：
+     uav1=(-8.8, -1.0, 1.4)
+     uav2=(-8.8, 0.0, 1.4)
+     uav3=(-8.8, 1.0, 1.4)
+   - 目标高度：1.4m。
+   - useWaypointZ=false。
+   - lockEgoTrackingHeight=true。
+   - trackMaxControlZ=1.4。
+   - 目标速度：0.5。
+
+2. 红球路径
+   - 从 x=-8.2 向 x=8.6 前进，中间穿过 3 个横向位置不同的门：
+     (-8.2,0.0,1.4)
+     (-5.8,0.0,1.4)
+     (-4.0,-0.5,1.4)
+     (-3.2,-0.5,1.4)
+     (-2.4,-0.5,1.4)
+     (-1.0,0.3,1.4)
+     (0.7,0.3,1.4)
+     (1.6,0.3,1.4)
+     (3.2,-0.3,1.4)
+     (4.4,-0.3,1.4)
+     (5.2,-0.3,1.4)
+     (6.8,-0.05,1.4)
+     (8.6,0.0,1.4)
+
+3. 障碍物
+   - 两侧长墙：
+     lower wall：center=(1.0,-2.35)，size=(14.4,0.28,2.8)
+     upper wall：center=(1.0, 2.35)，size=(14.4,0.28,2.8)
+   - 三个窄门，各由上下两个 box leaf 组成，x 分别约为 -3.2、0.7、4.4，门中心横向位置不同，厚度也不同。
+   - 另有两个圆柱障碍：
+     (-4.7,1.7), radius=0.42
+     (3.6,1.35), radius=0.42
+   - EGO 地图：
+     mapSizeENU=(24.0,12.0,4.5)
+     maxVel=0.95
+     maxAcc=1.4
+     planningHorizon=5.5
+     obstacleClearance=0.55
+
+4. 当前问题
+   - 窄门场景是目前主要困难。
+   - 之前 FOV 开启 L_ag/L_yaw 后，uav3 被推到上侧墙附近，最终 y 约 2.67，明显撞/贴墙。
+   - 关闭 L_ag/L_yaw 后，侧边机不再长期卡在墙侧，但三机仍会在过门中段挤得太近、过冲、进障碍。
+   - 最近一轮 verified 结果还不合格：FOV 比纯 EGO 差。
+
+六、楼梯场景 stair_climb.json 描述
+
+1. 基本设置
+   - 3 架无人机。
+   - 起飞点同窄门：
+     uav1=(-8.8, -1.0, 1.4)
+     uav2=(-8.8, 0.0, 1.4)
+     uav3=(-8.8, 1.0, 1.4)
+   - useWaypointZ=true。
+   - lockEgoTrackingHeight=false。
+   - trackMaxControlZ=3.2。
+   - 目标基准速度 0.44，但分段速度不同。
+
+2. 红球路径
+   - 用户要求不是循环，而是“低速向前 + 高速抬升 + 低速向前 + 高速抬升”，直到楼梯顶。
+   - 当前路径：
+     (-8.2,0.0,1.4)
+     (-5.15,0.0,1.4)
+     (-3.05,0.0,1.4)
+     (-3.05,0.0,1.58)
+     (-0.45,0.0,1.58)
+     (-0.45,0.0,2.18)
+     (2.05,0.0,2.18)
+     (2.05,0.0,2.9)
+     (6.7,0.0,2.9)
+     (7.4,0.0,2.9)
+   - 分段速度：
+     0.42, 0.42, 0.95, 0.42, 0.95, 0.42, 0.95, 0.42, 0.42
+   - 目标：红球不能没入台阶，抬升段速度更高。
+
+3. 障碍物
+   - 台阶/平台：
+     stair_step_0 center=(-3.8,0.0), size=(2.3,3.4,0.5)
+     stair_step_1 center=(-1.4,0.0), size=(2.5,3.4,1.15)
+     stair_step_2 center=(1.1,0.0), size=(2.5,3.4,1.75)
+     upper_landing center=(4.2,0.0), size=(3.7,3.4,2.5)
+   - 两侧墙：
+     center=(0.2,-2.15), size=(9.6,0.22,1.7)
+     center=(0.2, 2.15), size=(9.6,0.22,1.7)
+   - 两个圆柱障碍：
+     (-4.9,-2.0), radius=0.38
+     (5.3,2.0), radius=0.42
+   - EGO 地图：
+     mapSizeENU=(24.0,12.0,6.5)
+     maxVel=0.95
+     maxAcc=1.4
+     planningHorizon=5.5
+     obstacleClearance=0.55
+
+4. 当前风险
+   - 楼梯场景不能忽略 z 轴。
+   - FOV 距离代价已经支持 fov_lock_tracking_height=false 时使用 3D 距离。
+   - 但 L_ag/L_yaw 当前仍主要按 x-y 视角实现；如重新启用，需谨慎检查楼梯场景。
+
+七、最近仿真结果和困局
+
+1. 纯 EGO 参考结果
+   - 目录：analysis/target_tracking_20260709_214048
+   - 窄门，纯 EGO，结果较好：
+     三机 mean tracking error 约 0.34~0.43m。
+     max tracking error 约 1.62m。
+     success_rate=1.0。
+     team any visible ratio=1.0。
+     min pair distance=0.367m。
+   - 这说明当前地图并非完全不可通过，纯 EGO 链路仍是重要基准。
+
+2. FOV 较差结果
+   - 目录：analysis/target_tracking_20260709_214852
+   - uav2 卡住，mean error=6.80m，final error=8.00m。
+   - ERROR! the drone is in obstacle 约 3808 次。
+   - Unable to handle initial/end point 约 477 次。
+   - 说明 FOV 当时严重破坏了规划链路。
+
+3. FOV 中间较好但仍不合格结果
+   - 目录：analysis/target_tracking_20260709_220329
+   - uav1 mean/final/max: 1.35 / 0.20 / 4.26
+   - uav2 mean/final/max: 0.61 / 0.46 / 2.16
+   - uav3 mean/final/max: 2.16 / 2.48 / 2.88
+   - team any visible ratio=1.0。
+   - min pair distance=0.259m。
+   - 但 ERROR! the drone is in obstacle 约 8208 次。
+   - uav3 最终停在 y 约 2.67，目标跟踪点 y 约 0.31，明显贴到上侧墙附近。
+
+4. 加入近障碍 FOV 软代价退让后的结果
+   - 目录：analysis/target_tracking_20260709_221232
+   - uav3 不再冲到 y=2.7，上侧墙问题缓解。
+   - 但 uav1 在门附近长期拿不到新轨迹，mean error=4.86，final error=6.55。
+   - team any visible ratio=0.9696，有 69 个 zero visible samples。
+   - 结果不合格。
+
+5. 当前最近验证结果
+   - 目录：analysis/target_tracking_20260709_221638
+   - 此时 L_ag/L_yaw 默认关掉，FOV 侧向间距还是 +-0.35。
+   - 结果：
+     uav1 mean/final/max: 1.78 / 0.39 / 5.46
+     uav2 mean/final/max: 1.36 / 0.74 / 5.03
+     uav3 mean/final/max: 2.42 / 0.17 / 7.20
+     team any visible ratio=1.0。
+     min pair distance=0.279m。
+     ERROR! the drone is in obstacle 约 666 次。
+     traj 1 failed 约 5995 次。
+   - 结论：没有长期卡死，但仍有严重过冲、挤压和进障碍；FOV 仍不如纯 EGO。
+
+6. 中断前最后一个未验证改动
+   - target_tracking_platform_single.launch 中 FOV 侧向相对点从 +-0.35 改成 +-0.50。
+   - 目的：增加一点横向分离，降低三机过门时的挤压，但仍比纯 EGO 的 +-0.85 更紧凑。
+   - 该改动无需重新编译 XML，但尚未跑仿真验证。
+
+八、当前困局判断
+
+1. 当前卡住/撞障不是因为完全没有目标发布。
+   - TargetTrack.py 仍持续发布目标。
+   - CSV 中 target_source 常见 ego_planner/ego_waiting，说明 planner 有时过期，但不是目标被可见性关断。
+
+2. 主要矛盾是：
+   - FOV 需要多机视角分离和可见性提升；
+   - 窄门要求多机在狭小通道逐次或贴近通过；
+   - L_ag/L_yaw 这类视角分离代价在窄门里容易把侧边机推向墙/门框，压过避障和基础跟踪。
+
+3. 另一个矛盾是：
+   - 用户不希望用“槽位机制”解决问题；
+   - 但当前系统仍有 EGOv2 的 relative_tracking 基础点。
+   - 因此未来应把 relative_tracking 只当作 EGOv2 原始跟踪输入，不要在 FOV 中继续发明固定角色/固定槽位逻辑。
+
+4. 当前 FOV 默认为了不破坏链路，已经把 L_ag/L_yaw 关掉。
+   - 这样 FOV 更接近 EGOv2，但可见性改进有限。
+   - 下一步应寻找“只在安全开阔区启用 FOV 软代价，在窄门/近障碍自动退让”的方式，并且必须验证窄门和楼梯都不坏。
+
+九、建议下一步给接手 agent
+
+1. 首先不要改地图，先验证中断前的 +-0.50 相对点：
+   ./batch_run_target_tracking.sh narrow_door 1 110 fov
+   查看 analysis 最新目录。
+
+2. 验证指标重点：
+   - 三架 mean/final/max tracking error。
+   - team any visible ratio 是否为 1.0。
+   - zero visible samples 是否为 0。
+   - min pair distance 是否过小。
+   - ERROR! the drone is in obstacle 次数。
+   - traj 1 failed、Unable to handle initial/end、Emergency stop。
+   - CSV 中每架无人机是否在某个门前长期 ego_waiting。
+
+3. 若 +-0.50 仍不行，不要马上重开 L_ag/L_yaw 大权重。
+   - 可以考虑极小权重逐步验证，例如 L_ag=0.5 或 1.0，L_yaw=0.0。
+   - 只在 fovObstacleSafetyScale(p) 较高时启用；近障碍时必须退让给避障。
+   - 每改一次最多跑一轮窄门，避免大幅震荡。
+
+4. 楼梯验证必须单独跑：
+   ./batch_run_target_tracking.sh stair_climb 1 110 fov
+   因楼梯 useWaypointZ=true 且 lockEgoTrackingHeight=false，任何修改不能把距离/可见性又退回纯 x-y。
+
+5. 对比纯 EGO 时应使用同一场景、同一红球轨迹：
+   ./batch_run_target_tracking.sh narrow_door 1 110 ego
+   ./batch_run_target_tracking.sh stair_climb 1 110 ego
+   对比 tracking error、smoothness、visible ratio、collision/error logs。
+
+十、不要踩的坑
+
+1. 不要再把 FOV 候选目标点/安全走廊默认打开。之前效果差，且当前实现不够 3D。
+2. 不要把可见性作为是否发布目标的门控。用户已经要求 FOV/EGO 都持续发布目标。
+3. 不要为了窄门把楼梯 z 轴逻辑破坏掉。
+4. 不要为了楼梯把窄门场景改宽、改简单；用户不想做地图特化。
+5. 不要关闭 Docker，不要杀用户容器。
+6. 不要把纯 EGO 的参数一起改坏。纯 EGO 是当前最好基准。
+7. 不要用“固定槽位/角色分配”冒充 Rao FOV 论文复现。
+8. 不要只看 final error。过门中段 max error、进障碍次数、规划失败次数同样重要。
+
+十一、当前代码状态简表
+
+1. FOV candidate goal：保留，默认 false。
+2. FOV visible safe region/corridor：保留，默认 false。
+3. FOV distance constraint：启用，weight=2.0，支持楼梯 3D。
+4. FOV height lock：窄门启用，楼梯关闭。
+5. L_ag：代码有，默认 weight=0.0。
+6. L_yaw：代码有，默认 weight=0.0。
+7. L_ag/L_yaw 近障碍退让：代码有，但当前因权重为 0 不生效。
+8. FOV 相对点：uav1/uav3 已改为 +-0.50，但尚未验证。
+9. 纯 EGO 相对点：仍为 +-0.85，不应被修改。
+10. 最新 verified 结果：FOV 仍不如 EGO，问题是窄门中段过冲、挤压和进障碍。

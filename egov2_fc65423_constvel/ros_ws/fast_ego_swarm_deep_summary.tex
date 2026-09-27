@@ -1,0 +1,484 @@
+% !TEX program = xelatex
+\documentclass[UTF8,a4paper,12pt]{ctexart}
+
+\usepackage{geometry}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,calc}
+
+\geometry{left=2.2cm,right=2.2cm,top=2.4cm,bottom=2.4cm}
+\hypersetup{colorlinks=true,linkcolor=blue!50!black,urlcolor=blue!50!black}
+\setlist[itemize]{leftmargin=2em,itemsep=0.25em}
+\setlist[enumerate]{leftmargin=2em,itemsep=0.25em}
+
+\newcommand{\traj}{\boldsymbol{\Phi}}
+\newcommand{\ctrl}{\mathbf{Q}}
+\newcommand{\pos}{\mathbf{p}}
+\newcommand{\vel}{\mathbf{v}}
+\newcommand{\acc}{\mathbf{a}}
+\newcommand{\dist}{d_{\mathrm{safe}}}
+\newcommand{\R}{\mathbb{R}}
+
+\title{\textbf{Fast-Planner、EGO-Planner 与 EGO-Swarm 深度精读报告}\\
+\large 面向无人机快速局部规划与分布式集群避碰的三篇核心论文}
+\author{基于论文原文与 PaperLocus 阅读框架整理}
+\date{2026年6月}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+\section{阅读定位与总览}
+
+Fast-Planner、EGO-Planner 与 EGO-Swarm 可以看作浙江大学 FAST-Lab 系列无人机规划工作的三个连续台阶。Fast-Planner 先建立了一个高速自主飞行所需的工程闭环：前端 kinodynamic 搜索给出动态可行的初值，后端 B-spline 优化提升安全距离和平滑性，最后用非均匀 B-spline 时间调整修正速度、加速度约束。EGO-Planner 在这个基础上进一步追问：既然梯度优化每次只关心当前轨迹附近的障碍，是否真的需要维护大范围 ESDF？它的答案是否定的，于是提出 ESDF-free 的碰撞梯度构造。EGO-Swarm 则继续把 EGO-Planner 从单机扩展到分布式集群：每架无人机独立规划，但把其他无人机广播的未来轨迹作为时空动态障碍，并在目标函数中加入 reciprocal collision avoidance penalty。
+
+这三篇论文的主线并不是低层姿态控制，而是“给飞控系统提供什么样的可执行轨迹”。它们默认底层控制器可以跟踪位置、速度或轨迹参考；真正解决的是上层局部规划中的三个难点：
+
+\begin{itemize}
+  \item \textbf{快速性}：无人机在未知环境中必须频繁重规划，规划时间通常只有毫秒到几十毫秒量级。
+  \item \textbf{动态可行性}：轨迹不仅要避障，还要满足速度、加速度等约束，否则低层控制器无法可靠跟踪。
+  \item \textbf{安全与协同}：单机要避开静态障碍，多机还要避开其他无人机的未来运动。
+\end{itemize}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+  node distance=1.2cm and 1.4cm,
+  box/.style={rectangle,rounded corners,draw=blue!55!black,fill=blue!4,thick,align=center,minimum width=3.4cm,minimum height=0.9cm},
+  arrow/.style={-{Latex[length=2.5mm]},thick}
+]
+\node[box] (fast) {Fast-Planner\\前端搜索 + B-spline 优化};
+\node[box,right=of fast] (ego) {EGO-Planner\\去 ESDF 的碰撞梯度};
+\node[box,right=of ego] (swarm) {EGO-Swarm\\分布式多机轨迹避碰};
+\draw[arrow] (fast) -- node[above,align=center]{减少后端优化压力\\保证动态初值} (ego);
+\draw[arrow] (ego) -- node[above,align=center]{复用 ESDF-free 局部优化\\加入邻机轨迹惩罚} (swarm);
+\node[box,below=of ego,minimum width=5.6cm] (flight) {对飞控/系统的接口：连续、平滑、可跟踪、安全裕度充足的轨迹};
+\draw[arrow] (fast) -- (flight);
+\draw[arrow] (ego) -- (flight);
+\draw[arrow] (swarm) -- (flight);
+\end{tikzpicture}
+\caption{三篇论文的技术递进关系。}
+\end{figure}
+
+\section{统一数学背景：B-spline 轨迹优化}
+
+三篇论文都围绕 B-spline 轨迹表示展开。设一条三维轨迹由控制点 $\ctrl_i\in\R^3$ 和基函数 $B_{i,p}(t)$ 表示：
+
+\begin{equation}
+  \traj(t)=\sum_{i=0}^{N}\ctrl_i B_{i,p}(t), \qquad \ctrl_i=[x_i,y_i,z_i]^\top .
+\end{equation}
+
+B-spline 的核心优点是\textbf{局部性}和\textbf{凸包性质}。局部性意味着移动某个控制点只会影响邻近若干段轨迹，这对在线重规划非常重要；凸包性质意味着一段曲线位于相关控制点的凸包内，因此可以通过约束控制点或控制点差分间接约束整条曲线的安全性与动态可行性。
+
+对均匀 B-spline，速度和加速度仍可写成 B-spline，其控制点由相邻位置控制点差分给出。若节点间隔为 $\Delta t$，则速度控制点和加速度控制点可写作：
+
+\begin{align}
+  \vel_i &= \frac{p}{\Delta t}(\ctrl_{i+1}-\ctrl_i),\\
+  \acc_i &= \frac{p-1}{\Delta t}(\vel_{i+1}-\vel_i)
+  =\frac{p(p-1)}{\Delta t^2}(\ctrl_{i+2}-2\ctrl_{i+1}+\ctrl_i).
+\end{align}
+
+于是，如果所有速度控制点和加速度控制点满足
+
+\begin{equation}
+  \|\vel_i\|_\infty \le v_{\max}, \qquad
+  \|\acc_i\|_\infty \le a_{\max},
+\end{equation}
+
+则由于凸包性质，轨迹的速度和加速度也能在对应范围内得到保守保证。这一思想贯穿 Fast-Planner 的后端优化、EGO-Planner 的可行性惩罚，以及 EGO-Swarm 的多机轨迹表示。
+
+\section{Fast-Planner：高速自主飞行的三段式轨迹生成}
+
+\subsection{论文定位}
+
+Fast-Planner 的完整标题是 \textit{Robust and Efficient Quadrotor Trajectory Generation for Fast Autonomous Flight}。它要解决的是未知杂乱环境中的快速无人机轨迹生成问题。此前方法大致分为两类：硬约束方法通常先构造安全走廊或凸空间，再在其中优化轨迹；软约束方法直接对轨迹加入碰撞代价并用梯度优化。前者安全性较强，但构造约束空间耗时且可能保守；后者灵活快速，但容易受初值影响，也可能生成动态不可行的轨迹。
+
+Fast-Planner 的核心贡献是把“搜索、优化、时间调整”组织成一个可靠 pipeline。前端 kinodynamic path searching 不是只搜索几何路径，而是在控制空间里扩展 motion primitive，直接考虑速度、加速度等状态；后端 B-spline 优化利用地图距离梯度和 B-spline 凸包性质，同时处理平滑性、避障和动态约束；最后，如果优化后的轨迹仍违反速度或加速度约束，就通过非均匀 B-spline 的 knot span 调整局部时间分配。
+
+\subsection{系统流程}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+  node distance=0.9cm,
+  box/.style={rectangle,draw=black!65,fill=green!5,rounded corners,align=center,minimum width=8.4cm,minimum height=0.8cm},
+  arrow/.style={-{Latex[length=2.5mm]},thick}
+]
+\node[box] (map) {局部体素地图 / EDF：提供占据、安全距离和梯度};
+\node[box,below=of map] (front) {前端 kinodynamic path searching：在离散控制空间搜索初始轨迹};
+\node[box,below=of front] (bspline) {均匀 B-spline 参数化：由控制点 $\ctrl_i$ 表示轨迹};
+\node[box,below=of bspline] (opt) {后端非线性优化：$f_s+f_c+f_v+f_a$};
+\node[box,below=of opt] (time) {非均匀 B-spline 时间调整：修正速度/加速度不可行段};
+\node[box,below=of time] (exec) {输出连续、平滑、安全且动态可行的轨迹给控制器};
+\draw[arrow] (map) -- (front);
+\draw[arrow] (front) -- (bspline);
+\draw[arrow] (bspline) -- (opt);
+\draw[arrow] (opt) -- (time);
+\draw[arrow] (time) -- (exec);
+\end{tikzpicture}
+\caption{Fast-Planner 的三段式轨迹生成流程。}
+\end{figure}
+
+\subsection{前端 kinodynamic path searching}
+
+Fast-Planner 的前端不是传统 A* 那种只在几何网格上搜索位置，而是在一个简化的动力学模型中搜索状态。若状态为 $x=[\pos^\top,\vel^\top]^\top$，控制输入近似为加速度 $\mathbf{u}$，则可写成双积分模型：
+
+\begin{equation}
+  \dot{\pos}=\vel,\qquad \dot{\vel}=\mathbf{u}.
+\end{equation}
+
+在固定时间间隔 $T$ 内，给定常值控制 $\mathbf{u}$，状态传播为：
+
+\begin{align}
+  \pos(T)&=\pos(0)+\vel(0)T+\frac{1}{2}\mathbf{u}T^2,\\
+  \vel(T)&=\vel(0)+\mathbf{u}T.
+\end{align}
+
+论文将轨迹代价设计为时间和控制努力的组合，形式上可理解为：
+
+\begin{equation}
+  J(T)=\int_0^T \left(\|\mathbf{u}(t)\|^2+\rho\right)\mathrm{d}t,
+\end{equation}
+
+其中 $\rho$ 是对时间的惩罚权重。这个代价体现了高速自主飞行中的折中：单纯最短时间会导致过激控制，单纯最小控制会飞得太慢。Fast-Planner 通过启发式搜索与 shot trajectory 连接目标，使前端能快速给出一个动态上合理、碰撞检查通过的初始轨迹。
+
+\subsection{后端 B-spline 优化目标}
+
+Fast-Planner 的后端目标函数可以概括为：
+
+\begin{equation}
+  \min_{\{\ctrl_i\}} 
+  f_{\mathrm{total}}
+  =\lambda_s f_s+\lambda_c f_c+\lambda_v f_v+\lambda_a f_a .
+\end{equation}
+
+其中：
+
+\begin{itemize}
+  \item $f_s$ 是平滑性代价，鼓励控制点分布平顺，间接减少高阶导数。
+  \item $f_c$ 是碰撞代价，利用 EDF 的距离和梯度把控制点推离障碍。
+  \item $f_v$ 和 $f_a$ 是速度、加速度可行性惩罚。
+\end{itemize}
+
+平滑性常用控制点二阶差分来表达：
+
+\begin{equation}
+  f_s=\sum_i \|\ctrl_{i+2}-2\ctrl_{i+1}+\ctrl_i\|^2.
+\end{equation}
+
+碰撞代价的直观形式是：若某个控制点或凸包采样点到障碍距离 $d(\ctrl_i)$ 小于安全距离 $\dist$，则产生惩罚：
+
+\begin{equation}
+  f_c=\sum_i \psi(d(\ctrl_i)), \qquad
+  \psi(d)=
+  \begin{cases}
+  (d-\dist)^2, & d<\dist,\\
+  0, & d\ge \dist.
+  \end{cases}
+\end{equation}
+
+这不是逐点轨迹碰撞检查的替代，而是一种可优化的连续代价。B-spline 凸包性质让控制点与曲线局部段之间有联系，EDF 梯度则提供“往哪里推”的方向。
+
+\subsection{动态可行性与时间调整}
+
+即使前端搜索考虑了动力学，后端碰撞优化也可能为了绕障碍拉长曲线，导致局部速度或加速度超限。Fast-Planner 的处理不是简单扩大整条轨迹时间，而是把最终轨迹转成非均匀 B-spline，对超限局部的 knot span 做调整。
+
+非均匀情况下，速度控制点可写成：
+
+\begin{equation}
+  \vel_i=\frac{p(\ctrl_{i+1}-\ctrl_i)}{t_{i+p+1}-t_{i+1}},
+\end{equation}
+
+可见增大局部时间间隔可以降低对应速度。加速度同理依赖相邻 knot span。因此时间调整的核心思想是：发现哪一段导数控制点违反约束，就扩大相关节点间隔，使其回到可行范围。相比统一放慢整条轨迹，局部时间调整保留了更多速度潜力。
+
+\subsection{实验逻辑}
+
+Fast-Planner 的实验不是只展示“能飞”，而是围绕三个 claim 展开：
+
+\begin{enumerate}
+  \item \textbf{前端搜索足够快且成功率高}：与其他 kinodynamic search 或 motion primitive 方法相比，Fast-Planner 通过启发式和解析连接目标降低搜索开销。
+  \item \textbf{后端优化收敛快、轨迹平滑}：B-spline 凸包性质让安全和动力学约束能转化到控制点层面，优化维度和梯度计算都较友好。
+  \item \textbf{在线重规划可实飞}：当地图更新或目标变化时，系统能迅速重新生成轨迹，并保持轨迹连续性。
+\end{enumerate}
+
+从研究脉络看，Fast-Planner 是后续 EGO-Planner 和 EGO-Swarm 的底座：它把轨迹表示、搜索初值、后端优化和时间调整这几个模块组织清楚，但仍依赖 EDF/ESDF 距离场提供碰撞梯度。这个依赖正是 EGO-Planner 后来要削减的瓶颈。
+
+\section{EGO-Planner：去掉 ESDF 的梯度局部规划}
+
+\subsection{论文定位}
+
+EGO-Planner 的完整标题是 \textit{EGO-Planner: An ESDF-free Gradient-based Local Planner for Quadrotors}。论文的起点非常明确：传统 gradient-based local planner 依赖 ESDF 查询距离和梯度，但 ESDF 的构建和更新本身很耗时。更关键的是，轨迹优化实际只关心当前轨迹附近的一小片空间，而 ESDF 更新通常覆盖更大的局部地图，因此存在明显冗余。
+
+EGO-Planner 的核心观点可以概括为一句话：\textbf{碰撞梯度不必来自完整 ESDF，也可以来自“碰撞轨迹”和“无碰撞 guiding path”之间的几何关系。}
+
+\subsection{从 ESDF 到局部障碍信息}
+
+传统 ESDF-based 方法把障碍环境表示为距离场：
+
+\begin{equation}
+  \phi(\pos)=
+  \begin{cases}
+  +d(\pos,\mathcal{O}), & \pos \text{ 在自由空间},\\
+  -d(\pos,\partial\mathcal{O}), & \pos \text{ 在障碍内部}.
+  \end{cases}
+\end{equation}
+
+优化器需要查询 $\phi(\pos)$ 和 $\nabla\phi(\pos)$，以构造碰撞代价和梯度。问题是，为了得到这些查询结果，需要先维护一个距离场，而距离场更新范围和当前轨迹优化范围并不匹配。
+
+EGO-Planner 采用另一种局部构造。给定当前 B-spline 轨迹 $\traj$，如果某段轨迹进入障碍，算法会搜索一条 collision-free guiding path $\Gamma$。对碰撞轨迹上的点 $\pos$，找到其在 guiding path 上的对应点 $\pos_g$，构造方向向量：
+
+\begin{equation}
+  \mathbf{v}=\frac{\pos_g-\pos}{\|\pos_g-\pos\|}.
+\end{equation}
+
+这个向量不是 ESDF 的真实梯度，但它能表达“把轨迹推出障碍、推向安全路径一侧”的方向。论文把这种局部信息存成若干 $\{\pos,\mathbf{v}\}$ 对，再分配给相关控制点。
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+  scale=1.0,
+  obstacle/.style={draw=red!70!black,fill=red!10,thick},
+  arrow/.style={-{Latex[length=2.5mm]},thick,blue!65!black}
+]
+\draw[obstacle] (2,0.2) ellipse (1.0 and 0.65);
+\draw[thick,red!80!black] (0,0) .. controls (1.4,0.1) and (2.2,0.2) .. (4,0.1);
+\draw[thick,green!50!black] (0,1.4) .. controls (1.2,1.7) and (2.8,1.5) .. (4,1.2);
+\foreach \x/\y/\gx/\gy in {1.45/0.12/1.35/1.62,2.0/0.2/2.0/1.55,2.55/0.16/2.72/1.42}{
+  \fill[red!80!black] (\x,\y) circle (1.5pt);
+  \draw[arrow] (\x,\y) -- (\gx,\gy);
+}
+\node[red!80!black] at (3.2,-0.45) {碰撞轨迹 $\traj$};
+\node[green!50!black] at (3.0,1.85) {guiding path $\Gamma$};
+\node[blue!65!black] at (0.9,0.75) {$\{\pos,\mathbf{v}\}$};
+\end{tikzpicture}
+\caption{EGO-Planner 用 guiding path 生成局部碰撞梯度。}
+\end{figure}
+
+\subsection{优化目标}
+
+EGO-Planner 仍然使用 B-spline 轨迹参数化。其目标函数可概括为：
+
+\begin{equation}
+  \min_{\{\ctrl_i\}} J
+  =\lambda_s J_s+\lambda_c J_c+\lambda_d J_d .
+\end{equation}
+
+其中 $J_s$ 是平滑性代价，$J_c$ 是 ESDF-free 的碰撞代价，$J_d$ 是动态可行性代价。平滑项与 Fast-Planner 类似，鼓励控制点高阶差分变小：
+
+\begin{equation}
+  J_s=\sum_i \|\ctrl_{i+2}-2\ctrl_{i+1}+\ctrl_i\|^2.
+\end{equation}
+
+碰撞项则由 $\{\pos_j,\mathbf{v}_j\}$ 对构造。设控制点 $\ctrl_i$ 与某个碰撞信息对的投影距离为：
+
+\begin{equation}
+  d_{ij}=(\ctrl_i-\pos_j)^\top \mathbf{v}_j .
+\end{equation}
+
+如果 $d_{ij}$ 小于安全距离，就产生惩罚：
+
+\begin{equation}
+  J_c=\sum_i \sum_j \psi(d_{ij}), \qquad
+  \psi(d)=
+  \begin{cases}
+  (d-\dist)^2, & d<\dist,\\
+  0, & d\ge \dist .
+  \end{cases}
+\end{equation}
+
+这个公式的意义非常直观：如果控制点还没有被推到 $\mathbf{v}_j$ 指向的安全半空间外，就继续施加代价。它牺牲了 ESDF 的全局精确性，但换来了非常轻量的局部优化信息。
+
+\subsection{轨迹时间重分配与 anisotropic curve fitting}
+
+EGO-Planner 继承并改进了动态可行性处理。若优化后的安全轨迹 $\traj_s$ 违反速度或加速度约束，算法会增大轨迹总时间或局部时间，并生成一条新的拟合轨迹 $\traj_f$。论文特别强调，在调整时间后，不应只追求几何上贴近原轨迹，还要考虑碰撞方向的各向异性权重。
+
+可将拟合问题概括为：
+
+\begin{equation}
+  \min_{\traj_f}
+  J'=\lambda_f J_{\mathrm{fit}}+\lambda_s J_s+\lambda_d J_d ,
+\end{equation}
+
+其中
+
+\begin{equation}
+  J_{\mathrm{fit}}=\sum_k
+  \left\|
+  \mathbf{W}_k \left(\traj_f(\alpha_k T')-\traj_s(\alpha_k T)\right)
+  \right\|^2 .
+\end{equation}
+
+$\mathbf{W}_k$ 是各向异性权重矩阵。沿着可能导致碰撞的方向，拟合误差权重更高；沿安全方向，拟合可以相对放松，以便在满足动态约束的同时避免重新撞入障碍。
+
+\subsection{实验逻辑}
+
+EGO-Planner 的实验目标主要有三层：
+
+\begin{enumerate}
+  \item \textbf{优化器选择}：比较 BB、L-BFGS 和 truncated Newton 等优化器，最终选择 L-BFGS，因为它在该类目标函数上兼顾成功率和计算效率。
+  \item \textbf{ESDF-free 是否节省时间}：与 ESDF-based 方案比较，EGO-Planner 在保持相近安全性和平滑性的同时，显著减少 ESDF 构建和更新开销。
+  \item \textbf{真实飞行验证}：在室内狭窄环境、目标突变、户外树林等场景中验证在线重规划能力。
+\end{enumerate}
+
+EGO-Planner 的意义不只是“快一点”。它改变了局部梯度规划对地图表示的依赖方式：从“先构造完整局部距离场，再查梯度”变成“轨迹碰撞时才构造必要的避障方向”。这使得规划器更贴近实时系统的计算预算，也为 EGO-Swarm 的多机实时重规划打下基础。
+
+\section{EGO-Swarm：分布式四旋翼集群系统}
+
+\subsection{论文定位}
+
+EGO-Swarm 的完整标题是 \textit{EGO-Swarm: A Fully Autonomous and Decentralized Quadrotor Swarm System in Cluttered Environments}。它要回答的问题是：如果每架无人机都只有自己的局部感知和本地计算，如何在杂乱未知环境中实现多机安全飞行？
+
+这篇论文不是简单地把 EGO-Planner 复制到多架无人机上。真正的难点在于多机之间存在时空耦合：每架无人机规划出的未来轨迹都会成为其他无人机的动态障碍，而且通信可能延迟、丢包，定位还可能存在漂移。因此 EGO-Swarm 在 EGO-Planner 的基础上加入了三类机制：
+
+\begin{itemize}
+  \item \textbf{轻量拓扑轨迹生成}：帮助单机跳出局部极小值，尤其是在非凸障碍和拥挤场景中。
+  \item \textbf{reciprocal collision avoidance}：把邻机未来轨迹纳入优化目标，形成分布式机间避碰。
+  \item \textbf{系统工程处理}：包括轨迹广播、启动顺序、相对定位漂移修正和视觉识别邻机。
+\end{itemize}
+
+\subsection{总体架构}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+  node distance=0.9cm and 1.0cm,
+  box/.style={rectangle,rounded corners,draw=purple!60!black,fill=purple!4,thick,align=center,minimum width=3.5cm,minimum height=0.85cm},
+  arrow/.style={-{Latex[length=2.5mm]},thick}
+]
+\node[box] (local) {本机深度感知\\局部障碍地图};
+\node[box,right=of local] (recv) {接收邻机广播\\未来轨迹};
+\node[box,below=of local] (topo) {轻量拓扑候选\\trajectory generation};
+\node[box,below=of recv] (swarm) {机间避碰惩罚\\$J_{w,k}$};
+\node[box,below right=0.9cm and -1.8cm of topo,minimum width=4.8cm] (opt) {EGO-style B-spline 优化\\$J_s+J_c+J_d+J_t+J_{w,k}$};
+\node[box,below=of opt,minimum width=4.8cm] (broadcast) {执行最优轨迹并广播给邻机};
+\draw[arrow] (local) -- (topo);
+\draw[arrow] (recv) -- (swarm);
+\draw[arrow] (topo) -- (opt);
+\draw[arrow] (swarm) -- (opt);
+\draw[arrow] (opt) -- (broadcast);
+\draw[arrow,dashed] (broadcast.east) .. controls +(1.5,0) and +(1.5,0) .. (recv.east);
+\end{tikzpicture}
+\caption{EGO-Swarm 的分布式规划闭环。}
+\end{figure}
+
+\subsection{从单机目标到多机目标}
+
+EGO-Swarm 继承 EGO-Planner 的单机目标函数。对第 $k$ 架无人机，其基础目标可以写成：
+
+\begin{equation}
+  J_k^{\mathrm{ego}}
+  =\lambda_s J_s+\lambda_c J_c+\lambda_d J_d+\lambda_t J_t ,
+\end{equation}
+
+其中 $J_t$ 表示终端进度或目标接近项。多机情况下，额外加入 swarm collision penalty：
+
+\begin{equation}
+  J_k=J_k^{\mathrm{ego}}+\lambda_w J_{w,k}.
+\end{equation}
+
+设第 $k$ 架无人机的轨迹为 $\traj_k(t)$，邻机 $q$ 广播的轨迹为 $\traj_q(t)$。机间距离为：
+
+\begin{equation}
+  d_{kq}(t)=\|\traj_k(t)-\traj_q(t)\|.
+\end{equation}
+
+当距离小于安全半径 $d_{\mathrm{swarm}}$ 时，产生惩罚：
+
+\begin{equation}
+  J_{w,k}=
+  \sum_{q\in\mathcal{N}_k}\sum_{t_m}
+  \psi\left(d_{kq}(t_m)\right),
+  \qquad
+  \psi(d)=
+  \begin{cases}
+  (d-d_{\mathrm{swarm}})^2, & d<d_{\mathrm{swarm}},\\
+  0, & d\ge d_{\mathrm{swarm}}.
+  \end{cases}
+\end{equation}
+
+这个形式和障碍碰撞代价非常相似：障碍是空间中的静态危险区域，邻机轨迹则是时空中的动态危险区域。EGO-Swarm 的工程简洁性正来自这里：它没有把多机问题变成大规模集中式优化，而是在每架无人机的本地优化中加入邻机轨迹惩罚。
+
+\subsection{拓扑轨迹生成}
+
+单机局部梯度法容易陷入局部极小值。例如障碍把直线路径切断时，轨迹可能被推到某一侧，但这一侧不一定通向目标；多机场景中，拥挤区域还会让无人机互相等待或绕行失败。EGO-Swarm 使用轻量拓扑轨迹生成来构造若干不同候选。
+
+其思想不是像传统 topological planning 那样构造完整 PRM 图并搜索大量同伦类，而是基于 EGO-Planner 的碰撞信息和 guiding path，快速生成“从障碍另一侧绕过”的候选轨迹。可以把候选集合记为：
+
+\begin{equation}
+  \mathcal{C}_k=\{\traj_k^{(1)},\traj_k^{(2)},\ldots,\traj_k^{(M)}\}.
+\end{equation}
+
+对每条候选轨迹运行局部优化后，选择总代价最低的一条执行：
+
+\begin{equation}
+  \traj_k^\star=\arg\min_{\traj\in\mathcal{C}_k} J_k(\traj).
+\end{equation}
+
+这个机制补上了 EGO-Planner 的一个短板：纯局部梯度优化在非凸环境中可能因为初值不好而失败，而轻量拓扑候选能以很低计算成本提供多个逃逸方向。
+
+\subsection{通信、漂移与真实系统}
+
+EGO-Swarm 的论文价值还在于系统问题处理得比较完整。每架无人机通过 broadcast network 周期性发送未来轨迹。其他无人机收到后进行碰撞检查；若发现当前轨迹与邻机未来轨迹存在冲突，就触发重规划。由于轨迹是低维控制点序列，通信负担相对小。
+
+系统还使用 chain network 管理启动顺序，避免所有无人机同时从初值开始重规划导致混乱。此外，论文意识到多机定位漂移会破坏机间避碰：如果不同无人机的世界坐标系有偏差，那么“收到的轨迹”与“真实位置”不一致。为此，系统利用深度图中观测到的邻机位置来修正相对定位漂移。这一点很重要，因为真实多机系统的安全性不只取决于规划公式，也取决于感知、定位和通信是否一致。
+
+\subsection{实验逻辑}
+
+EGO-Swarm 的实验分成四类：
+
+\begin{enumerate}
+  \item \textbf{拓扑规划效率}：与传统拓扑路径搜索比较候选数量和计算时间，证明其轻量性。
+  \item \textbf{无障碍集群交换}：与 DMPC、RBP、ORCA 等方法比较飞行距离、飞行时间、碰撞次数和计算时间。
+  \item \textbf{障碍丰富环境}：多架无人机在不同障碍密度下穿越，检验局部地图独立、中心区域相遇和互相避让。
+  \item \textbf{真实飞行}：室内 circle swap、窄门穿越、杂乱环境穿越，以及户外树林场景。
+\end{enumerate}
+
+这些实验共同支撑一个系统级 claim：EGO-Swarm 能在未知杂乱环境中实现完全自主、分布式、多机实时规划，而不依赖集中式调度或全局地图。
+
+\section{三篇论文的横向比较}
+
+\begin{longtable}{p{3.0cm}p{3.8cm}p{3.8cm}p{3.8cm}}
+\toprule
+\textbf{维度} & \textbf{Fast-Planner} & \textbf{EGO-Planner} & \textbf{EGO-Swarm}\\
+\midrule
+\endhead
+核心问题 & 高速未知环境中生成安全、平滑、动态可行轨迹 & 去掉 ESDF 维护开销，仍保留梯度优化优势 & 多机未知环境中分布式避障与协同规划\\
+\midrule
+关键模块 & Kinodynamic search、B-spline optimization、time adjustment & ESDF-free collision cost、guiding path、anisotropic fitting & Topological trajectory generation、swarm collision penalty、trajectory broadcast\\
+\midrule
+地图依赖 & 依赖 EDF/ESDF 距离与梯度 & 不维护完整 ESDF，只在碰撞时提取局部障碍信息 & 单机仍用 EGO-style 局部信息，同时接收邻机轨迹\\
+\midrule
+动态可行性 & 前端搜索 + 后端惩罚 + 非均匀时间调整 & 可行性惩罚 + 时间重分配 + 曲线拟合 & 沿用 EGO 的动态可行性处理，并考虑机间避碰\\
+\midrule
+多机能力 & 无，主要是单机 & 无，主要是单机 & 有，分布式、多机、异步轨迹共享\\
+\midrule
+主要短板 & ESDF/EDF 更新仍可能成为瓶颈 & 局部极小值和动态障碍处理仍有限 & 通信延迟和软惩罚安全性缺少形式化保证\\
+\bottomrule
+\end{longtable}
+
+\section{对飞控算法创新的启发}
+
+如果研究目标是“飞控算法创新”，这三篇论文不应只被看作路径规划论文，而应被看作飞控系统上层参考轨迹生成器。低层控制器真正收到的是 $\traj(t),\dot{\traj}(t),\ddot{\traj}(t)$ 以及可能的 yaw 参考；如果轨迹时间分配过激、曲率太大、加速度接近极限，控制器即使理论上能跟踪，也会在实际推力、倾角、角速度和电机响应约束下产生误差。因此可以从以下方向衔接：
+
+\begin{enumerate}
+  \item \textbf{规划-控制一致性}：把控制器跟踪误差模型显式反馈给轨迹规划，使安全距离不再只是几何半径，而是包含跟踪误差上界。
+  \item \textbf{NMPC 后端替换或安全过滤}：将 EGO/Fast-Planner 生成的轨迹作为 nominal trajectory，再用 NMPC 或 CBF 对速度、姿态、推力和安全约束进行在线过滤。
+  \item \textbf{延迟鲁棒集群避碰}：EGO-Swarm 的机间避碰是软惩罚，可结合 committed trajectory 或 delay-aware safety check 改造成更强安全机制。
+  \item \textbf{感知不确定性约束}：高速飞行中障碍感知、VIO 漂移和深度噪声会影响安全裕度，可把不确定性作为规划代价或约束。
+  \item \textbf{具身语义规划接口}：在 EGO-Swarm 之上加入 VLM/LLM 生成的语义目标或语义风险区域，但底层仍用 B-spline/NMPC 保证动态可行。
+\end{enumerate}
+
+\section{结论}
+
+Fast-Planner、EGO-Planner 和 EGO-Swarm 构成了一条清晰的技术链：Fast-Planner 给出高速单机局部规划的完整工程 pipeline；EGO-Planner 去掉 ESDF，显著降低梯度规划的地图维护成本；EGO-Swarm 把这种轻量局部优化扩展到分布式多机系统，并处理通信、定位和真实实验中的一部分工程问题。
+
+这三篇论文的共同哲学是：不追求一次性求解全局最优，而是用足够好的局部模型、足够快的优化和频繁重规划来支撑真实无人机系统。它们的不足也来自同一处：软惩罚和局部优化虽然快，但严格安全性、通信延迟鲁棒性、控制跟踪误差和感知不确定性仍需要额外机制。对后续研究而言，最有价值的方向不是简单替换某个模块，而是把“轨迹规划的几何安全”和“飞控执行的动态安全”统一起来。
+
+\end{document}

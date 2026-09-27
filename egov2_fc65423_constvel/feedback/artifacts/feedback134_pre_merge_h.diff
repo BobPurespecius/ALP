@@ -1,0 +1,18 @@
+--- 
++++ 
+@@ -760,4 +760,9 @@
+ 
+   private:
++    // Optional, read-only audit sink; never consumed by planning decisions.
++    void traceTopologyAudit134(const char *stage, const CandidateResult *candidate,
++        const poly_traj::Trajectory *trajectory = nullptr,
++        const std::string &reason = "", int related_id = -1,
++        double comparison_begin = 0.0, double comparison_end = 0.0) const;
+     trajectory_lifecycle::State currentStateAt(double stamp) const;
+     LocalGeometryPolicy geometry_policy_;
+@@ -1345,4 +1350,5 @@
+       bool pending_activation_check{false};
+       int pending_traj_id{0};
++      int pending_candidate_id{-1};
+       double pending_c3{0.0};
+       double pending_d3{0.0};

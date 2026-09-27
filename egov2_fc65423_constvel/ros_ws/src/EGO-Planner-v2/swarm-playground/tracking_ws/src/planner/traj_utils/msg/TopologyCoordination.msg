@@ -1,0 +1,53 @@
+uint64 coordination_generation
+time snapshot_stamp
+bool valid
+string selection_reason
+int32 selected_encirclement_hypothesis_id
+float64 selected_phi0
+uint64 selected_encirclement_generation
+bool outer_loop_evaluation
+time evaluation_start_time
+float64 evaluation_horizon
+
+int16[] drone_ids
+uint64[] planning_generations
+int32[] selected_candidate_ids
+uint8[] selected_candidate_kinds
+int32[] local_candidate_ids
+uint8[] local_candidate_kinds
+
+uint32 combination_count
+float64 team_min_separation
+uint32 conflict_pair_count
+uint32 crossing_pair_count
+uint32 temporally_separated_crossing_pair_count
+float64 conflict_duration
+float64 near_conflict_duration
+float64 severe_conflict_samples
+float64 temporal_fix_burden
+float64 atleast2_visibility
+float64 all3_visibility
+float64 none_visibility
+float64 mean_visible_count
+float64 diversity_score
+float64 team_cost
+
+float64 local_team_min_separation
+uint32 local_conflict_pair_count
+float64 local_conflict_duration
+float64 local_temporal_fix_burden
+float64 local_atleast2_visibility
+float64 local_all3_visibility
+float64 local_none_visibility
+float64 local_mean_visible_count
+float64 local_diversity_score
+float64 local_team_cost
+
+bool differed_from_local
+bool improved_min_separation
+bool reduced_conflict
+bool improved_k2
+bool improved_diversity
+bool worsened_safety
+bool topology_switched
+bool rapid_reversal

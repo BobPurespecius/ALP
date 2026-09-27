@@ -1,0 +1,308 @@
+{
+    "number": 3,
+    "leaders": 1,
+    "head": 1,
+    "velocityVectorENU": [
+        0.2,
+        0.0,
+        0.0
+    ],
+    "formationTime": 55,
+    "useGazeboTruthForFeedback": true,
+    "safety": {
+        "xMin": -10.5,
+        "xMax": 10.5,
+        "yMin": -4.5,
+        "yMax": 4.5,
+        "minHeight": 0.15,
+        "maxHeight": 2.2
+    },
+    "mavrosLocalOffsetENU": [
+        [
+            0.0,
+            0.0,
+            0.0
+        ],
+        [
+            0.0,
+            0.0,
+            0.0
+        ],
+        [
+            0.0,
+            0.0,
+            0.0
+        ]
+    ],
+    "takeoffPointENU": [
+        [
+            -8.8,
+            -1.0,
+            1.4
+        ],
+        [
+            -8.8,
+            0.0,
+            1.4
+        ],
+        [
+            -8.8,
+            1.0,
+            1.4
+        ]
+    ],
+    "preparePointENU": [
+        [
+            -8.8,
+            -1.0,
+            1.4
+        ],
+        [
+            -8.8,
+            0.0,
+            1.4
+        ],
+        [
+            -8.8,
+            1.0,
+            1.4
+        ]
+    ],
+    "targetTracking": {
+        "mode": "waypoints",
+        "speed": 0.5,
+        "takeoffHeight": 1.4,
+        "targetHeight": 1.4,
+        "useWaypointZ": false,
+        "lockEgoTrackingHeight": true,
+        "trackMaxControlZ": 1.4,
+        "waypointsENU": [
+            [
+                -8.2,
+                0.0,
+                1.4
+            ],
+            [
+                -5.8,
+                0.0,
+                1.4
+            ],
+            [
+                -4.0,
+                -0.5,
+                1.4
+            ],
+            [
+                -3.2,
+                -0.5,
+                1.4
+            ],
+            [
+                -2.4,
+                -0.5,
+                1.4
+            ],
+            [
+                -1.0,
+                0.3,
+                1.4
+            ],
+            [
+                0.7,
+                0.3,
+                1.4
+            ],
+            [
+                1.6,
+                0.3,
+                1.4
+            ],
+            [
+                3.2,
+                -0.3,
+                1.4
+            ],
+            [
+                4.4,
+                -0.3,
+                1.4
+            ],
+            [
+                5.2,
+                -0.3,
+                1.4
+            ],
+            [
+                6.8,
+                -0.05,
+                1.4
+            ],
+            [
+                8.6,
+                0.0,
+                1.4
+            ]
+        ]
+    },
+    "obstacleData": {
+        "0": {
+            "centerENU": [
+                -4.7,
+                1.7
+            ],
+            "radius": 0.42
+        },
+        "1": {
+            "centerENU": [
+                3.6,
+                1.35
+            ],
+            "radius": 0.42
+        }
+    },
+    "boxObstacleData": {
+        "0": {
+            "modelName": "narrow_corridor_lower_wall",
+            "centerENU": [
+                1.0,
+                -2.35
+            ],
+            "sizeENU": [
+                14.4,
+                0.28,
+                2.8
+            ]
+        },
+        "1": {
+            "modelName": "narrow_corridor_upper_wall",
+            "centerENU": [
+                1.0,
+                2.35
+            ],
+            "sizeENU": [
+                14.4,
+                0.28,
+                2.8
+            ]
+        },
+        "2": {
+            "modelName": "narrow_door_1_lower_leaf",
+            "centerENU": [
+                -3.2,
+                -1.675
+            ],
+            "sizeENU": [
+                0.38,
+                1.25,
+                2.8
+            ]
+        },
+        "3": {
+            "modelName": "narrow_door_1_upper_leaf",
+            "centerENU": [
+                -3.2,
+                1.175
+            ],
+            "sizeENU": [
+                0.38,
+                2.25,
+                2.8
+            ]
+        },
+        "4": {
+            "modelName": "narrow_door_2_lower_leaf",
+            "centerENU": [
+                0.7,
+                -1.275
+            ],
+            "sizeENU": [
+                0.55,
+                2.05,
+                2.8
+            ]
+        },
+        "5": {
+            "modelName": "narrow_door_2_upper_leaf",
+            "centerENU": [
+                0.7,
+                1.575
+            ],
+            "sizeENU": [
+                0.55,
+                1.45,
+                2.8
+            ]
+        },
+        "6": {
+            "modelName": "narrow_door_3_lower_leaf",
+            "centerENU": [
+                4.4,
+                -1.575
+            ],
+            "sizeENU": [
+                0.72,
+                1.45,
+                2.8
+            ]
+        },
+        "7": {
+            "modelName": "narrow_door_3_upper_leaf",
+            "centerENU": [
+                4.4,
+                1.275
+            ],
+            "sizeENU": [
+                0.72,
+                2.05,
+                2.8
+            ]
+        }
+    },
+    "egoPlanner": {
+        "enabled": true,
+        "mapSizeENU": [
+            24.0,
+            12.0,
+            4.5
+        ],
+    "goalsENU": [
+            [
+                8.6,
+                -0.35,
+                1.4
+            ],
+            [
+                8.6,
+                0.0,
+                1.4
+            ],
+            [
+                8.6,
+                0.35,
+                1.4
+      ]
+    ],
+    "routeWaypointsENU": [
+      [-4.0, -0.5, 1.4],
+      [-1.8, -0.5, 1.4],
+      [2.2, 0.3, 1.4],
+      [6.0, -0.3, 1.4]
+    ],
+    "maxVel": 0.9,
+    "maxAcc": 1.4,
+    "egov2MaxVel": 1.4,
+    "egov2MaxAcc": 1.8,
+    "presetStartDelayStep": 12.0,
+        "virtualCeilHeight": 2.2,
+        "planningHorizon": 5.5,
+        "obstacleInflation": 0.12,
+        "plannerObstacleClearance": 0.15,
+        "swarmClearance": 0.45,
+        "cloudResolution": 0.16,
+        "cloudPublishPeriod": 0.5,
+        "obstacleHeight": 2.8,
+        "obstacleClearance": 0.28
+    },
+    "movingObstacleData": {},
+    "nMovingObstacle": 0
+}

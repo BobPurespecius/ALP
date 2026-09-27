@@ -1,0 +1,252 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="world" default="$(find multi_uav_formation)/worlds/long_cylinder_forest.world"/>
+    <arg name="scene_file" default="$(find multi_uav_formation)/scenes/long_cylinder_forest.json"/>
+    <arg name="vehicle" default="neverlost_livox_pitch30"/>
+    <arg name="gui" default="true"/>
+    <arg name="paused" default="false"/>
+    <arg name="map_size_x" default="82.0"/>
+    <arg name="map_size_y" default="28.0"/>
+    <arg name="map_size_z" default="5.0"/>
+    <arg name="max_vel" default="1.2"/>
+    <arg name="max_acc" default="1.8"/>
+    <arg name="max_jer" default="20.0"/>
+    <arg name="enable_target_facing_yaw" default="true"/>
+    <arg name="planning_horizon" default="6.5"/>
+    <arg name="obstacles_inflation" default="0.35"/>
+    <arg name="obstacle_clearance" default="0.5"/>
+    <arg name="virtual_ceil_height" default="2.9"/>
+    <arg name="cloud_resolution" default="0.22"/>
+    <arg name="target_waypoints" default="-33.0,0.0;-29.0,1.0;-25.0,2.25;-21.0,3.5;-18.5,4.0;-16.0,3.5;-12.0,2.25;-11.0,2.25;-10.0,1.75;-6.0,-1.0;-2.0,-0.25;-1.0,0.25;3.0,0.25;7.0,1.75;11.0,2.25;15.0,2.25;17.5,2.75;18.5,2.0;22.5,-1.0;24.5,-2.75;25.5,-3.0;29.5,-1.5;32.5,0.25;33.5,0.5;36.0,0.0"/>
+    <arg name="target_speed" default="0.928"/>
+    <arg name="target_height" default="1.5"/>
+
+    <arg name="uav1_start_x" default="-35.2"/>
+    <arg name="uav1_start_y" default="-1.0"/>
+    <arg name="uav2_start_x" default="-35.2"/>
+    <arg name="uav2_start_y" default="0.0"/>
+    <arg name="uav3_start_x" default="-35.2"/>
+    <arg name="uav3_start_y" default="1.0"/>
+
+    <arg name="goal0_x" default="34.55"/>
+    <arg name="goal0_y" default="-0.85"/>
+    <arg name="goal1_x" default="34.30"/>
+    <arg name="goal1_y" default="0.0"/>
+    <arg name="goal2_x" default="34.55"/>
+    <arg name="goal2_y" default="0.85"/>
+    <arg name="goal_z" default="1.5"/>
+
+    <include file="$(find multi_uav_formation)/launch/multi_uav_mavros_sitl.launch">
+        <arg name="world" value="$(arg world)"/>
+        <arg name="scene_file" value="$(arg scene_file)"/>
+        <arg name="vehicle" value="$(arg vehicle)"/>
+        <arg name="uav_count" value="3"/>
+        <arg name="enable_moving_obstacles" value="false"/>
+        <arg name="gui" value="$(arg gui)"/>
+        <arg name="paused" value="$(arg paused)"/>
+        <arg name="uav1_start_x" value="$(arg uav1_start_x)"/>
+        <arg name="uav1_start_y" value="$(arg uav1_start_y)"/>
+        <arg name="uav2_start_x" value="$(arg uav2_start_x)"/>
+        <arg name="uav2_start_y" value="$(arg uav2_start_y)"/>
+        <arg name="uav3_start_x" value="$(arg uav3_start_x)"/>
+        <arg name="uav3_start_y" value="$(arg uav3_start_y)"/>
+        <arg name="uav1_fcu_url" value="udp://:24540@localhost:34580"/>
+        <arg name="uav2_fcu_url" value="udp://:24541@localhost:34581"/>
+        <arg name="uav3_fcu_url" value="udp://:24542@localhost:34582"/>
+        <arg name="publish_mavros_vision" value="true"/>
+    </include>
+
+    <!-- Resolve the parameter file from the EGOv2 package selected by the
+         wrapper script, keeping the planner binary and its XML in one tree. -->
+    <arg name="ego_advanced_param_file" default="$(find ego_planner)/launch/advanced_param.xml"/>
+
+    <include file="$(arg ego_advanced_param_file)">
+        <arg name="drone_id" value="0"/>
+        <arg name="map_size_x_" value="$(arg map_size_x)"/>
+        <arg name="map_size_y_" value="$(arg map_size_y)"/>
+        <arg name="map_size_z_" value="$(arg map_size_z)"/>
+        <arg name="odometry_topic" value="visual_slam/odom"/>
+        <arg name="cloud_topic" value="pcl_render_node/cloud"/>
+        <arg name="camera_pose_topic" value="pcl_render_node/camera_pose"/>
+        <arg name="depth_topic" value="pcl_render_node/depth"/>
+        <arg name="cx" value="321.04638671875"/>
+        <arg name="cy" value="243.44969177246094"/>
+        <arg name="fx" value="387.229248046875"/>
+        <arg name="fy" value="387.229248046875"/>
+        <arg name="max_vel" value="$(arg max_vel)"/>
+        <arg name="max_acc" value="$(arg max_acc)"/>
+        <arg name="max_jer" value="$(arg max_jer)"/>
+        <arg name="planning_horizon" value="$(arg planning_horizon)"/>
+        <arg name="obstacles_inflation" value="$(arg obstacles_inflation)"/>
+        <arg name="obstacle_clearance" value="$(arg obstacle_clearance)"/>
+        <arg name="virtual_ceil_height" value="$(arg virtual_ceil_height)"/>
+        <arg name="flight_type" value="2"/>
+        <arg name="realworld_experiment" value="false"/>
+        <arg name="sequential_start" value="true"/>
+        <arg name="point_num" value="1"/>
+        <arg name="point0_x" value="$(arg goal0_x)"/>
+        <arg name="point0_y" value="$(arg goal0_y)"/>
+        <arg name="point0_z" value="$(arg goal_z)"/>
+        <arg name="point1_x" value="$(arg goal0_x)"/>
+        <arg name="point1_y" value="$(arg goal0_y)"/>
+        <arg name="point1_z" value="$(arg goal_z)"/>
+        <arg name="point2_x" value="$(arg goal0_x)"/>
+        <arg name="point2_y" value="$(arg goal0_y)"/>
+        <arg name="point2_z" value="$(arg goal_z)"/>
+        <arg name="point3_x" value="$(arg goal0_x)"/>
+        <arg name="point3_y" value="$(arg goal0_y)"/>
+        <arg name="point3_z" value="$(arg goal_z)"/>
+        <arg name="point4_x" value="$(arg goal0_x)"/>
+        <arg name="point4_y" value="$(arg goal0_y)"/>
+        <arg name="point4_z" value="$(arg goal_z)"/>
+        <arg name="obj_num_set" value="0"/>
+        <arg name="use_distinctive_trajs" value="false"/>
+        <arg name="tracking_error_replan_threshold" value="0.0"/>
+        <arg name="tracking_velocity_error_replan_threshold" value="0.0"/>
+        <arg name="relative_tracking_x" value="-1.5"/>
+        <arg name="relative_tracking_y" value="-0.85"/>
+        <arg name="relative_tracking_z" value="0.0"/>
+        <arg name="broadcast_traj_send_topic" value="/native_egov2/broadcast_traj"/>
+        <arg name="broadcast_traj_recv_topic" value="/native_egov2/broadcast_traj"/>
+    </include>
+
+    <include file="$(arg ego_advanced_param_file)">
+        <arg name="drone_id" value="1"/>
+        <arg name="map_size_x_" value="$(arg map_size_x)"/>
+        <arg name="map_size_y_" value="$(arg map_size_y)"/>
+        <arg name="map_size_z_" value="$(arg map_size_z)"/>
+        <arg name="odometry_topic" value="visual_slam/odom"/>
+        <arg name="cloud_topic" value="pcl_render_node/cloud"/>
+        <arg name="camera_pose_topic" value="pcl_render_node/camera_pose"/>
+        <arg name="depth_topic" value="pcl_render_node/depth"/>
+        <arg name="cx" value="321.04638671875"/>
+        <arg name="cy" value="243.44969177246094"/>
+        <arg name="fx" value="387.229248046875"/>
+        <arg name="fy" value="387.229248046875"/>
+        <arg name="max_vel" value="$(arg max_vel)"/>
+        <arg name="max_acc" value="$(arg max_acc)"/>
+        <arg name="max_jer" value="$(arg max_jer)"/>
+        <arg name="planning_horizon" value="$(arg planning_horizon)"/>
+        <arg name="obstacles_inflation" value="$(arg obstacles_inflation)"/>
+        <arg name="obstacle_clearance" value="$(arg obstacle_clearance)"/>
+        <arg name="virtual_ceil_height" value="$(arg virtual_ceil_height)"/>
+        <arg name="flight_type" value="2"/>
+        <arg name="realworld_experiment" value="false"/>
+        <arg name="sequential_start" value="true"/>
+        <arg name="point_num" value="1"/>
+        <arg name="point0_x" value="$(arg goal1_x)"/>
+        <arg name="point0_y" value="$(arg goal1_y)"/>
+        <arg name="point0_z" value="$(arg goal_z)"/>
+        <arg name="point1_x" value="$(arg goal1_x)"/>
+        <arg name="point1_y" value="$(arg goal1_y)"/>
+        <arg name="point1_z" value="$(arg goal_z)"/>
+        <arg name="point2_x" value="$(arg goal1_x)"/>
+        <arg name="point2_y" value="$(arg goal1_y)"/>
+        <arg name="point2_z" value="$(arg goal_z)"/>
+        <arg name="point3_x" value="$(arg goal1_x)"/>
+        <arg name="point3_y" value="$(arg goal1_y)"/>
+        <arg name="point3_z" value="$(arg goal_z)"/>
+        <arg name="point4_x" value="$(arg goal1_x)"/>
+        <arg name="point4_y" value="$(arg goal1_y)"/>
+        <arg name="point4_z" value="$(arg goal_z)"/>
+        <arg name="obj_num_set" value="0"/>
+        <arg name="use_distinctive_trajs" value="false"/>
+        <arg name="tracking_error_replan_threshold" value="0.0"/>
+        <arg name="tracking_velocity_error_replan_threshold" value="0.0"/>
+        <arg name="relative_tracking_x" value="-1.7"/>
+        <arg name="relative_tracking_y" value="0.0"/>
+        <arg name="relative_tracking_z" value="0.0"/>
+        <arg name="broadcast_traj_send_topic" value="/native_egov2/broadcast_traj"/>
+        <arg name="broadcast_traj_recv_topic" value="/native_egov2/broadcast_traj"/>
+    </include>
+
+    <include file="$(arg ego_advanced_param_file)">
+        <arg name="drone_id" value="2"/>
+        <arg name="map_size_x_" value="$(arg map_size_x)"/>
+        <arg name="map_size_y_" value="$(arg map_size_y)"/>
+        <arg name="map_size_z_" value="$(arg map_size_z)"/>
+        <arg name="odometry_topic" value="visual_slam/odom"/>
+        <arg name="cloud_topic" value="pcl_render_node/cloud"/>
+        <arg name="camera_pose_topic" value="pcl_render_node/camera_pose"/>
+        <arg name="depth_topic" value="pcl_render_node/depth"/>
+        <arg name="cx" value="321.04638671875"/>
+        <arg name="cy" value="243.44969177246094"/>
+        <arg name="fx" value="387.229248046875"/>
+        <arg name="fy" value="387.229248046875"/>
+        <arg name="max_vel" value="$(arg max_vel)"/>
+        <arg name="max_acc" value="$(arg max_acc)"/>
+        <arg name="max_jer" value="$(arg max_jer)"/>
+        <arg name="planning_horizon" value="$(arg planning_horizon)"/>
+        <arg name="obstacles_inflation" value="$(arg obstacles_inflation)"/>
+        <arg name="obstacle_clearance" value="$(arg obstacle_clearance)"/>
+        <arg name="virtual_ceil_height" value="$(arg virtual_ceil_height)"/>
+        <arg name="flight_type" value="2"/>
+        <arg name="realworld_experiment" value="false"/>
+        <arg name="sequential_start" value="true"/>
+        <arg name="point_num" value="1"/>
+        <arg name="point0_x" value="$(arg goal2_x)"/>
+        <arg name="point0_y" value="$(arg goal2_y)"/>
+        <arg name="point0_z" value="$(arg goal_z)"/>
+        <arg name="point1_x" value="$(arg goal2_x)"/>
+        <arg name="point1_y" value="$(arg goal2_y)"/>
+        <arg name="point1_z" value="$(arg goal_z)"/>
+        <arg name="point2_x" value="$(arg goal2_x)"/>
+        <arg name="point2_y" value="$(arg goal2_y)"/>
+        <arg name="point2_z" value="$(arg goal_z)"/>
+        <arg name="point3_x" value="$(arg goal2_x)"/>
+        <arg name="point3_y" value="$(arg goal2_y)"/>
+        <arg name="point3_z" value="$(arg goal_z)"/>
+        <arg name="point4_x" value="$(arg goal2_x)"/>
+        <arg name="point4_y" value="$(arg goal2_y)"/>
+        <arg name="point4_z" value="$(arg goal_z)"/>
+        <arg name="obj_num_set" value="0"/>
+        <arg name="use_distinctive_trajs" value="false"/>
+        <arg name="tracking_error_replan_threshold" value="0.0"/>
+        <arg name="tracking_velocity_error_replan_threshold" value="0.0"/>
+        <arg name="relative_tracking_x" value="-1.5"/>
+        <arg name="relative_tracking_y" value="0.85"/>
+        <arg name="relative_tracking_z" value="0.0"/>
+        <arg name="broadcast_traj_send_topic" value="/native_egov2/broadcast_traj"/>
+        <arg name="broadcast_traj_recv_topic" value="/native_egov2/broadcast_traj"/>
+    </include>
+
+    <node pkg="ego_planner" type="traj_server" name="native_drone_0_traj_server" output="screen">
+        <remap from="/position_cmd" to="/drone_0_planning/pos_cmd"/>
+        <remap from="~planning/trajectory" to="/drone_0_planning/trajectory"/>
+        <param name="traj_server/time_forward" value="1.0" type="double"/>
+        <param name="traj_server/enable_target_facing_yaw" value="$(arg enable_target_facing_yaw)" type="bool"/>
+    </node>
+    <node pkg="ego_planner" type="traj_server" name="native_drone_1_traj_server" output="screen">
+        <remap from="/position_cmd" to="/drone_1_planning/pos_cmd"/>
+        <remap from="~planning/trajectory" to="/drone_1_planning/trajectory"/>
+        <param name="traj_server/time_forward" value="1.0" type="double"/>
+        <param name="traj_server/enable_target_facing_yaw" value="$(arg enable_target_facing_yaw)" type="bool"/>
+    </node>
+    <node pkg="ego_planner" type="traj_server" name="native_drone_2_traj_server" output="screen">
+        <remap from="/position_cmd" to="/drone_2_planning/pos_cmd"/>
+        <remap from="~planning/trajectory" to="/drone_2_planning/trajectory"/>
+        <param name="traj_server/time_forward" value="1.0" type="double"/>
+        <param name="traj_server/enable_target_facing_yaw" value="$(arg enable_target_facing_yaw)" type="bool"/>
+    </node>
+
+    <!-- Keep the target at its first waypoint until all three vehicles have
+         completed takeoff. -->
+    <node pkg="multi_uav_formation" type="target_state_coordinator.py"
+          name="native_target_state_coordinator" output="log">
+        <param name="rate" value="30.0"/>
+        <param name="frame_id" value="world"/>
+        <param name="target_mode" value="waypoints"/>
+        <param name="target_speed" value="$(arg target_speed)"/>
+        <param name="target_height" value="$(arg target_height)"/>
+        <param name="target_waypoints" value="$(arg target_waypoints)"/>
+        <param name="target_waypoints_use_z" value="false" type="bool"/>
+        <rosparam param="required_uavs">[uav1, uav2, uav3]</rosparam>
+        <param name="ground_truth_topic" value="/target_tracking/ground_truth"/>
+        <param name="shared_topic" value="/object_odom"/>
+        <param name="start_time_topic" value="/target_tracking/target_start_time"/>
+    </node>
+
+    <node pkg="multi_uav_formation" type="native_egov2_gazebo_bridge.py"
+          name="native_egov2_gazebo_bridge" output="screen"
+          args="--count 3 --scene-file $(arg scene_file) --cloud-period 0.5 --cloud-resolution $(arg cloud_resolution)"/>
+</launch>

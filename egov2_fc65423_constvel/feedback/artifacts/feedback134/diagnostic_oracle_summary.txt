@@ -1,0 +1,44 @@
+records 10267 candidates 1686 oracle_stage_rows 2294 candidate_episode_rows 562 unmatched_los 6
+episode  first_reject      
+u1e1                           27
+         FINAL_INPUT_FAILED     3
+         HANDOFF_REJECT         2
+         PREFLIGHT_REJECT       5
+         PREINIT_REJECT         1
+u1e2                           22
+         FINAL_INPUT_FAILED     1
+         HANDOFF_REJECT         4
+         PREFLIGHT_REJECT      18
+         PREINIT_REJECT         3
+u1e3                           25
+         FINAL_INPUT_FAILED     5
+         HANDOFF_REJECT        10
+         PREFLIGHT_REJECT       3
+         PREINIT_REJECT         7
+u1e4                           26
+         COMMIT_FAILED         11
+         PREFLIGHT_REJECT      32
+         PREINIT_REJECT         3
+u1e5                           24
+         FINAL_INPUT_FAILED     1
+         HANDOFF_REJECT         4
+         PREFLIGHT_REJECT      11
+         PREINIT_REJECT         4
+u2e1                           25
+         FINAL_INPUT_FAILED    15
+         HANDOFF_REJECT        15
+         PREFLIGHT_REJECT      12
+         PREINIT_REJECT        56
+u3e1                           21
+         FINAL_INPUT_FAILED     2
+         HANDOFF_REJECT         2
+         PREFLIGHT_REJECT       8
+u3e2                           18
+         FINAL_INPUT_FAILED    14
+         HANDOFF_REJECT        12
+         PREFLIGHT_REJECT       9
+         PREINIT_REJECT        13
+u3e3                           25
+         CERTIFICATE_REJECT    34
+         FINAL_INPUT_FAILED    23
+         PREFLIGHT_REJECT       6

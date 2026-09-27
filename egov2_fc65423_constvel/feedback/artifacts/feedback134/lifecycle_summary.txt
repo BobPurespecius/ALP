@@ -1,0 +1,12 @@
+Lifecycle 541 astar final marked 3 SFC marked 194 fallback 91
+SIDE_SOLVE 266 median,p95,max [3.4837722778320312, 7.331132888793945, 155.45272827148438]
+FINAL_INPUT_TO_COMPARATOR 194 median,p95,max [0.769495964050293, 2.5236248970031734, 5.469799041748047]
+first_reject
+CERTIFICATE_REJECT               34
+COMMIT_FAILED                    11
+FINAL_INPUT_FAILED               62
+HANDOFF_REJECT                   47
+PREFLIGHT_REJECT                100
+PREINIT_REJECT                   86
+SOLVER_FAILED_NO_FINAL_INPUT     18
+NaN                             183

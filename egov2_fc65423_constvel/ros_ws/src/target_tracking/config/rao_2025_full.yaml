@@ -1,0 +1,99 @@
+# Rao et al. 2025 reproduction parameters.
+# This configuration is consumed only by rao_2025_full_reproduction.py.
+frame_id: world
+rate: 20.0
+planner_rate: 2.0
+planning_horizon: 2.4
+prediction_dt: 0.3
+prediction_steps: 8
+random_seed: 2025
+duration: 0.0
+csv_path: /tmp/rao_2025_reproduction.csv
+topics:
+  namespace: /rao_2025
+
+scene:
+  size_x: 65.0
+  size_y: 30.0
+  size_z: 4.0
+  obstacle_count: 140
+  cube_width_min: 0.3
+  cube_width_max: 0.8
+  cube_height_min: 2.0
+  cube_height_max: 3.0
+  annulus_diameter_min: 0.5
+  annulus_diameter_max: 0.7
+  annulus_probability: 0.18
+  vehicle_radius: 0.35
+  obstacle_clearance: 0.20
+
+uav:
+  initial_positions:
+    - [0.75, 1.4, 1.0]
+    - [-1.5, 0.0, 1.0]
+    - [0.75, -1.4, 1.0]
+  max_speed: 3.0
+  max_acceleration: 6.0
+  max_jerk: 20.0
+  max_yaw_rate: 2.5
+  execution_follow_gain: 0.35
+  tracking_distance: 1.68
+  pair_clearance: 1.0
+  relative_positions:
+    - [-1.45, 0.85, 0.0]
+    - [-1.70, 0.0, 0.0]
+    - [-1.45, -0.85, 0.0]
+
+target:
+  initial_position: [0.0, 0.0, 1.0]
+  initial_yaw: 0.0
+  initial_speed: 1.5
+  max_speed: 2.2
+  wheelbase: 2.5
+  steering_amplitude: 0.34
+  steering_frequency: 0.055
+  acceleration_amplitude: 0.45
+  acceleration_frequency: 0.041
+  altitude: 1.0
+
+ekf:
+  measurement_noise: 0.08
+  process_noise_position: 0.04
+  process_noise_velocity: 0.30
+  initial_position_variance: 0.25
+  initial_velocity_variance: 1.0
+
+camera:
+  horizontal_fov_deg: 85.0
+  vertical_fov_deg: 72.0
+  min_distance: 0.5
+  max_distance: 20.0
+  los_sample_step: 0.12
+  visibility_clearance: 0.03
+  detection_probability: 1.0
+
+front_end:
+  primitive_dt: 0.30
+  beam_width: 24
+  acceleration_levels: [-1.0, 0.0, 1.0]
+  lambda_time: 0.15
+  heuristic_weight: 1.0
+  visibility_weight: 3.0
+  max_corridor_length: 4.0
+
+back_end:
+  optimizer: L-BFGS-B
+  max_iterations: 8
+  sample_count: 8
+  time_weight: 0.05
+  jerk_weight: 0.015
+  formation_weight: 7.0
+  distance_weight: 3.0
+  angular_weight: 1.2
+  yaw_weight: 0.35
+  fov_weight: 45.0
+  los_weight: 6000.0
+  obstacle_weight: 80.0
+  feasibility_weight: 8.0
+  reciprocal_weight: 60.0
+  corridor_weight: 70.0

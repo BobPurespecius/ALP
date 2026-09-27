@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="config" default="$(find target_tracking)/config/fov_tracking.yaml"/>
+
+  <node pkg="target_tracking"
+        type="fov_tracking_planner_node"
+        name="fov_tracking_planner"
+        output="screen">
+    <rosparam command="load" file="$(arg config)"/>
+  </node>
+</launch>

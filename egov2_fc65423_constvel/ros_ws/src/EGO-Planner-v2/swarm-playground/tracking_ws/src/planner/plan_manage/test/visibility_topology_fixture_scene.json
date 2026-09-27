@@ -1,0 +1,17 @@
+{
+  "egoPlanner": {"obstacleHeight": 3.0},
+  "obstacleData": {
+    "left_occluder": {
+      "modelName": "left_occluder",
+      "centerENU": [-1.0, -1.35],
+      "radius": 0.30,
+      "height": 3.0
+    },
+    "right_occluder": {
+      "modelName": "right_occluder",
+      "centerENU": [1.0, -1.35],
+      "radius": 0.30,
+      "height": 3.0
+    }
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "run": "20260927_055748_1104145",
+  "epoch": 1790459877.1149755,
+  "samples": 2348,
+  "K3_sample_fraction": 0.9007666098807495,
+  "K3_time_fraction": 0.9007171882849199,
+  "K3_loss_seconds": 7.770502000000005,
+  "K2_sample_fraction": 0.9940374787052811,
+  "uav_loss_events": 8,
+  "union_loss_events": 7,
+  "union_episodes": [
+    {
+      "begin": 7.948906,
+      "end": 8.78344,
+      "seconds": 0.8345340000000006
+    },
+    {
+      "begin": 10.415412,
+      "end": 11.817137,
+      "seconds": 1.4017250000000008
+    },
+    {
+      "begin": 24.848506,
+      "end": 26.248478,
+      "seconds": 1.3999719999999982
+    },
+    {
+      "begin": 35.548658,
+      "end": 36.482008,
+      "seconds": 0.9333499999999972
+    },
+    {
+      "begin": 63.91556,
+      "end": 65.048782,
+      "seconds": 1.1332220000000035
+    },
+    {
+      "begin": 70.715363,
+      "end": 71.916153,
+      "seconds": 1.2007899999999978
+    },
+    {
+      "begin": 73.148637,
+      "end": 74.015546,
+      "seconds": 0.8669090000000068
+    }
+  ],
+  "oracle_validation": [
+    {
+      "uav": 1,
+      "static_disagreement": 0,
+      "dynamic_disagreement": 0,
+      "n": 2348
+    },
+    {
+      "uav": 2,
+      "static_disagreement": 0,
+      "dynamic_disagreement": 0,
+      "n": 2348
+    },
+    {
+      "uav": 3,
+      "static_disagreement": 0,
+      "dynamic_disagreement": 0,
+      "n": 2348
+    }
+  ]
+}

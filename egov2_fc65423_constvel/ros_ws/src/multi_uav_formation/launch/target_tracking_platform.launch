@@ -1,0 +1,78 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="world" default="$(find multi_uav_formation)/worlds/platform_track.world"/>
+    <arg name="scene_file" default="$(find multi_uav_formation)/scenes/platform_track.json"/>
+    <arg name="enable_moving_obstacles" default="true"/>
+    <arg name="vehicle" default="neverlost_livox_pitch30"/>
+    <arg name="debug" default="false"/>
+    <arg name="verbose" default="false"/>
+    <arg name="paused" default="false"/>
+    <arg name="track_log_file" default=""/>
+    <arg name="planner_backend" default="egov2"/>
+    <arg name="fov_half_angle_deg" default="42.5"/>
+    <arg name="fov_enable_candidate_goal" default="false"/>
+    <arg name="fov_candidate_count" default="17"/>
+    <arg name="fov_candidate_angle_span_deg" default="360.0"/>
+    <arg name="fov_use_los_check" default="true"/>
+    <arg name="fov_use_angle_check" default="true"/>
+    <arg name="fov_weight" default="8.0"/>
+    <arg name="fov_occlusion_weight" default="20.0"/>
+    <arg name="fov_los_sample_step" default="0.12"/>
+    <arg name="fov_angular_weight" default="20.0"/>
+    <arg name="fov_angular_min_angle_deg" default="30.0"/>
+    <arg name="fov_yaw_weight" default="15.0"/>
+    <arg name="fov_yaw_speed_min" default="0.15"/>
+    <arg name="object_velocity_deadband" default="0.5"/>
+    <arg name="target_center_x" default="4.0"/>
+    <arg name="target_center_y" default="0.0"/>
+    <arg name="target_radius_x" default="1.8"/>
+    <arg name="target_radius_y" default="1.0"/>
+    <arg name="target_omega" default="0.18"/>
+    <arg name="target_mode" default="waypoints"/>
+    <arg name="target_speed" default="0.45"/>
+    <arg name="takeoff_height" default="1.4"/>
+    <arg name="target_height" default="1.4"/>
+    <arg name="target_waypoints_use_z" default="false"/>
+    <arg name="lock_ego_tracking_height" default="true"/>
+    <arg name="track_max_control_z" default="1.4"/>
+    <arg name="target_waypoints" default="-8.2,0.0;-6.0,0.3;-3.7,-0.2;-1.4,0.4;1.2,-0.2;3.6,0.4;6.3,-0.1;9.2,0.3;12.0,0.0;14.2,0.6;16.0,0.0"/>
+
+    <include file="$(find multi_uav_formation)/launch/target_tracking_platform_single.launch">
+        <arg name="world" value="$(arg world)"/>
+        <arg name="scene_file" value="$(arg scene_file)"/>
+        <arg name="enable_moving_obstacles" value="$(arg enable_moving_obstacles)"/>
+        <arg name="vehicle" value="$(arg vehicle)"/>
+        <arg name="debug" value="$(arg debug)"/>
+        <arg name="verbose" value="$(arg verbose)"/>
+        <arg name="paused" value="$(arg paused)"/>
+        <arg name="track_log_file" value="$(arg track_log_file)"/>
+        <arg name="planner_backend" value="$(arg planner_backend)"/>
+        <arg name="fov_half_angle_deg" value="$(arg fov_half_angle_deg)"/>
+        <arg name="fov_enable_candidate_goal" value="$(arg fov_enable_candidate_goal)"/>
+        <arg name="fov_candidate_count" value="$(arg fov_candidate_count)"/>
+        <arg name="fov_candidate_angle_span_deg" value="$(arg fov_candidate_angle_span_deg)"/>
+        <arg name="fov_use_los_check" value="$(arg fov_use_los_check)"/>
+        <arg name="fov_use_angle_check" value="$(arg fov_use_angle_check)"/>
+        <arg name="fov_weight" value="$(arg fov_weight)"/>
+        <arg name="fov_occlusion_weight" value="$(arg fov_occlusion_weight)"/>
+        <arg name="fov_los_sample_step" value="$(arg fov_los_sample_step)"/>
+        <arg name="fov_angular_weight" value="$(arg fov_angular_weight)"/>
+        <arg name="fov_angular_min_angle_deg" value="$(arg fov_angular_min_angle_deg)"/>
+        <arg name="fov_yaw_weight" value="$(arg fov_yaw_weight)"/>
+        <arg name="fov_yaw_speed_min" value="$(arg fov_yaw_speed_min)"/>
+        <arg name="object_velocity_deadband" value="$(arg object_velocity_deadband)"/>
+        <arg name="target_center_x" value="$(arg target_center_x)"/>
+        <arg name="target_center_y" value="$(arg target_center_y)"/>
+        <arg name="target_radius_x" value="$(arg target_radius_x)"/>
+        <arg name="target_radius_y" value="$(arg target_radius_y)"/>
+        <arg name="target_omega" value="$(arg target_omega)"/>
+        <arg name="target_mode" value="$(arg target_mode)"/>
+        <arg name="target_speed" value="$(arg target_speed)"/>
+        <arg name="takeoff_height" value="$(arg takeoff_height)"/>
+        <arg name="target_height" value="$(arg target_height)"/>
+        <arg name="target_waypoints_use_z" value="$(arg target_waypoints_use_z)"/>
+        <arg name="lock_ego_tracking_height" value="$(arg lock_ego_tracking_height)"/>
+        <arg name="track_max_control_z" value="$(arg track_max_control_z)"/>
+        <arg name="target_waypoints" value="$(arg target_waypoints)"/>
+    </include>
+</launch>

@@ -1,0 +1,3 @@
+before v=3.778268 a=129.309492 j=15449.939350 duration=0.176778
+lambda=9.175553 after v=0.411776 a=1.535910 j=20.000000 duration=1.622036
+static_window=[0.030000,0.140000] scaled=[0.275267,1.284577] los_world_start=1790363549.500 result=PASS

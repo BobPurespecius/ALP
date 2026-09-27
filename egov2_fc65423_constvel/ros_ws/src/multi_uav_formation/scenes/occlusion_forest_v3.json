@@ -1,0 +1,740 @@
+{
+  "number": 3,
+  "leaders": 1,
+  "head": 1,
+  "velocityVectorENU": [
+    0.2,
+    0.0,
+    0.0
+  ],
+  "formationTime": 190,
+  "useGazeboTruthForFeedback": true,
+  "safety": {
+    "xMin": -39.0,
+    "xMax": 39.0,
+    "yMin": -13.5,
+    "yMax": 13.5,
+    "minHeight": 0.15,
+    "maxHeight": 4.5
+  },
+  "mavrosLocalOffsetENU": [
+    [
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "takeoffPointENU": [
+    [
+      -35.2,
+      -1.0,
+      1.5
+    ],
+    [
+      -35.2,
+      0.0,
+      1.5
+    ],
+    [
+      -35.2,
+      1.0,
+      1.5
+    ]
+  ],
+  "preparePointENU": [
+    [
+      -35.2,
+      -1.0,
+      1.5
+    ],
+    [
+      -35.2,
+      0.0,
+      1.5
+    ],
+    [
+      -35.2,
+      1.0,
+      1.5
+    ]
+  ],
+  "targetTracking": {
+    "mode": "waypoints",
+    "speed": 0.928,
+    "dynamicObstacleAvoidanceEnabled": true,
+    "takeoffHeight": 1.5,
+    "targetHeight": 1.5,
+    "useWaypointZ": false,
+    "lockEgoTrackingHeight": true,
+    "trackMaxControlZ": 1.5,
+    "waypointsENU": [
+      [
+        -33.0,
+        0.0,
+        1.5
+      ],
+      [
+        -30.24,
+        -0.353,
+        1.5
+      ],
+      [
+        -27.48,
+        -0.361,
+        1.5
+      ],
+      [
+        -24.72,
+        0.037,
+        1.5
+      ],
+      [
+        -21.96,
+        0.653,
+        1.5
+      ],
+      [
+        -19.2,
+        1.02,
+        1.5
+      ],
+      [
+        -16.44,
+        0.875,
+        1.5
+      ],
+      [
+        -13.68,
+        0.435,
+        1.5
+      ],
+      [
+        -10.92,
+        0.144,
+        1.5
+      ],
+      [
+        -8.16,
+        0.186,
+        1.5
+      ],
+      [
+        -5.4,
+        0.303,
+        1.5
+      ],
+      [
+        -2.64,
+        0.11,
+        1.5
+      ],
+      [
+        0.12,
+        -0.436,
+        1.5
+      ],
+      [
+        2.88,
+        -0.951,
+        1.5
+      ],
+      [
+        5.64,
+        -1.019,
+        1.5
+      ],
+      [
+        8.4,
+        -0.631,
+        1.5
+      ],
+      [
+        11.16,
+        -0.184,
+        1.5
+      ],
+      [
+        13.92,
+        -0.048,
+        1.5
+      ],
+      [
+        16.68,
+        -0.168,
+        1.5
+      ],
+      [
+        19.44,
+        -0.16,
+        1.5
+      ],
+      [
+        22.2,
+        0.227,
+        1.5
+      ],
+      [
+        24.96,
+        0.792,
+        1.5
+      ],
+      [
+        27.72,
+        1.072,
+        1.5
+      ],
+      [
+        30.48,
+        0.834,
+        1.5
+      ],
+      [
+        33.24,
+        0.321,
+        1.5
+      ],
+      [
+        36.0,
+        0.0,
+        1.5
+      ]
+    ]
+  },
+  "obstacleColorRGBA": [
+    0.08,
+    0.55,
+    0.16,
+    0.92
+  ],
+  "obstacleData": {
+    "00": {
+      "modelName": "occlusion_forest_cylinder_00",
+      "centerENU": [
+        -23.251,
+        2.107
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "01": {
+      "modelName": "occlusion_forest_cylinder_01",
+      "centerENU": [
+        -17.979,
+        -0.746
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "02": {
+      "modelName": "occlusion_forest_cylinder_02",
+      "centerENU": [
+        18.929,
+        -1.362
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "03": {
+      "modelName": "occlusion_forest_cylinder_03",
+      "centerENU": [
+        -29.534,
+        1.345
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "04": {
+      "modelName": "occlusion_forest_cylinder_04",
+      "centerENU": [
+        -33.091,
+        -1.45
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "05": {
+      "modelName": "occlusion_forest_cylinder_05",
+      "centerENU": [
+        35.793,
+        1.484
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "06": {
+      "modelName": "occlusion_forest_cylinder_06",
+      "centerENU": [
+        -2.864,
+        -1.077
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "07": {
+      "modelName": "occlusion_forest_cylinder_07",
+      "centerENU": [
+        12.273,
+        -1.832
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "08": {
+      "modelName": "occlusion_forest_cylinder_08",
+      "centerENU": [
+        9.131,
+        -2.234
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "09": {
+      "modelName": "occlusion_forest_cylinder_09",
+      "centerENU": [
+        -14.782,
+        -0.857
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "10": {
+      "modelName": "occlusion_forest_cylinder_10",
+      "centerENU": [
+        -11.327,
+        -1.02
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "11": {
+      "modelName": "occlusion_forest_cylinder_11",
+      "centerENU": [
+        32.539,
+        1.926
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "12": {
+      "modelName": "occlusion_forest_cylinder_12",
+      "centerENU": [
+        22.005,
+        1.412
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "13": {
+      "modelName": "forest_perimeter_cylinder_13",
+      "centerENU": [
+        -5.986,
+        4.06
+      ],
+      "radius": 0.45,
+      "height": 3.6
+    },
+    "14": {
+      "modelName": "forest_perimeter_cylinder_14",
+      "centerENU": [
+        11.259,
+        -9.978
+      ],
+      "radius": 0.45,
+      "height": 3.6
+    },
+    "15": {
+      "modelName": "forest_perimeter_cylinder_15",
+      "centerENU": [
+        1.609,
+        -11.837
+      ],
+      "radius": 0.45,
+      "height": 3.6
+    },
+    "16": {
+      "modelName": "forest_perimeter_cylinder_16",
+      "centerENU": [
+        23.709,
+        3.778
+      ],
+      "radius": 0.45,
+      "height": 3.6
+    },
+    "17": {
+      "modelName": "forest_perimeter_cylinder_17",
+      "centerENU": [
+        -1.737,
+        4.183
+      ],
+      "radius": 0.45,
+      "height": 3.6
+    },
+    "18": {
+      "modelName": "forest_perimeter_cylinder_18",
+      "centerENU": [
+        -26.979,
+        5.373
+      ],
+      "radius": 0.45,
+      "height": 3.6
+    },
+    "19": {
+      "modelName": "forest_perimeter_cylinder_19",
+      "centerENU": [
+        17.838,
+        9.519
+      ],
+      "radius": 0.45,
+      "height": 3.6
+    },
+    "20": {
+      "modelName": "forest_perimeter_cylinder_20",
+      "centerENU": [
+        -28.441,
+        10.408
+      ],
+      "radius": 0.45,
+      "height": 3.6
+    },
+    "21": {
+      "modelName": "forest_perimeter_cylinder_21",
+      "centerENU": [
+        39.5,
+        -8.948
+      ],
+      "radius": 0.45,
+      "height": 3.6
+    },
+    "22": {
+      "modelName": "forest_perimeter_cylinder_22",
+      "centerENU": [
+        -23.189,
+        11.36
+      ],
+      "radius": 0.45,
+      "height": 3.6
+    },
+    "23": {
+      "modelName": "forest_perimeter_cylinder_23",
+      "centerENU": [
+        -13.727,
+        3.422
+      ],
+      "radius": 0.45,
+      "height": 3.6
+    },
+    "24": {
+      "modelName": "forest_perimeter_cylinder_24",
+      "centerENU": [
+        32.224,
+        -4.464
+      ],
+      "radius": 0.45,
+      "height": 3.6
+    },
+    "25": {
+      "modelName": "forest_perimeter_cylinder_25",
+      "centerENU": [
+        9.559,
+        10.52
+      ],
+      "radius": 0.45,
+      "height": 3.6
+    },
+    "26": {
+      "modelName": "forest_perimeter_cylinder_26",
+      "centerENU": [
+        -33.532,
+        -4.198
+      ],
+      "radius": 0.45,
+      "height": 3.6
+    },
+    "27": {
+      "modelName": "forest_perimeter_cylinder_27",
+      "centerENU": [
+        -33.461,
+        4.594
+      ],
+      "radius": 0.45,
+      "height": 3.6
+    },
+    "28": {
+      "modelName": "forest_perimeter_cylinder_28",
+      "centerENU": [
+        32.956,
+        -6.84
+      ],
+      "radius": 0.45,
+      "height": 3.6
+    },
+    "29": {
+      "modelName": "forest_perimeter_cylinder_29",
+      "centerENU": [
+        -27.845,
+        3.471
+      ],
+      "radius": 0.45,
+      "height": 3.6
+    },
+    "30": {
+      "modelName": "forest_perimeter_cylinder_30",
+      "centerENU": [
+        8.212,
+        5.269
+      ],
+      "radius": 0.45,
+      "height": 3.6
+    },
+    "31": {
+      "modelName": "forest_perimeter_cylinder_31",
+      "centerENU": [
+        -33.813,
+        7.034
+      ],
+      "radius": 0.45,
+      "height": 3.6
+    },
+    "32": {
+      "modelName": "forest_perimeter_cylinder_32",
+      "centerENU": [
+        9.542,
+        8.847
+      ],
+      "radius": 0.45,
+      "height": 3.6
+    },
+    "33": {
+      "modelName": "forest_perimeter_cylinder_33",
+      "centerENU": [
+        -3.413,
+        8.094
+      ],
+      "radius": 0.45,
+      "height": 3.6
+    },
+    "34": {
+      "modelName": "forest_perimeter_cylinder_34",
+      "centerENU": [
+        -8.166,
+        8.102
+      ],
+      "radius": 0.45,
+      "height": 3.6
+    }
+  },
+  "egoPlanner": {
+    "enabled": true,
+    "mapSizeENU": [
+      82.0,
+      28.0,
+      5.0
+    ],
+    "goalsENU": [
+      [
+        34.55,
+        -0.85,
+        1.5
+      ],
+      [
+        34.3,
+        0.0,
+        1.5
+      ],
+      [
+        34.55,
+        0.85,
+        1.5
+      ]
+    ],
+    "maxVel": 1.2,
+    "maxAcc": 1.8,
+    "planningHorizon": 6.5,
+    "obstacleInflation": 0.35,
+    "plannerObstacleClearance": 0.5,
+    "swarmClearance": 0.5,
+    "cloudResolution": 0.22,
+    "cloudPublishPeriod": 0.5,
+    "obstacleHeight": 3.6,
+    "obstacleClearance": 0.6,
+    "earlyAvoidanceEnabled": false,
+    "movingObstacleTimeAwareCostEnabled": false,
+    "movingObstaclePredictionHorizon": 3.0,
+    "movingObstaclePredictionDt": 0.5,
+    "movingObstaclePredictionRadiusGrowth": 0.04,
+    "movingObstaclePredictionMaxExtraRadius": 0.18
+  },
+  "movingObstacleData": {
+    "0": {
+      "modelName": "occlusion_forest_moving_0",
+      "centerENU": [
+        -20.324,
+        2.081
+      ],
+      "radius": 0.28,
+      "height": 3.6,
+      "axisENU": [
+        -0.1318,
+        0.9913
+      ],
+      "amplitude": 1.5,
+      "period": 8.0,
+      "phase": 0.66
+    },
+    "1": {
+      "modelName": "occlusion_forest_moving_1",
+      "centerENU": [
+        5.436,
+        0.186
+      ],
+      "radius": 0.28,
+      "height": 3.6,
+      "axisENU": [
+        0.0246,
+        0.9997
+      ],
+      "amplitude": 2.1,
+      "period": 10.0,
+      "phase": 2.403
+    },
+    "2": {
+      "modelName": "occlusion_forest_moving_2",
+      "centerENU": [
+        -8.512,
+        -1.27
+      ],
+      "radius": 0.28,
+      "height": 3.6,
+      "axisENU": [
+        -0.0152,
+        0.9999
+      ],
+      "amplitude": 1.5,
+      "period": 8.0,
+      "phase": 4.348
+    },
+    "3": {
+      "modelName": "occlusion_forest_moving_3",
+      "centerENU": [
+        7.543,
+        0.46
+      ],
+      "radius": 0.28,
+      "height": 3.6,
+      "axisENU": [
+        -0.1392,
+        0.9903
+      ],
+      "amplitude": 1.5,
+      "period": 8.0,
+      "phase": 2.187
+    },
+    "4": {
+      "modelName": "occlusion_forest_moving_4",
+      "centerENU": [
+        -6.134,
+        -1.179
+      ],
+      "radius": 0.28,
+      "height": 3.6,
+      "axisENU": [
+        -0.0424,
+        0.9991
+      ],
+      "amplitude": 2.1,
+      "period": 10.0,
+      "phase": 0.456
+    },
+    "5": {
+      "modelName": "occlusion_forest_moving_5",
+      "centerENU": [
+        -15.331,
+        1.913
+      ],
+      "radius": 0.28,
+      "height": 3.6,
+      "axisENU": [
+        0.1574,
+        0.9875
+      ],
+      "amplitude": 1.8,
+      "period": 9.0,
+      "phase": 4.57
+    },
+    "6": {
+      "modelName": "occlusion_forest_moving_6",
+      "centerENU": [
+        -7.405,
+        1.169
+      ],
+      "radius": 0.28,
+      "height": 3.6,
+      "axisENU": [
+        -0.0424,
+        0.9991
+      ],
+      "amplitude": 2.1,
+      "period": 10.0,
+      "phase": 4.147
+    },
+    "7": {
+      "modelName": "occlusion_forest_moving_7",
+      "centerENU": [
+        15.786,
+        -1.33
+      ],
+      "radius": 0.28,
+      "height": 3.6,
+      "axisENU": [
+        0.0434,
+        0.9991
+      ],
+      "amplitude": 2.1,
+      "period": 10.0,
+      "phase": 0.582
+    },
+    "8": {
+      "modelName": "occlusion_forest_moving_8",
+      "centerENU": [
+        -28.225,
+        0.841
+      ],
+      "radius": 0.28,
+      "height": 3.6,
+      "axisENU": [
+        0.0029,
+        1.0
+      ],
+      "amplitude": 1.8,
+      "period": 8.0,
+      "phase": 2.461
+    },
+    "9": {
+      "modelName": "occlusion_forest_moving_9",
+      "centerENU": [
+        -10.891,
+        1.345
+      ],
+      "radius": 0.28,
+      "height": 3.6,
+      "axisENU": [
+        -0.0152,
+        0.9999
+      ],
+      "amplitude": 1.5,
+      "period": 8.0,
+      "phase": 3.232
+    }
+  },
+  "nMovingObstacle": 10
+}

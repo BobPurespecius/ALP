@@ -1,0 +1,437 @@
+EGO / EGOv2 动态障碍平台任务交接清单
+生成时间：2026-07-20 Asia/Shanghai
+主工作区：/home/bob/ALP/guidance/ros_ws
+容器：px4_noetic_dev
+容器内路径：/app/guidance/ros_ws
+
+一、用户总要求和硬约束
+
+1. 所有仿真、ROS、Gazebo、PX4/MAVROS 相关端口和命令都应在 Docker 容器 px4_noetic_dev 里使用。
+   推荐形式：
+   docker exec px4_noetic_dev bash -lc 'cd /app/guidance/ros_ws && <command>'
+
+2. 不要关闭用户已经开启的 Docker 容器。不要 kill 掉容器本身。
+
+3. 不要破坏 ego v1。用户多次强调 v1 之前效果不错，现在要保证 v1 一直能正常运行。
+
+4. 对 egov2 的修改要遵循 EGOv2 / Wild 论文思路，不要随意加 v2 独有的外扩、局部绕障、外部控制层避障等非论文机制。
+
+5. 用户要求严格对齐 egov1 之前已有成果：
+   - 不提前避障。
+   - 点云提前避障。
+   - 代价梯度提前避障。
+   这三个模式都要有开关，且 v2 应尽量模仿 v1 方法。
+
+6. 用户后来要求当前不要“乱搞外扩”。如需改动态障碍安全范围，必须先确认是否符合论文，不符合就不要改。
+
+7. batch 脚本需求：
+   ./batch_run_experiments.sh --scene platform --planner ego|egov2 --runs N --duration SEC
+   其中 planner 可选 ego 和 egov2，默认 ego。
+   duration=70 时应在 70s 仿真时间附近停止，不应无限跑。
+
+8. 指标需求：
+   需要统计成功率、轨迹平滑度、耗时、路径长度、障碍物碰撞/间距等。
+   动态障碍碰撞不能只看中心距离，必须同时考虑无人机与障碍物中心间距、障碍物半径以及高度范围。
+
+二、最初 PDF / 论文理解任务
+
+1. 用户要求比较 /home/bob/ALP/guidance/ros_ws/src/EGO-Planner-v2 下 ego / swarm / wild 三者区别，尤其 wild 进步在哪里。
+   当前目录实际有 4 个 PDF：
+   - src/EGO-Planner-v2/EGO-Planner_2008.08835.pdf
+   - src/EGO-Planner-v2/EGO-Swarm_2011.04183.pdf
+   - src/EGO-Planner-v2/Swarm_of_Micro_Flying_Robots_in_the_Wild.pdf
+   - src/EGO-Planner-v2/swarm-playground/[README]_Brief_Documentation_for_Swarm_Playground.pdf
+
+2. 已在对话中口述过核心理解，但没有单独形成论文笔记文件：
+   - EGO-Planner：ESDF-free 单机局部轨迹优化，核心是用障碍梯度和 min-jerk / B-spline 类轨迹优化生成可行局部轨迹。
+   - EGO-Swarm：在 EGO-Planner 基础上增加多机去中心化规划、机间轨迹广播与相互避碰。
+   - Wild：面向真实野外/真实多机系统，更强调完整系统、真实感知、同步、通信、动态环境鲁棒性和实飞部署。
+   - Wild 对应的本地原代码应优先看 EGO-Planner-v2 / swarm-playground，而不是旧 ego-planner v1；但具体论文 commit 是否完全一致还未严格核对。
+
+三、已有代码入口和当前改动概览
+
+1. 批处理脚本：
+   - batch_run_experiments.sh
+   已增加 --planner 参数，支持 ego / egov2。
+   run prefix 现在包含 planner：batch_${SCENE}_${PLANNER}_...
+   force_cleanup 里会清理 ego_v2_more_obstacles roslaunch。
+   增加了 MAVROS/PX4 状态等待和 PX4 SITL 参数缓存清理。
+
+2. tmux 启动：
+   - tmuxinator.yml
+   已把 planner 传给 multi_uav_formation.sh：
+   ./multi_uav_formation.sh <scene> $UAV_NUM $LEADERS_NUM <run_prefix> <planner>
+
+3. planner 选择：
+   - multi_uav_formation.sh
+   已支持第 5 个参数 planner_arg=ego|egov2。
+   ego 查找 src/ego-planner/devel/setup.bash 等。
+   egov2 查找 src/EGO-Planner-v2/swarm-playground/tracking_ws/devel/setup.bash 或 main_ws/devel/setup.bash。
+   对 planner_run_prefix 增加 ROS_PACKAGE_PATH / CMAKE_PREFIX_PATH / PYTHONPATH / LD_LIBRARY_PATH，避免 rospack 解析到错误 planner。
+
+4. v2 launch：
+   - src/multi_uav_formation/launch/ego_v2_more_obstacles.launch
+   已新增，用来启动 5 架 v2 planner。
+   已传递 max_vel、max_acc、max_jer、moving obstacle time-aware cost 参数和 virtual_ceil_height。
+
+5. v2 advanced 参数：
+   - src/EGO-Planner-v2/swarm-playground/tracking_ws/src/planner/plan_manage/launch/advanced_param.xml
+   已增加/传递：
+   - manager/max_jer
+   - optimization/max_jer
+   - manager/feasibility_tolerance=0.05
+   - prediction/use_time_aware_moving_obj_cost
+   - moving_obj_clearance / lambda / horizon / decay_tau / max_grad
+   - grid_map/virtual_ceil_height
+
+6. SingleRun 桥接：
+   - src/multi_uav_formation/multi_uav_formation/SingleRun.py
+   已增加 --planner-backend ego|egov2。
+   已记录 plannerBackend 到日志数据。
+   已增加 EGO obstacle cloud 发布状态日志和若干字段：
+   - egoCloudPointCount
+   - egoCloudMovingObstacleCount
+   - egoCloudMovingObstacleIncludedCount
+   - egoMovingObstaclePredictionEnabled
+   - egoMovingObstaclePointCloudEnabled
+   - egoMovingObstacleTimeAwareCostEnabled
+   - egoLastCloudPublishAge
+
+7. 分析脚本：
+   - src/multi_uav_formation/scripts/analyze_runs.py
+   已调整静态/动态障碍 clearance 计算：按距离减障碍物半径，并加入障碍物 z_min / height 范围过滤。
+   注意：这是分析层修正，不是 planner 层外扩。
+
+四、提前避障三模式当前开关位置
+
+文件：
+src/multi_uav_formation/scenes/platform.json
+
+当前 platform.json 中：
+earlyAvoidanceEnabled: false
+movingObstacleTimeAwareCostEnabled: true
+movingObstaclePointCloudEnabled: 未显式配置，SingleRun 默认 true
+
+因此当前模式应理解为：
+1. 当前移动障碍物会作为当前点云进入 /drone_X_pcl_render_node/cloud。
+2. 不做未来点云提前避障，因为 earlyAvoidanceEnabled=false。
+3. 启用动态障碍代价梯度提前法，因为 movingObstacleTimeAwareCostEnabled=true。
+
+三种模式应这样切换：
+1. 不提前避障：
+   earlyAvoidanceEnabled=false
+   movingObstacleTimeAwareCostEnabled=false
+   movingObstaclePointCloudEnabled=true  或默认 true，只保留当前点云刷新
+
+2. 点云提前避障：
+   earlyAvoidanceEnabled=true
+   movingObstacleTimeAwareCostEnabled=false
+   movingObstaclePointCloudEnabled=true
+
+3. 代价梯度提前法：
+   earlyAvoidanceEnabled=false
+   movingObstacleTimeAwareCostEnabled=true
+   movingObstaclePointCloudEnabled=true
+
+注意：
+movingObstaclePointCloudEnabled 控制“当前移动障碍点云是否发布”。
+earlyAvoidanceEnabled 控制“未来预测点云是否加入点云”。
+movingObstacleTimeAwareCostEnabled 控制“v1/v2 的时间感知动态障碍代价梯度模式”。
+
+五、已经完成并验证过的事项
+
+1. egov2 接口接入 batch_run_experiments.sh：完成。
+   可用命令：
+   docker exec px4_noetic_dev bash -lc 'cd /app/guidance/ros_ws && ./batch_run_experiments.sh --scene platform --planner egov2 --runs 1 --duration 70 --analysis-dir analysis/<dir>'
+
+2. v2 模仿 v1 启动方式：部分完成。
+   multi_uav_formation.sh 会像 v1 一样 source planner workspace、启动 planner launch、再启动 SingleRun。
+   v2 remap 已检查过：planner 发布 /drone_3_planning/trajectory，traj_server 订阅该 topic，PositionCommand remap 到 /drone_3_planning/pos_cmd。
+
+3. duration 停止问题：当前已恢复。
+   最新 v2 单次 70s 批处理停止在 sim_time_duration 约 70.004，说明 duration 控制目前可用。
+
+4. v2 map 天花板同步：已做过一次真实修复。
+   问题：v2 grid_map/virtual_ceil_height 之前未和 platform safety envelope 对齐。
+   改动：
+   - advanced_param.xml 加 virtual_ceil_height 参数。
+   - ego_v2_more_obstacles.launch 转发 virtual_ceil_height。
+   - multi_uav_formation.sh 仅对 planner=egov2 按 scene/platform safety 计算 virtual_ceil_height。
+   platform.json 当前计算得到 v2 virtual_ceil_height=2.25。
+   已用 roslaunch --dump-params 验证 5 个 v2 planner 节点收到 grid_map/virtual_ceil_height: 2.25。
+
+5. jerk 约束：代码层已补。
+   位置：
+   - planner_manager.cpp: manager/max_jer 读取和 post-check 动力学检查。
+   - poly_traj_optimizer.cpp: feasibilityGradCostJ()，在轨迹优化积分代价中加入 jerk feasibility cost。
+   - advanced_param.xml / ego_v2_more_obstacles.launch: max_jer 传参，默认 20.0。
+   状态：代码有实现，但 v2 整体仿真仍有失败，不能把“论文功能整体完成”标为已验收。
+
+6. 动态障碍轨迹代价：代码层已补一版。
+   位置：
+   - planner_manager.cpp 创建 ObjPredictor，并传给 PolyTrajOptimizer。
+   - poly_traj_optimizer.cpp: movingObjGradCostP() 使用预测目标位置、速度、尺度、clearance、时间衰减，产生位置梯度和时间梯度。
+   - addPVAGradCost2CT() 中调用 movingObjGradCostP()。
+   状态：代码有实现，当前平台配置已开启 cost-gradient 模式，但 v2 仍有轨迹停更/失败问题，未验收。
+
+7. post-check 安全闭环：代码层已补一版。
+   位置：
+   - planner_manager.cpp: checkTrajectoryDynamics()
+   - planner_manager.cpp: checkDynamicObstacleCollision()
+   - planner_manager.cpp: checkTrajectoryPostSafety()
+   - reboundReplan() 成功后先 post-check，不安全就拒绝该轨迹。
+   状态：post-check 正在生效；但它目前也可能导致 v2 轨迹长期停更，是下一步重点。
+
+8. 删除一周之前的 .pkl：已检查，当前没有 mtime 超过 7 天的 .pkl。
+   命令结果：find ... -name '*.pkl' -mtime +7 | wc -l = 0。
+
+六、最近仿真结果和当前状态
+
+1. 历史好 v1 参考：
+   analysis/batch_20260612_194805
+   total_runs=10
+   successful_runs=8
+   run_success_rate=0.8
+   mean_vehicle_success_rate=0.96
+
+2. 当前 v1 复查：
+   analysis/v1_default_path_5run_recheck_20260720_204534
+   total_runs=5
+   successful_runs=3
+   run_success_rate=0.6
+   mean_vehicle_success_rate=0.92
+   说明：v1 已能运行，且大多数飞机能成功，但还没有完全回到历史 20260612 的 0.8 run_success_rate / 0.96 vehicle_success_rate。由于样本数不同，不能只凭 5 次完全定论，但用户认为 v1 之前更好，后续仍需小心。
+
+3. 最新 v2 单次：
+   analysis/egov2_ceil_sync_check_20260720
+   run_dir=/app/guidance/ros_ws/data/multi_uav_formation/SingleRun/batch_platform_egov2_20260720_212155_001
+   total_runs=1
+   successful_runs=0
+   run_success_rate=0.0
+   mean_vehicle_success_rate=0.8
+   失败车辆：uav4 / drone_3 / data_4.pkl
+   失败原因：final_z_error；实际更关键的是轨迹长期停更。
+   uav4 final_ego_command_age=57.56s，max_ego_command_age=57.56s。
+   final XY error=8.357m，final Z error=0.852m。
+
+4. v2 最新现象：
+   - 点云输入不是完全断掉：最近检查中有约 8424 个点，moving obstacles in cloud=5，cloud age 最大约 0.55s。
+   - 动态预测器不是完全断掉：日志显示 pose_histories=5/5, valid_predictions=5/5。
+   - topic/remap 基本正确。
+   - 但 drone_3 在约 36.5s 后开始没有新可接受轨迹，导致 PositionCommand stale。
+
+七、当前最重要未完成问题
+
+1. v2 仍未达到可用指标。
+   最新单次只有 4/5 vehicle success，run success=0。
+
+2. v2 有“轨迹被 post-check 拒绝后长期收不到新轨迹”的问题。
+   日志证据在容器内：
+   /home/developer/.ros/log/latest
+   关键日志大致为：
+   [post_check] Reject unsafe trajectory: dynamics vel=0.980361/0.9 acc=1.039/1.3 jer=1.98919/20
+   [post_check] Reject unsafe trajectory: dynamics vel=1.00353/0.9 acc=0.925828/1.3 jer=2.79436/20
+   后面还有 vel=0.960395/0.9 类似拒绝。
+
+3. 当前代码中 manager/feasibility_tolerance=0.05。
+   这意味着 post-check 理论上允许速度到 0.9*1.05=0.945。
+   日志中 0.96 到 1.00 仍超过容差，所以被拒绝是代码预期。
+   但优化器仍生成这些轻微超速轨迹，说明 optimizer feasibility / time allocation / manager post-check 之间仍不一致。
+   不要直接关掉 post-check；这不符合用户要求。
+
+4. 下一步应重点查：
+   - optimization/max_vel、manager/max_vel 是否一致且被正确传入每个 drone。
+   - weight_time 是否推动轨迹过快，导致 feasibility 软约束挡不住。
+   - feasibilityGradCostV/A/J 是否只在采样点惩罚，getMaxVelRate() 是否在连续轨迹上检出采样外峰值。
+   - EGOv2 原论文/代码是否有类似 re-time / scale duration 的硬约束处理，可按论文补齐，而不是调大容差。
+   - post-check 拒绝后是否应触发论文一致的重规划/停轨迹/安全闭环，而不是让旧 PositionCommand stale 57s。
+
+5. v2 动态障碍效果仍需证明。
+   用户怀疑过点云/地图同步：
+   - 当前点云发布端看起来有当前移动障碍点云。
+   - 但还没有严格证明这些点真正进入 v2 inflated map，且没有被局部清空。
+   后续应查：
+   - /drone_X_pcl_render_node/cloud 的 header.frame_id、stamp 是否和 v2 grid_map 期望一致。
+   - v2 grid_map 接收点云后是否进入 occupancy / inflated map。
+   - local update 范围是否把移动障碍点云清掉。
+   - odom topic、点云时间戳、map frame 是否错位。
+   - ObjPredictor 的 obstacle pose topic 是否所有 drone 都同步。
+
+6. v1 当前仍需保护。
+   当前 v1 能跑，但 5 次结果为 run_success_rate=0.6，低于历史好结果 0.8。
+   后续修改 v2 时不要改 v1 C++ 和 v1 launch。
+   如果必须改 SingleRun.py 这种共用桥接层，改完必须至少跑一次 planner=ego 检查 v1 未坏。
+
+八、建议下个 agent 的工作顺序
+
+1. 先不要大改代码，复查 v2 最新失败日志。
+   命令示例：
+   docker exec px4_noetic_dev bash -lc 'rg -n "post_check|Reject unsafe|moving_obj|pose_histories|valid_predictions|drone_3" /home/developer/.ros/log/latest'
+
+2. dump v2 参数，确认每个 drone 的 max_vel/max_acc/max_jer、virtual_ceil_height、use_time_aware_moving_obj_cost。
+   重点确认：
+   - manager/max_vel=0.9
+   - optimization/max_vel=0.9
+   - manager/max_acc=1.3
+   - optimization/max_acc=1.3
+   - manager/max_jer=20
+   - optimization/max_jer=20
+   - manager/feasibility_tolerance=0.05
+   - grid_map/virtual_ceil_height=2.25
+
+3. 修 v2 的首选方向：
+   按 EGOv2 论文一致方式让优化后的轨迹满足硬动力学约束。
+   可以考虑 re-time / duration scale / stronger feasibility enforcement / 连续峰值一致采样，但要先查原 v2 是否已有方法。
+   不建议：
+   - 直接禁用 post-check。
+   - 随意增大动态障碍外扩。
+   - 在 SingleRun 外部强行绕障。
+   - 只为某一次平台场景写特殊逻辑。
+
+4. 修完后只跑 1 次 v2 70s。
+   命令：
+   docker exec px4_noetic_dev bash -lc 'cd /app/guidance/ros_ws && ./batch_run_experiments.sh --scene platform --planner egov2 --runs 1 --duration 70 --analysis-dir analysis/<new_v2_dir>'
+
+5. 分析这几个最关键指标：
+   - run_success_rate / vehicle_success_rate
+   - final_ego_command_age / max_ego_command_age
+   - failure_reasons
+   - min_obstacle_clearance
+   - mean_path_length
+   - rms_accel / rms_jerk / max_jerk
+   - ROS log 中是否还有 post_check 连续拒绝
+
+6. v2 单次明显改善后，再跑一次 v1 保护检查。
+   命令：
+   docker exec px4_noetic_dev bash -lc 'cd /app/guidance/ros_ws && ./batch_run_experiments.sh --scene platform --planner ego --runs 1 --duration 70 --analysis-dir analysis/<new_v1_guard_dir>'
+
+九、当前重要文件清单
+
+批处理/启动：
+- /home/bob/ALP/guidance/ros_ws/batch_run_experiments.sh
+- /home/bob/ALP/guidance/ros_ws/tmuxinator.yml
+- /home/bob/ALP/guidance/ros_ws/multi_uav_formation.sh
+- /home/bob/ALP/guidance/ros_ws/setup_runtime_env.sh
+
+场景和参数：
+- /home/bob/ALP/guidance/ros_ws/src/multi_uav_formation/scenes/platform.json
+
+桥接与日志：
+- /home/bob/ALP/guidance/ros_ws/src/multi_uav_formation/multi_uav_formation/SingleRun.py
+- /home/bob/ALP/guidance/ros_ws/src/multi_uav_formation/scripts/analyze_runs.py
+
+v1 planner：
+- /home/bob/ALP/guidance/ros_ws/src/ego-planner/src/planner/plan_manage/src/planner_manager.cpp
+- /home/bob/ALP/guidance/ros_ws/src/ego-planner/src/planner/plan_manage/src/traj_server.cpp
+- /home/bob/ALP/guidance/ros_ws/src/ego-planner/src/planner/plan_manage/launch/advanced_param.xml
+
+v2 planner：
+- /home/bob/ALP/guidance/ros_ws/src/multi_uav_formation/launch/ego_v2_more_obstacles.launch
+- /home/bob/ALP/guidance/ros_ws/src/EGO-Planner-v2/swarm-playground/tracking_ws/src/planner/plan_manage/launch/advanced_param.xml
+- /home/bob/ALP/guidance/ros_ws/src/EGO-Planner-v2/swarm-playground/tracking_ws/src/planner/plan_manage/src/planner_manager.cpp
+- /home/bob/ALP/guidance/ros_ws/src/EGO-Planner-v2/swarm-playground/tracking_ws/src/planner/traj_opt/src/poly_traj_optimizer.cpp
+- /home/bob/ALP/guidance/ros_ws/src/EGO-Planner-v2/swarm-playground/tracking_ws/src/planner/plan_manage/src/traj_server.cpp
+
+历史/结果：
+- /home/bob/ALP/guidance/ros_ws/analysis/batch_20260612_194805
+- /home/bob/ALP/guidance/ros_ws/analysis/v1_default_path_5run_recheck_20260720_204534
+- /home/bob/ALP/guidance/ros_ws/analysis/egov2_ceil_sync_check_20260720
+- /home/bob/ALP/guidance/ros_ws/changes_zh.txt
+- /home/bob/ALP/guidance/ros_ws/changes_zh_20260602_20260610.txt
+- /home/bob/ALP/guidance/ros_ws/changes_zh_20260611_20260628.txt
+
+注意：
+/home/bob/ALP/guidance/ros_ws/FOV_EGOv2_handoff_zh.txt 是另一条 FOV 目标跟踪任务的交接文件，不是本 platform 动态障碍任务的主文件；不要把两条任务混在一起。
+
+十、当前工作区状态提醒
+
+1. 工作区是 dirty 的，且 EGO-Planner-v2 目录目前是未跟踪目录。
+   不要 git reset --hard，不要回滚用户或其他 agent 的改动。
+
+2. git status 当前显示许多改动/未跟踪文件，包括：
+   - batch_run_experiments.sh
+   - multi_uav_formation.sh
+   - setup_runtime_env.sh
+   - src/multi_uav_formation/multi_uav_formation/SingleRun.py
+   - src/multi_uav_formation/scripts/analyze_runs.py
+   - src/EGO-Planner-v2/
+   - src/multi_uav_formation/launch/ego_v2_more_obstacles.launch
+   还有 target_tracking / FOV 相关未跟踪文件。
+
+3. 下个 agent 应先读本文件，再读 changes_zh*.txt 和关键代码，不要根据单个最新结果直接大范围重写。
+
+十一、2026-07-20 本轮完成情况
+
+1. 已按 Wild 论文的 Hierarchical safety guarantee 修复 v2 post-check 闭环。
+   论文原文要求：软约束解 post-check 失败后提高对应 penalty weight 重试；多次失败后终止本次规划，持续安全检查在临近危险时生成 emergency stop。
+   本轮只修改 EGO-Planner-v2/swarm-playground/tracking_ws；没有修改 v1 C++ 或 v1 launch，没有增加动态障碍外扩、局部绕障或 v2 外部障碍控制层。
+
+2. 动力学约束修复：
+   - planner_manager.cpp 新增 retryTrajectoryDynamics()。
+   - 连续极值 post-check 失败后，提高 optimization/weight_feasibility，并用较长 MINCO duration 作为下一次时空联合优化的 warm start。
+   - 最多重试 3 次，仍不满足 max_vel/max_acc/max_jer 和现有 feasibility_tolerance 时拒绝。
+   - distinctive trajectories 分支会保存与最佳轨迹对应的 ConstraintPoints，避免重试时使用错误走廊。
+
+3. 动态障碍约束修复：
+   - manager 与 optimizer 统一使用 prediction/moving_obj_prediction_horizon。
+   - post-check 和持续安全检查只在配置的 2.0s 常速度预测窗内检查，不再用短期常速度模型拒绝 3-6s 后的轨迹。
+   - 窗内动态障碍 post-check 失败时，提高 moving_obj_lambda 重试；仍失败则拒绝并保留 emergency stop 闭环。
+   - 没有修改 moving_obj_clearance、障碍物半径、点云 inflation 或 scene safety range。
+
+4. 机间安全约束修复：
+   - 新增连续时间 checkTrajectorySwarmSafety() 和 retryTrajectorySwarm()。
+   - post-check 使用 Wild 论文的椭球距离和硬阈值 Cw=swarm_clearance；优化器原有 1.25/1.5 倍范围继续只作为软优化缓冲。
+   - swarm 重试后会再次检查动力学和动态障碍，避免时间重分配破坏其他安全约束。
+   - egov2 guidance 不再由 SingleRun 的外部机间速度恢复覆盖；v1 仍保留原行为。
+
+5. 轨迹停更修复：
+   - 非 FOV 的 v2 local trajectory 过期后也会从实时 odom/global trajectory 重规划，不再从过期多项式外推起始状态。
+   - REPLAN_TRAJ 连续失败且旧轨迹剩余时间不超过 emergency_time 时进入 EMERGENCY_STOP，避免旧 PositionCommand 长期 stale。
+
+6. 参数核对完成。
+   roslaunch --dump-params 已确认 drone_0..drone_4 全部为：
+   - manager/max_vel=0.9，optimization/max_vel=0.9
+   - manager/max_acc=1.3，optimization/max_acc=1.3
+   - manager/max_jer=20，optimization/max_jer=20
+   - manager/feasibility_tolerance=0.05
+   - optimization/weight_feasibility=10000，weight_time=10
+   - prediction/use_time_aware_moving_obj_cost=true
+   - grid_map/virtual_ceil_height=2.25
+
+7. 点云进入 v2 inflated map 已现场验证。
+   - /dynamic/pose_X 和 /drone_X_pcl_render_node/cloud 均为 world frame，采样时间差为亚秒级。
+   - 每路源点云为 8424 点。
+   - 对位于 local_update_range 内的移动障碍，源点云最近点距障碍中心约 0.09-0.22m，occupancy_inflate 最近点约 0.07m。
+   - 说明当前移动障碍点云确实进入 v2 膨胀地图，local update 只清除范围外数据。
+
+8. 最终 v2 单次验收结果：
+   analysis/egov2_paper_hard_constraints_20260720
+   run_dir=data/multi_uav_formation/SingleRun/batch_platform_egov2_20260720_233548_001
+   - stop condition=all_goals_reached
+   - run_success_rate=1.0，vehicle_success_rate=1.0（5/5）
+   - mean duration=55.895s
+   - mean final goal error=0.100m
+   - mean path length=20.663m
+   - min obstacle clearance=0.242m（已减障碍半径并按高度范围过滤）
+   - min pairwise 3D distance=0.684m，大于 Cw=0.5m
+   - max ego command age=3.159s，不再出现 57.56s 长期停更
+   - mean RMS acceleration=0.426m/s^2，mean RMS jerk=3.979m/s^3
+
+9. v1 保护检查通过：
+   analysis/v1_guard_after_egov2_postcheck_20260720
+   run_dir=data/multi_uav_formation/SingleRun/batch_platform_ego_20260720_233804_001
+   - stop condition=all_goals_reached
+   - run_success_rate=1.0，vehicle_success_rate=1.0（5/5）
+   - mean path length=19.395m
+   - min obstacle clearance=0.305m
+   - max ego command age=1.896s
+
+10. 构建和静态检查通过：
+    - tracking_ws: catkin_make -DCMAKE_BUILD_TYPE=Release -j2
+    - python3 -m py_compile SingleRun.py analyze_runs.py
+    - bash -n batch_run_experiments.sh multi_uav_formation.sh setup_runtime_env.sh
+    - git diff --check
+
+11. 剩余统计风险：
+    - 最终结果是单次 5/5 成功，证明故障链已被打通，但不能替代 5-10 次批量统计。
+    - 实际飞行数据的瞬时 finite-difference jerk 仍有尖峰（最终 v2 单次最大值来自 uav4，约 133.5m/s^3）；规划轨迹 post-check 的 jerk 上限与闭环实机/仿真测量 jerk 不是同一层指标，后续若优化平滑度必须单独定位控制跟踪和数值微分，不要通过放宽 planner jerk 或关闭 post-check 处理。

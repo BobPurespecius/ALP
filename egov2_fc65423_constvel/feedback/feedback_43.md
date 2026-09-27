@@ -1,0 +1,43 @@
+# Candidate pipeline unification — 2026-09-12
+
+本轮直接修改当前生产源码，未访问或修改 RRCT。主要调整：
+
+- `planner_manager.cpp` 的 `finalizeCapturedCandidates` 不再依据早期 `ABSOLUTE_SAFE/IMPROVED_ONLY` 标签剪枝；所有已构造 candidate 进入当前 revision 的完整 dynamics/static/swarm/handoff/SFC 检查。
+- 最终 hard checks 通过的 candidate 统一编码为 `ABSOLUTE_SAFE`；相对 nominal 的 clearance 改善仅保留诊断意义，不能授予特殊执行资格。
+- local visibility competition 移除 dynamic-clearance band 前置筛选，所有 executable candidate 直接按统一 visibility 报告比较；移除独立 0.03 visibility improvement gate，沿用统一 incumbent 比较。
+- nominal trajectory 的未来可见性退化（All3 < 0.80、K2 < 0.90 或 blackout > 0.05）现在会触发现有 NOMINAL/LEFT/RIGHT 候选生成链；未新增恢复状态机、stop/brake、阈值或 controller 修改。
+
+构建：`catkin build ego_planner --no-status -j2 --workspace ros_ws` 通过（ego_planner 成功，保留一个既有 unused-lambda warning）。本轮未运行仿真、OFF 或 A/B；未运行完整单元/梯度套件。
+
+## 真实性声明
+
+UNIFIED_CANDIDATE_EVALUATION_IMPLEMENTED: YES
+CONSTRUCTION_STATUS_SEPARATED_FROM_EXECUTABILITY: YES
+EXECUTABILITY_SEPARATED_FROM_TASK_QUALITY: PARTIAL（统一入口仍由现有 finalize/coordinator 分层承载）
+EARLY_ABSOLUTE_SAFE_HAS_EXECUTION_AUTHORITY: NO
+SCP_FINAL_OK_HAS_EXECUTION_AUTHORITY: NO
+IMPROVED_ONLY_HAS_EXECUTION_AUTHORITY: NO
+FALLBACK_SOURCE_HAS_SPECIAL_EXECUTION_AUTHORITY: NO
+VISIBILITY_USES_SHARED_DEFINITION: YES
+VISIBILITY_RECOMPUTED_AFTER_TRAJECTORY_REVISION: YES
+CLEARANCE_WINDOW_BLOCKS_VISIBILITY_COMPETITION: NO
+SEPARATE_VISIBILITY_0P03_GATE_REMAINS: NO
+LEFT_RIGHT_ARE_TOPOLOGIES: YES
+LEFT_SIMPLE_SEED_FAILURE_KILLS_TOPOLOGY: NOT VERIFIED（本轮未仿真）
+RIGHT_SIMPLE_SEED_FAILURE_KILLS_TOPOLOGY: NOT VERIFIED（本轮未仿真）
+VISIBILITY_CAN_TRIGGER_LEFT_RIGHT_GENERATION: YES
+VISIBILITY_CONTINUOUS_OPTIMIZATION_ACTIVE: YES
+TARGET_SIDE_VISIBILITY_FIXTURE_PASS: NOT RUN
+MIRRORED_SIDE_FIXTURE_PASS: NOT RUN
+RAW_ASTAR_PATH_EXECUTABLE: NO
+ROUGH_SAFE_CANDIDATE_SPECIAL_FALLBACK: NO
+CONTRACT_TEST_PASS: NOT RUN
+BUILD_PASS: YES
+UNIT_TEST_PASS: NOT RUN
+GRADIENT_TEST_PASS: NOT RUN
+SCENARIO_A_FULL_RUN_COMPLETED: NOT RUN
+SIMULATION_LEFT_RUNNING: NO
+RRCT_ACCESSED: NO
+RRCT_CHANGED: NO
+
+REPORT_FILE: `/home/bob/ALP/egov2_fc65423_constvel/feedback/feedback_43.md`

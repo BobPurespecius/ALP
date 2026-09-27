@@ -1,0 +1,198 @@
+# EGO-Planner-v2 目标追踪改动交接说明
+
+本文档记录当前目标追踪仿真的最新状态。此前使用 SRW `detection_filter` 的“检测框 -> EKF 目标估计”链路已经从目标追踪运行入口移除；现在使用 EGO-Planner-v2 tracking 节点产生轨迹，并通过 MAVROS 桥接到 PX4/Gazebo 物理仿真。
+
+## 1. 当前目标
+
+目标追踪流程现在应满足：
+
+- Gazebo + PX4 + MAVROS 仍然是真实执行环境。
+- 原 `platform.json` / `platform.world` 保持不改，作为 platform 基准地图保存。
+- 目标追踪默认使用 `platform_track.world`，由 `platform_track.json` 生成；该 scene 复用 platform 的生成器、障碍物颜色、移动障碍物模型名和运动逻辑，仅把静态障碍物密度降到 10 个，并保留 5 个原移动障碍物。
+- 目标追踪入口启动 3 架无人机，从远离平台的负 x 侧三机起飞点 `(-8.8,-2.6) / (-8.8,0.0) / (-8.8,2.6)` 起飞，目标起飞/跟踪高度统一为 `1.4 m`。
+- 启用 Gazebo 真值反馈时，位置和速度都统一到 Gazebo world/ENU；每架无人机分别订阅 `/uav_1/gazebo_pose`、`/uav_2/gazebo_pose`、`/uav_3/gazebo_pose`，避免多机共用 UAV1 反馈。
+- 目标追踪当前是定高任务，EGO-Planner-v2 输出进入 MAVROS 前会把 z 指令锁到跟随点高度，避免到达目标点附近时规划器 z 抖动导致 Gazebo 中上下移动。
+- 虚拟目标在 Gazebo 中显示为红色球体，并按 waypoint 或 ellipse 轨迹移动。
+- 第一架 `TargetTrack.py` 发布目标真值 `/object_odom`；三架 `TargetTrack.py` 分别发布 `/drone_0_visual_slam/odom`、`/drone_1_visual_slam/odom`、`/drone_2_visual_slam/odom`。
+- 三个 EGO-Planner-v2 `ego_planner_node` 订阅同一个目标 odom，分别使用自己的 tracking offset 规划跟踪轨迹。
+- 三个 EGO-Planner-v2 `traj_server` 分别输出 `/drone_0_planning/pos_cmd`、`/drone_1_planning/pos_cmd`、`/drone_2_planning/pos_cmd`。
+- 每架 `TargetTrack.py` 从当前 `platform_track.json` 发布对应的 `/drone_i_pcl_render_node/cloud` 障碍物点云，使 Gazebo 圆柱和 EGO 栅格地图使用同一份障碍物数据。
+- `TargetTrack.py` 把 `quadrotor_msgs/PositionCommand` 转成 MAVROS offboard 速度控制，并继续写 CSV 日志。
+
+## 2. 默认启动入口
+
+主要入口：
+
+`guidance/ros_ws/batch_run_target_tracking.sh`
+
+保持使用这个目标追踪脚本启动仿真。脚本负责：
+
+- source `setup_runtime_env.sh`
+- 检查 `ego_planner` 和 `quadrotor_msgs`
+- 清理上一次残留的 ROS/PX4/Gazebo 进程
+- 启动目标追踪 launch
+- 捕获终端 `Ctrl+C`，中断当前 roslaunch 并执行同一套清理逻辑
+- 写入每次运行的 CSV 和 roslaunch 日志
+- 调用分析脚本生成汇总结果
+
+脚本内部默认调用：
+
+`guidance/ros_ws/src/multi_uav_formation/launch/target_tracking_platform_single.launch`
+
+`target_tracking_platform_single.launch` 当前启动内容：
+
+- Gazebo `empty_world.launch`，加载 `platform_track.world`。
+- `move_obstacles.py`，根据 `platform_track.json` 持续移动 `platform_moving_obstacle_*`。
+- `gazebo_pose_bridge.py`，发布 `/uav_1/gazebo_pose`、`/uav_2/gazebo_pose`、`/uav_3/gazebo_pose`。
+- PX4 `single_vehicle_spawn.launch` + MAVROS `px4.launch`，按原多机端口规则启动 `uav1/uav2/uav3`。
+- 三个 EGO-Planner-v2 `ego_planner_node`，由 `ego_planner/launch/advanced_param.xml` 启动。
+- 三个 EGO-Planner-v2 `traj_server`，把规划轨迹转为各自的 `PositionCommand`。
+- 三个 `TargetTrack.py`，负责各自起飞、EGO 输入发布、EGO 命令桥接和日志记录；红球模型和 `/object_odom` 只由第一架发布。
+
+目标追踪入口不再启动或订阅：
+
+- `sim_target_tracking_bridge.py`
+- SRW `detection_filter_node`
+- `/yolov5trt/bboxes_pub`
+- `/object_odom_dtc2brig`
+- `TargetTrack.py` 中的 SRW `srw_ekf` 目标来源
+
+## 3. TargetTrack.py 当前职责
+
+路径：
+
+`guidance/ros_ws/src/multi_uav_formation/scripts/TargetTrack.py`
+
+当前它不是主要跟踪规划器，而是仿真/控制适配节点：
+
+1. 读取目标轨迹、起飞高度、跟随偏移、EGO 话题、日志路径等参数。
+2. 在 Gazebo 中生成并移动红色目标球。
+3. 发布：
+   - `/object_odom`：EGO-Planner-v2 使用的目标 odom，包含位置、速度和目标 yaw。
+   - `/drone_i_visual_slam/odom`：EGO-Planner-v2 使用的每架无人机 odom。
+   - `/drone_i_pcl_render_node/cloud`：由当前 target-tracking scene 生成的障碍物点云。
+   - `~true_target_pose`、`~target_pose`、`~tracking_error`：日志和可视化辅助。
+4. 订阅：
+   - `/uav_i/gazebo_pose`：对应无人机 Gazebo 真值位姿。
+   - `/drone_i_planning/pos_cmd`：对应 EGO `traj_server` 输出。
+5. PX4 状态机：
+   - `INIT`
+   - `OFFBOARD`
+   - `ARM`
+   - `TAKEOFF`
+   - `TRACK`
+   - `HOLD`
+6. TRACK 阶段使用 EGO `PositionCommand`：
+   - 读取 EGO 命令位置和速度。
+   - 位置/速度反馈、EGO odom、目标 odom、可视化 frame 统一为 Gazebo world/ENU。
+   - 定高目标追踪中将 EGO raw `PositionCommand.z` 约束到当前 `follow_point.z`，并将 EGO raw `velocity.z` 置零后再做闭环速度控制。
+   - 用 Gazebo world/ENU 反馈下的位置误差 + 速度前馈生成 ENU 速度控制。
+   - 通过 P230/MAVROS 发给 PX4。
+   - 若 EGO 命令超时，则回到当前 `follow_point` 做低速保高等待新规划命令，不再发零速度停在错误高度。
+
+## 4. EGO tracking 参数
+
+EGO-Planner-v2 tracking cost 追踪的是：
+
+`object_position + object_orientation * relative_tracking_offset`
+
+当前默认：
+
+- `relative_tracking_x = -1.2`
+- `relative_tracking_y = 0.0`
+- `relative_tracking_z = 0.0`
+
+`TargetTrack.py` 会根据目标路径方向给 `/object_odom` 设置 yaw，因此 `relative_tracking_x=-1.2` 表示跟在目标运动方向后方 1.2 m。
+
+默认目标参数：
+
+- `target_height = 1.4`
+- `target_mode = waypoints`
+- `target_speed = 0.55`
+- `target_center_x = 4.0`、`target_center_y = 0.0`，仅 ellipse 模式使用；waypoints 模式不依赖它。
+- `target_waypoints = -8.2,0.0;-6.0,0.3;-3.7,-0.2;-1.4,0.4;1.2,-0.2;3.6,0.4;6.3,-0.1;9.2,0.3;12.0,0.0;14.2,0.6;16.0,0.0`
+- 红球最终点位于平台中心上方；平台顶面 `z=1.05 m`，红球高度 `z=1.4 m`。
+- 专用 3 机地图已沿 x 方向拉长：三机起飞点为 `x=-8.8`，平台/目标终点为 `x=16.0`，EGO map size 为 `[44.0, 18.0, 4.5]`；障碍数量保持 `10` 个静态 + `5` 个移动，移动障碍仍复用 `platform_moving_obstacle_*` 和原移动逻辑。
+
+## 5. 最新诊断和修复
+
+较早问题结果 `analysis/target_tracking_20260706_005928` 显示：
+
+- `mean_ego_planner_sample_ratio = 0.0`，说明当时没有收到任何新鲜 EGO `PositionCommand`，实际不是完整的“EGO 避障 + 追踪”闭环。
+- `target_tracking_move_obstacles` 进程因 `move_obstacles.py` 不接受 ROS 自动追加的 `__name:=... __log:=...` 参数而退出，移动障碍没有运行。
+- EGO tracking 后端日志出现 `traj 1 success` 但随后 `plan_success=0`；原因是 `use_distinctive_trajs=true` 分支成功优化轨迹后没有把 `flag_success` 置为 `true`。
+
+已修复：
+
+- `move_obstacles.py` 改为忽略 ROS remap 参数，移动障碍节点可以在 roslaunch 中持续运行。
+- `EGO-Planner-v2/.../planner_manager.cpp` 中 successful distinctive trajectory 会正确置 `flag_success=true`，并已在容器 `/app/guidance/ros_ws` 内重新 `catkin_make`。
+- `TargetTrack.py` 在等待 EGO 命令时不再把补偿高度 `-1.0` 作为控制点记录，避免 EGO 失效时的错误高度补偿干扰诊断。
+
+后一轮结果 `analysis/target_tracking_20260706_011503` 显示：
+
+- UAV1 已明显接入 EGO，`ego_planner_sample_ratio = 0.7623`，平均跟踪误差约 `0.592 m`。
+- UAV2/UAV3 的 `ego_planner_sample_ratio = 0.0`，CSV 中 `ego_cmd_*` 全空，说明仍未收到 `/drone_1_planning/pos_cmd`、`/drone_2_planning/pos_cmd`。
+- 日志显示移动障碍节点已加载 `5` 个障碍；但 EGO 仍多次报 `terminal point of the current trajectory is in obstacle`，因此已将 target-tracking 专用地图沿 x 方向拉长并降低障碍密度。
+
+后一轮结果 `analysis/target_tracking_20260706_013218` 显示：
+
+- 地图拉长后 UAV1 已达到 `ego_planner_sample_ratio = 1.0`，平均跟踪误差约 `0.480 m`，成功。
+- UAV2/UAV3 仍为 `ego_planner_sample_ratio = 0.0`，直接原因不是地图，而是没有收到 EGO `PositionCommand`。
+- roslaunch 日志出现 `SEQUENTIAL_START, haven't receive traj from previous drone`；EGO tracking 默认通过 `/broadcast_traj_from_planner -> swarm_bridge -> /broadcast_traj_to_planner` 获取前序无人机轨迹，但目标追踪 launch 没有启动 swarm_bridge，因此 drone1/drone2 一直卡在顺序启动等待。
+- 已将 `EGO-Planner-v2/.../tracking_ws/.../advanced_param.xml` 的 broadcast send/recv 话题参数化，并在 `target_tracking_platform_single.launch` 中把三架 EGO 的 send/recv 都接到 `/target_tracking/broadcast_traj`。目标追踪在单个 ROS master 内运行，不再依赖 swarm_bridge 中继，旁边两架应能收到前序轨迹并进入规划输出。
+
+## 6. 目标追踪脚本
+
+脚本：
+
+`guidance/ros_ws/batch_run_target_tracking.sh`
+
+默认：
+
+- 运行 5 次。
+- 每次超时 70 秒。
+- Gazebo GUI 固定打开；批量脚本不再提供 GUI 开关。
+- 在终端按 `Ctrl+C` 会停止当前运行并清理目标追踪相关 ROS/PX4/Gazebo 进程。
+- 输出目录为 `guidance/ros_ws/analysis/target_tracking_<timestamp>`。
+
+输出：
+
+- `logs/target_tracking_run_XXX.csv`：uav1 日志。
+- `logs/target_tracking_run_XXX_uav2.csv`、`logs/target_tracking_run_XXX_uav3.csv`：uav2/uav3 日志。
+- `logs/roslaunch_run_XXX.log`
+- `run_logs.txt`
+- `target_tracking_summary.csv`
+- `target_tracking_overall.json`
+
+分析脚本：
+
+`guidance/ros_ws/src/multi_uav_formation/scripts/analyze_target_tracking_runs.py`
+
+当前统计 `ego_planner_sample_ratio`，表示 TRACK 阶段收到新鲜 EGO `PositionCommand` 的样本占比。
+
+## 7. 手动运行
+
+进入容器或 ROS 环境后：
+
+```bash
+cd /app/guidance/ros_ws
+source ./setup_runtime_env.sh
+./batch_run_target_tracking.sh --runs 1 --duration 70
+```
+
+批量运行：
+
+```bash
+cd /app/guidance/ros_ws
+source ./setup_runtime_env.sh
+./batch_run_target_tracking.sh --runs 5 --duration 70
+```
+
+直接 `roslaunch multi_uav_formation target_tracking_platform.launch` 只用于调试 launch 展开；正式目标追踪实验仍走上面的脚本。
+
+## 8. 后续优先检查
+
+1. 先用 Gazebo GUI 确认无人机能进入 TRACK，红色目标球可见且缓慢移动。
+2. 检查 CSV 中 `target_source` 是否主要为 `ego_planner`，如果长期是 `ego_waiting`，说明 EGO 没有持续输出 `/drone_0_planning/pos_cmd`。
+3. 检查 `gazebo_z`、`control_z`、`follow_z`、`tracking_error_m`，确认高度没有漂移。
+4. 再跑批量实验，看 `target_tracking_overall.json` 中成功率、平均误差、加速度和 jerk。

@@ -1,0 +1,447 @@
+MUSK platform 阶段修改说明
+==========================
+
+文档范围：2026-06-02 至 2026-06-10
+
+本文只总结上一次 more_obstacles 文档之后的新增设计、代码修改和当前保留的
+实现思路。上一阶段文档为：
+- guidance/ros_ws/issues_zh.txt
+- guidance/ros_ws/changes_zh.txt
+
+
+一、总体方向变化
+----------------
+上一阶段目标是让 more_obstacles 中 5 架无人机接入 EGO-Planner 并能穿越
+静态障碍物。
+
+本阶段目标进一步变为：
+1. 支持复杂场景和平台目标。
+2. 支持移动障碍物。
+3. 支持批量实验和自动统计。
+4. 保证输入 duration 后能及时停止仿真。
+5. 将最终目标从“降落在平台上”调整为“在指定坐标悬停”。
+6. 改善 RViz/Gazebo 显示一致性。
+7. 增加一套简单、可解释的本地避障兜底逻辑。
+
+
+二、platform 场景
+----------------
+新增/主要修改文件：
+- guidance/ros_ws/src/multi_uav_formation/scenes/platform.json
+- guidance/ros_ws/src/multi_uav_formation/worlds/platform.world
+
+platform.json 成为当前主要实验场景配置。
+
+主要内容：
+- 由 more_obstacles_complex 演化而来。
+- 障碍物数量相对 complex 减少。
+- 静态障碍物颜色统一为默认绿色。
+- 增加 movingObstacleData，用于配置移动障碍物。
+- 增加 platformData，用于配置终点平台。
+- egoPlanner.goalsENU 作为最终悬停目标坐标。
+- 当前不再要求降落，只要求无人机在目标点附近悬停。
+
+重要原则：
+- 最终悬停高度应主要通过 platform.json 中 goalsENU 的 z 调整。
+- 不再让降落逻辑覆盖最终悬停高度。
+- platformData 主要用于生成 Gazebo 平台和提供默认参考。
+
+
+三、world 自动生成
+-----------------
+新增文件：
+- guidance/ros_ws/src/multi_uav_formation/scripts/generate_world_from_scene.py
+
+作用：
+- 从 scene json 自动生成 Gazebo world。
+- 统一生成：
+  - 静态圆柱障碍物。
+  - 移动障碍物初始模型。
+  - 目标平台模型。
+
+为什么需要：
+- 之前修改障碍物需要同时修改 json 和 world。
+- 现在只需要维护 scene json，batch 运行前自动生成 world。
+
+已接入：
+- batch_run_experiments.sh 每次运行前调用 generate_world_from_scene.py。
+
+
+四、移动障碍物
+--------------
+新增文件：
+- guidance/ros_ws/src/multi_uav_formation/scripts/move_obstacles.py
+
+配置位置：
+- platform.json / movingObstacleData
+
+每个移动障碍物主要参数：
+- modelName：Gazebo 模型名。
+- centerENU：运动中心。
+- radius：圆柱半径。
+- axisENU：运动方向。
+- amplitude：往复运动幅值。
+- period：运动周期。
+- phase：初始相位。
+
+运动形式：
+- 沿 axisENU 做正弦往复运动。
+- 位置：
+  center + axis * amplitude * sin(2*pi*t/period + phase)
+- 速度：
+  axis * amplitude * 2*pi/period * cos(2*pi*t/period + phase)
+
+Gazebo 更新方式：
+- 同时支持 /gazebo/set_model_state topic 和 service。
+- launch 中启动后持续向 Gazebo 写入 ModelState。
+
+SingleRun 中对应修改：
+- currentObstacleStates() 同时返回静态障碍和移动障碍。
+- movingObstacleCenterENU() 根据当前时间计算移动障碍位置。
+- movingObstacleVelocityENU() 计算移动障碍速度。
+- 避障判断使用当前时刻的移动障碍位置，而不是初始位置。
+
+
+五、批量实验脚本
+----------------
+新增文件：
+- guidance/ros_ws/batch_run_experiments.sh
+
+推荐命令：
+  ./batch_run_experiments.sh --scene platform --runs 5 --duration 70
+
+主要功能：
+1. 根据 scene json 自动生成 world。
+2. 启动 tmux/tmuxinator 仿真。
+3. 等待 Gazebo、PX4、MAVROS、SingleRun save service 就绪。
+4. 调用 wait_for_stop_condition.py 等待停止条件。
+5. 停止后 pause Gazebo。
+6. 调用 /single_run_X/save_log 保存每架无人机数据。
+7. 清理仿真。
+8. 自动调用 analyze_runs.py 生成统计结果。
+
+输出：
+- analysis/<name>/run_dirs.txt
+- analysis/<name>/run_summary.csv
+- analysis/<name>/vehicle_summary.csv
+- analysis/<name>/overall_summary.json
+
+
+六、停止逻辑
+------------
+新增文件：
+- guidance/ros_ws/src/multi_uav_formation/scripts/wait_for_stop_condition.py
+
+停止条件：
+1. 所有无人机到达目标。
+2. Gazebo sim time 达到输入 duration。
+
+满足任一条件即停止。
+
+重要变化：
+- 不再等待真实时间 duration。
+- 不再结束时强制降落。
+- 不再将保存数据放在降落之后。
+- 停止后先 pause Gazebo，再保存数据。
+
+到达目标判断：
+- 优先读取 /single_run_X/status。
+- 支持 egoGoalReached 标志。
+- 也支持直接读取 egoGoalXYError 和 egoGoalZError 判断实际误差。
+
+
+七、数据分析脚本
+----------------
+新增文件：
+- guidance/ros_ws/src/multi_uav_formation/scripts/analyze_runs.py
+
+功能：
+- 读取 data_X.pkl。
+- 计算每架无人机的成功与否。
+- 汇总每次 run 和多次 run 的统计指标。
+
+主要成功率指标：
+- run_success_rate
+- vehicle_success_rate
+- final_goal_error_m
+- final_xy_error_m
+- final_z_error_m
+- final_speed_mps
+
+主要平滑度指标：
+- path_length_m
+- rms_accel_mps2
+- max_accel_mps2
+- rms_jerk_mps3
+- max_jerk_mps3
+- rms_logged_jerk_mps3
+- mean_turn_angle_rad
+- max_turn_angle_rad
+- mean_control_delta
+- max_control_delta
+
+避障安全指标：
+- min_obstacle_clearance_m
+
+
+八、SingleRun.py 总体修改
+------------------------
+文件：
+- guidance/ros_ws/src/multi_uav_formation/multi_uav_formation/SingleRun.py
+
+本阶段 SingleRun 的新增重点：
+1. platform 场景支持。
+2. Gazebo truth 反馈和日志。
+3. 自动保存服务。
+4. status 服务。
+5. 移动障碍物状态计算。
+6. 最终悬停逻辑整理。
+7. EGO 失效/停滞 fallback。
+8. 简化后的切向避障状态机。
+9. 避障切换滞回。
+
+
+九、SingleRun 中的 Gazebo truth 与日志
+-------------------------------------
+新增/保留思想：
+- 订阅 Gazebo pose，用于记录真实位置。
+- 数据日志中保存 MAVROS 与 Gazebo 的差异。
+
+主要记录字段：
+- gazeboPositionENU
+- gazeboMePositionErrorENU
+- gazeboMavrosPositionErrorENU
+- gazeboPoseAge
+- mavrosRawPositionENU
+- mavrosPositionENU
+- configuredLocalOffsetENU
+- activeLocalOffsetENU
+
+作用：
+- 分析 RViz/Gazebo/MAVROS 是否一致。
+- 定位某架无人机坐标漂移或显示不一致问题。
+
+
+十、SingleRun 中的保存与状态服务
+-------------------------------
+新增服务：
+- /single_run_X/save_log
+- /single_run_X/status
+
+save_log：
+- 批量实验停止后主动调用。
+- 防止依赖节点自然退出才保存数据。
+- 增加 logLock 和 logSaved，避免重复保存或保存中被继续写入。
+
+status：
+- 供 wait_for_stop_condition.py 查询每架无人机状态。
+- 返回目标误差、是否到达、状态机状态等关键信息。
+
+
+十一、最终悬停逻辑
+------------------
+当前目标：
+- 不做平台降落。
+- 只要求无人机在 platform.json 指定目标点悬停。
+
+主要函数：
+- platformFinalHoverPointENU()
+- switchToPlatformFinalHoverIfNeeded()
+- holdEgoGoalPoint()
+- convergeToEgoGoalPoint()
+- egoGoalIsSettled()
+
+控制策略：
+- EGO 正常输出时，跟随 EGO PositionCommand。
+- 接近目标或 EGO 停滞时，SingleRun 直接收敛到 egoGoalPointENU。
+- 达到 XY、Z、速度阈值并稳定一段时间后，认为该机完成。
+
+
+十二、EGO 停滞 fallback
+----------------------
+问题：
+- EGO 局部规划可能输出一个远离最终目标的局部点。
+- 例如失败样本中 uav4 长时间被拉向 (4.51, 5.45, 2.13)，而最终目标在
+  (10.0, 2.4, 1.25) 附近。
+
+新增逻辑：
+- updateEgoGoalProgress() 记录到最终目标的最佳距离。
+- egoGoalProgressStalled() 判断长期没有明显接近目标。
+- progressFallback 触发后，不再继续盲信 EGO 局部命令。
+- 直接 convergeToEgoGoalPoint()。
+- 远离终点时仍可启用 obstacle guard。
+
+
+十三、简化后的避障逻辑
+----------------------
+用户希望的原则：
+- 不要复杂候选速度反复试探。
+- 进入危险区后，转向障碍物圆柱切向。
+- 切向选择靠近终点的一边。
+- 暂停接收 EGO 结果。
+- 离开危险区后再交回 EGO。
+
+当前实现：
+- maybeStartObstacleEscape() 判断是否进入障碍物安全包络。
+- startObstacleEscape() 锁定当前障碍并记录切向方向。
+- stepObstacleEscape() 在避障状态中直接发布切向速度。
+- releaseObstacleEscape() 退出避障并重新触发 EGO。
+
+切向方向：
+- obstacleRadialAndTangentsXY() 计算径向和左右切向。
+- obstacleTangentSignForGoal() 比较左右切向与目标方向的投影，选择更靠近终点的一侧。
+- obstacleTangentDirectionXY() 输出当前锁定切向。
+
+竖直方向：
+- obstacleEscapeNominalZ() 使用最终目标高度。
+- 避障时只做小幅高度校正。
+- 不把下降作为主要避障策略。
+
+退出条件：
+- elapsed >= obstacleEscapeMinTime
+- point_margin >= obstacleEscapeReleaseMargin
+- velocity_margin >= obstacleEscapeReleaseMargin
+
+这样避免“当前位置刚安全，但下一步速度仍危险”时过早退出。
+
+
+十四、避障切换滞回
+------------------
+新增目的：
+- 降低避障状态频繁切换。
+- 减少切向方向反复翻转。
+- 改善 jerk 和 control_delta 峰值。
+
+新增参数：
+- obstacleEscapeSwitchMinTime
+- obstacleEscapeSwitchCooldown
+- obstacleEscapeSwitchMargin
+
+新增/修改函数：
+- obstacleByIdentity()
+- obstaclePointMarginForObstacle()
+- shouldSwitchObstacleEscape()
+
+逻辑：
+- 进入避障后优先跟踪原障碍物。
+- 当前跟踪障碍仍危险时，不轻易换成另一个“稍微更近”的障碍。
+- 只有新障碍足够危险并且明显更危险，或当前障碍已经安全，才允许切换。
+- 切换后更新 egoObstacleEscapeLastSwitchTime。
+
+platform.json 中当前配置：
+- obstacleEscapeCooldown: 0.8
+- obstacleEscapeSwitchMinTime: 1.5
+- obstacleEscapeSwitchCooldown: 0.8
+- obstacleEscapeSwitchMargin: 0.18
+
+
+十五、P230.py 修改
+-----------------
+文件：
+- guidance/ros_ws/src/multi_uav_formation/multi_uav_formation/models/P230/P230.py
+
+本阶段相关作用：
+- 保留 MAVROS local offset 机制。
+- 支持 configuredMavrosPositionENU / rawPositionENU 等记录字段。
+- 配合 SingleRun 记录 MAVROS 原始位置、补偿后位置和 Gazebo 真值差异。
+
+注意：
+- 没有直接修改 MAVROS 发布的 local_position。
+- 仍然是在 P230/SingleRun 侧做任务坐标系补偿和日志记录。
+
+
+十六、Visualizer.py 与 RViz
+---------------------------
+文件：
+- guidance/ros_ws/src/multi_uav_formation/multi_uav_formation/Visualizer.py
+- guidance/ros_ws/visualize_obstacles.rviz
+
+变化：
+- 支持显示更多障碍物、移动障碍物和平台相关 marker。
+- RViz 用于显示和调试，不负责物理碰撞。
+- 物理碰撞仍由 Gazebo world 中的 collision 决定。
+
+
+十七、launch 与运行环境
+----------------------
+相关文件：
+- guidance/ros_ws/src/multi_uav_formation/launch/multi_uav_mavros_sitl.launch
+- guidance/ros_ws/src/multi_uav_formation/launch/ego_more_obstacles.launch
+- guidance/ros_ws/tmuxinator.yml
+- guidance/ros_ws/setup_runtime_env.sh
+- guidance/ros_ws/multi_uav_formation.sh
+
+主要变化：
+- launch 支持 scene_file / world 参数。
+- Gazebo world 可由 batch 脚本自动生成后传入。
+- move_obstacles.py 可随仿真启动。
+- tmux/runtime 环境统一 source setup_runtime_env.sh。
+- setup_runtime_env.sh 维护 Gazebo、PX4、ROS、EGO 所需环境变量。
+
+
+十八、platform.json 当前关键参数含义
+-----------------------------------
+egoPlanner 中常用：
+- maxVel：EGO 规划速度上限。
+- maxAcc：EGO 规划加速度上限。
+- planningHorizon：局部规划视野。
+- goalXYTolerance：最终 XY 到达容差。
+- goalZTolerance：最终高度到达容差。
+- goalSpeedTolerance：最终速度容差。
+- goalSettleTime：进入容差后需要稳定的时间。
+- progressFallbackTime：长期无进展后触发 fallback 的时间。
+- progressFallbackGraceTime：刚进入 GUIDANCE 后暂不判定停滞的宽限时间。
+
+避障相关：
+- obstacleClearance：障碍物安全半径额外膨胀量。
+- obstacleCheckHorizon：速度预测避障检查时间窗。
+- obstacleVerticalMargin：障碍物高度判断的 z 方向余量。
+- obstacleEscapeTriggerMargin：进入切向避障的余量阈值。
+- obstacleEscapeReleaseMargin：退出切向避障的余量阈值。
+- obstacleEscapeVerticalSpeed：避障时 z 方向速度上限。
+- obstacleEscapeCooldown：退出避障后重新进入避障的冷却时间。
+- obstacleEscapeSwitchMinTime：进入避障后最短锁定时间。
+- obstacleEscapeSwitchCooldown：两次障碍切换之间的冷却时间。
+- obstacleEscapeSwitchMargin：新障碍必须比旧障碍危险多少才允许切换。
+
+
+十九、最近统计结果
+------------------
+最近一次完整读取的 5 次：
+- batch_platform_20260610_165304_001
+- batch_platform_20260610_165439_002
+- batch_platform_20260610_165619_003
+- batch_platform_20260610_165755_004
+- batch_platform_20260610_170007_005
+
+成功率：
+- run 成功率：4/5 = 80%
+- 单机成功率：24/25 = 96%
+
+平滑度：
+- 控制指令平均变化略有改善。
+- 真实轨迹 jerk 没有整体改善。
+- 主要问题来自个别失败样本和频繁障碍切换。
+
+因此最新修改重点转向：
+- 降低避障障碍切换频率。
+- 用滞回减少切向方向翻转。
+- 后续需要重新跑 5 次或 10 次验证该修改是否有效。
+
+
+二十、当前未完成/待验证项
+------------------------
+1. 避障切换滞回已经写入代码，但用户中断了后续 5 次批量验证。
+2. 需要重新运行：
+   ./batch_run_experiments.sh --scene platform --runs 5 --duration 70
+3. 需要比较修改前后的：
+   - 切换次数。
+   - run_success_rate。
+   - vehicle_success_rate。
+   - rms_jerk_mps3。
+   - max_jerk_mps3。
+   - mean_control_delta。
+   - max_control_delta。
+4. 若切换次数下降但成功率下降，说明锁定过强，需要降低 switchMinTime 或 switchMargin。
+5. 若成功率不变且 jerk 下降，说明滞回有效。
+

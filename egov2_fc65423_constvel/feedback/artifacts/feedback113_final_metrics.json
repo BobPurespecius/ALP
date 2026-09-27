@@ -1,0 +1,533 @@
+{
+  "run_id": "20260925_190928_365841",
+  "configuration": {
+    "ablation": "full",
+    "rviz": false,
+    "timeout_s": 240,
+    "boot_timeout_s": 180,
+    "scenario": "/home/bob/ALP/egov2_fc65423_constvel/ros_ws/src/multi_uav_formation/scenes/natural_team_stress_dense_38_targeted_k2_v6.json",
+    "ros_log_dir": "runs/20260925_190928_365841/ros_log (persistent ext4; tmpfs disabled)",
+    "team_k3_mode": "TELEMETRY_ONLY",
+    "local_k3_authority": true
+  },
+  "run_status": {
+    "final_exit_code": 0,
+    "boot12": true,
+    "owned_process_count": 29,
+    "cleanup_status": "OK",
+    "cleanup_force_killed": 0,
+    "cleanup_remaining_owned": 0,
+    "foreign_processes_killed": 0
+  },
+  "k3": {
+    "local_events": 17,
+    "events_by_target_uav_1based": {
+      "1": 9,
+      "2": 4,
+      "3": 4
+    },
+    "event_result_rows": 17,
+    "prebinary_positive_lead_events": 8,
+    "lead_to_binary_loss_positive_s": [
+      0.2,
+      0.1,
+      0.1,
+      0.2,
+      0.1,
+      0.2,
+      0.1,
+      0.1
+    ],
+    "lead_to_binary_loss_all_s": [
+      0.2,
+      0.1,
+      0.1,
+      0.2,
+      0.1,
+      -1.0,
+      -1.0,
+      0.0,
+      0.2,
+      -1.0,
+      0.1,
+      0.0,
+      -1.0,
+      0.0,
+      0.0,
+      -1.0,
+      0.1
+    ],
+    "lead_positive_median_s": 0.1,
+    "lead_positive_max_s": 0.2,
+    "dispatch_count": 13,
+    "dispatch_by_motion": {
+      "STATIC": 11,
+      "DYNAMIC": 2
+    },
+    "progress_selected_events": 13,
+    "progress_committed_events": 13,
+    "progress_activated_events": 12,
+    "progress_selected_instances": 24,
+    "progress_committed_instances": 24,
+    "progress_activated_instances": 23,
+    "selected_side_instances": {
+      "SIDE_PLUS": 7,
+      "NOMINAL": 11,
+      "SIDE_MINUS": 6
+    },
+    "recovered_events": 6,
+    "executed_recovery_observations": 6,
+    "recovery_checks": [
+      {
+        "event_id": 2,
+        "target_uav": 1,
+        "world_time": 1790334583.3668768,
+        "nearest_visibility_sample_delta_s": 0.015406370162963867,
+        "executed_visible": 1,
+        "limiter": "STATIC"
+      },
+      {
+        "event_id": 8,
+        "target_uav": 1,
+        "world_time": 1790334638.396376,
+        "nearest_visibility_sample_delta_s": 0.011574268341064453,
+        "executed_visible": 1,
+        "limiter": "STATIC"
+      },
+      {
+        "event_id": 9,
+        "target_uav": 1,
+        "world_time": 1790334639.811403,
+        "nearest_visibility_sample_delta_s": 0.0066525936126708984,
+        "executed_visible": 1,
+        "limiter": "STATIC"
+      },
+      {
+        "event_id": 4,
+        "target_uav": 3,
+        "world_time": 1790334648.669628,
+        "nearest_visibility_sample_delta_s": 0.015552759170532227,
+        "executed_visible": 1,
+        "limiter": "STATIC"
+      },
+      {
+        "event_id": 2,
+        "target_uav": 2,
+        "world_time": 1790334649.5782218,
+        "nearest_visibility_sample_delta_s": 0.006447792053222656,
+        "executed_visible": 1,
+        "limiter": "DYNAMIC_LOS"
+      },
+      {
+        "event_id": 3,
+        "target_uav": 2,
+        "world_time": 1790334649.8532708,
+        "nearest_visibility_sample_delta_s": 0.0020592212677001953,
+        "executed_visible": 1,
+        "limiter": "DYNAMIC_LOS"
+      }
+    ],
+    "false_recovery_predictions": 0,
+    "side_both_failed_events": 9,
+    "side_both_failed_attempts": 49,
+    "m2_preempted_events": 6,
+    "close_reasons": {
+      "M2_PREEMPTED": 6,
+      "RECOVERY_OBSERVED": 6,
+      "EVENT_EXPIRED": 1,
+      "MARGIN_RECOVERED": 4
+    },
+    "failure_stages": {
+      "M2_PREEMPTED": 6,
+      "RECOVERED": 6,
+      "PROGRESS_BUT_NOT_RECOVERED": 3,
+      "NO_SIDE_DISPATCH": 2
+    },
+    "k2_gate_unavailable_cycles": 1,
+    "world_time_audit_samples": 17,
+    "target_anchor_error_max_m": 0.0,
+    "selection_deltas": [
+      {
+        "side": "SIDE_PLUS",
+        "c3_before": 0.5,
+        "c3_after": 1.0,
+        "c3_delta": 0.5,
+        "d3_before": 0.482269,
+        "d3_after": 0.13836,
+        "d3_delta": -0.343909,
+        "k2": 1.0
+      },
+      {
+        "side": "NOMINAL",
+        "c3_before": 1.0,
+        "c3_after": 1.0,
+        "c3_delta": 0.0,
+        "d3_before": 0.068,
+        "d3_after": 0.068,
+        "d3_delta": 0.0,
+        "k2": 1.0
+      },
+      {
+        "side": "SIDE_MINUS",
+        "c3_before": 0.142857,
+        "c3_after": 0.571429,
+        "c3_delta": 0.42857199999999995,
+        "d3_before": 2.456909,
+        "d3_after": 0.699461,
+        "d3_delta": -1.7574480000000001,
+        "k2": 1.0
+      },
+      {
+        "side": "SIDE_MINUS",
+        "c3_before": 0.4,
+        "c3_after": 0.4,
+        "c3_delta": 0.0,
+        "d3_before": 2.240873,
+        "d3_after": 2.026668,
+        "d3_delta": -0.2142050000000002,
+        "k2": 1.0
+      },
+      {
+        "side": "NOMINAL",
+        "c3_before": 0.333333,
+        "c3_after": 0.583333,
+        "c3_delta": 0.25,
+        "d3_before": 3.585879,
+        "d3_after": 1.371095,
+        "d3_delta": -2.214784,
+        "k2": 1.0
+      },
+      {
+        "side": "NOMINAL",
+        "c3_before": 1.0,
+        "c3_after": 1.0,
+        "c3_delta": 0.0,
+        "d3_before": 0.017016,
+        "d3_after": 0.017015,
+        "d3_delta": -1.000000000001e-06,
+        "k2": 1.0
+      },
+      {
+        "side": "SIDE_PLUS",
+        "c3_before": 0.25,
+        "c3_after": 0.5,
+        "c3_delta": 0.25,
+        "d3_before": 0.628992,
+        "d3_after": 0.324187,
+        "d3_delta": -0.304805,
+        "k2": 1.0
+      },
+      {
+        "side": "SIDE_PLUS",
+        "c3_before": 0.333333,
+        "c3_after": 0.666667,
+        "c3_delta": 0.333334,
+        "d3_before": 1.052423,
+        "d3_after": 0.462029,
+        "d3_delta": -0.5903940000000001,
+        "k2": 1.0
+      },
+      {
+        "side": "SIDE_PLUS",
+        "c3_before": 0.3,
+        "c3_after": 0.3,
+        "c3_delta": 0.0,
+        "d3_before": 2.956167,
+        "d3_after": 2.788539,
+        "d3_delta": -0.1676280000000001,
+        "k2": 1.0
+      },
+      {
+        "side": "SIDE_MINUS",
+        "c3_before": 0.222222,
+        "c3_after": 1.0,
+        "c3_delta": 0.777778,
+        "d3_before": 1.904133,
+        "d3_after": 0.0,
+        "d3_delta": -1.904133,
+        "k2": 1.0
+      },
+      {
+        "side": "SIDE_PLUS",
+        "c3_before": 0.5,
+        "c3_after": 1.0,
+        "c3_delta": 0.5,
+        "d3_before": 0.120494,
+        "d3_after": 0.0,
+        "d3_delta": -0.120494,
+        "k2": 1.0
+      },
+      {
+        "side": "SIDE_MINUS",
+        "c3_before": 0.2,
+        "c3_after": 0.6,
+        "c3_delta": 0.39999999999999997,
+        "d3_before": 1.045304,
+        "d3_after": 0.60152,
+        "d3_delta": -0.44378399999999996,
+        "k2": 1.0
+      },
+      {
+        "side": "SIDE_PLUS",
+        "c3_before": 0.428571,
+        "c3_after": 0.428571,
+        "c3_delta": 0.0,
+        "d3_before": 1.642866,
+        "d3_after": 1.380209,
+        "d3_delta": -0.2626569999999999,
+        "k2": 1.0
+      },
+      {
+        "side": "SIDE_MINUS",
+        "c3_before": 0.222222,
+        "c3_after": 0.222222,
+        "c3_delta": 0.0,
+        "d3_before": 2.75674,
+        "d3_after": 2.749198,
+        "d3_delta": -0.007542000000000382,
+        "k2": 1.0
+      },
+      {
+        "side": "SIDE_PLUS",
+        "c3_before": 0.181818,
+        "c3_after": 0.181818,
+        "c3_delta": 0.0,
+        "d3_before": 3.626683,
+        "d3_after": 3.604906,
+        "d3_delta": -0.021776999999999713,
+        "k2": 1.0
+      },
+      {
+        "side": "SIDE_MINUS",
+        "c3_before": 0.153846,
+        "c3_after": 0.230769,
+        "c3_delta": 0.07692299999999999,
+        "d3_before": 3.975109,
+        "d3_after": 3.770526,
+        "d3_delta": -0.20458299999999996,
+        "k2": 1.0
+      },
+      {
+        "side": "NOMINAL",
+        "c3_before": 0.090909,
+        "c3_after": 0.090909,
+        "c3_delta": 0.0,
+        "d3_before": 3.890061,
+        "d3_after": 3.88474,
+        "d3_delta": -0.005321000000000353,
+        "k2": 1.0
+      },
+      {
+        "side": "NOMINAL",
+        "c3_before": 0.166667,
+        "c3_after": 0.166667,
+        "c3_delta": 0.0,
+        "d3_before": 1.314294,
+        "d3_after": 1.314073,
+        "d3_delta": -0.00022100000000002673,
+        "k2": 1.0
+      },
+      {
+        "side": "NOMINAL",
+        "c3_before": 0.0,
+        "c3_after": 0.0,
+        "c3_delta": 0.0,
+        "d3_before": 1.261768,
+        "d3_after": 1.165359,
+        "d3_delta": -0.09640899999999997,
+        "k2": 1.0
+      },
+      {
+        "side": "NOMINAL",
+        "c3_before": 0.0,
+        "c3_after": 0.0,
+        "c3_delta": 0.0,
+        "d3_before": 2.97267,
+        "d3_after": 2.936993,
+        "d3_delta": -0.03567699999999974,
+        "k2": 1.0
+      },
+      {
+        "side": "NOMINAL",
+        "c3_before": 0.0,
+        "c3_after": 0.0,
+        "c3_delta": 0.0,
+        "d3_before": 0.083718,
+        "d3_after": 0.083713,
+        "d3_delta": -5.0000000000050004e-06,
+        "k2": 1.0
+      },
+      {
+        "side": "NOMINAL",
+        "c3_before": 0.25,
+        "c3_after": 0.25,
+        "c3_delta": 0.0,
+        "d3_before": 1.458893,
+        "d3_after": 1.451635,
+        "d3_delta": -0.007257999999999987,
+        "k2": 1.0
+      },
+      {
+        "side": "NOMINAL",
+        "c3_before": 0.666667,
+        "c3_after": 0.666667,
+        "c3_delta": 0.0,
+        "d3_before": 0.235323,
+        "d3_after": 0.198566,
+        "d3_delta": -0.03675700000000001,
+        "k2": 1.0
+      },
+      {
+        "side": "NOMINAL",
+        "c3_before": 0.333333,
+        "c3_after": 1.0,
+        "c3_delta": 0.666667,
+        "d3_before": 0.769566,
+        "d3_after": 0.0,
+        "d3_delta": -0.769566,
+        "k2": 1.0
+      }
+    ],
+    "first_non_m2_failure": {
+      "event_id": "4",
+      "target_uav": 0,
+      "limiter_name": "STATIC",
+      "lead_to_binary_loss": "0.200000",
+      "window_begin": 1790334585.1000001,
+      "window_end": 1790334586.5999987,
+      "k3_better_candidate_count": "1",
+      "k3_better_selected_count": "1",
+      "k3_better_committed_count": "1",
+      "activated_progress_count": "1",
+      "binary_k3_recovered": "0",
+      "side_both_failed_count": "4",
+      "failure_stage": "PROGRESS_BUT_NOT_RECOVERED",
+      "close_reason": "EVENT_EXPIRED",
+      "executed_window": {
+        "samples": 45,
+        "target_uav_visible_samples": 8,
+        "target_uav_invisible_samples": 37,
+        "all3_visible_samples": 8,
+        "last_blocked_world_s": 1790334586.4859366,
+        "post_loss_all3_visible_world_s": [
+          1790334586.518644,
+          1790334586.551427,
+          1790334586.585134
+        ]
+      }
+    },
+    "event_limiter_counts": {
+      "STATIC": 12,
+      "FOV": 1,
+      "DYNAMIC_LOS": 3,
+      "RANGE": 1
+    },
+    "team_k3_telemetry_records": 26,
+    "team_k3_path_retired_runtime_records": 0,
+    "recovery_false_negative_at_least": 1,
+    "missed_executed_recovery": {
+      "event_id": 4,
+      "target_uav": 1,
+      "failure_stage": "PROGRESS_BUT_NOT_RECOVERED",
+      "event_window_world_s": [
+        1790334585.1000001,
+        1790334586.5999987
+      ],
+      "progress_candidate": {
+        "trajectory_id": 44,
+        "side": "NOMINAL",
+        "K2": 1.0,
+        "C3_before": 1.0,
+        "C3_after": 1.0,
+        "D3_before": 0.017016,
+        "D3_after": 0.017015,
+        "activation_world_s": 1790334586.4816928
+      },
+      "executed_window": {
+        "samples": 45,
+        "target_uav_visible_samples": 8,
+        "target_uav_invisible_samples": 37,
+        "all3_visible_samples": 8
+      },
+      "last_blocked_world_s": 1790334586.4859366,
+      "post_loss_all3_visible_world_s": [
+        1790334586.518644,
+        1790334586.551427,
+        1790334586.585134
+      ],
+      "event_result_world_s": 1790334586.9157085,
+      "logged_result": {
+        "binary_k3_recovered": 0,
+        "close_reason": "EVENT_EXPIRED"
+      },
+      "inference": "The observed executed K3 return fell inside the event window. The next activation-confirmation cycle was after window_end; source checks only the latest odometry stamp, so it is consistent with the in-window recovery sample being skipped. The exact odometry stamp examined by the checker was not logged."
+    }
+  },
+  "visibility": {
+    "samples": 2348,
+    "duration_s": 78.23326399999999,
+    "executed_all3": 0.903747870528109,
+    "executed_k2": 0.997870528109029,
+    "k3_loss_total_time_s": 7.531357000000009,
+    "k2_loss_total_time_s": 0.1666139999999956,
+    "longest_all3_loss_s": 1.7665400000000062,
+    "longest_k2_loss_s": 0.16683600000000354,
+    "per_uav": {
+      "uav1": {
+        "visibility_ratio": 0.942504258943782,
+        "min_static_clearance_m": 0.255722,
+        "min_moving_clearance_m": 0.589295,
+        "static_contact_samples": 0,
+        "dynamic_contact_samples": 0
+      },
+      "uav2": {
+        "visibility_ratio": 0.9859454855195912,
+        "min_static_clearance_m": 0.40804,
+        "min_moving_clearance_m": 0.313696,
+        "static_contact_samples": 0,
+        "dynamic_contact_samples": 0
+      },
+      "uav3": {
+        "visibility_ratio": 0.9731686541737649,
+        "min_static_clearance_m": 0.245478,
+        "min_moving_clearance_m": 0.70813,
+        "static_contact_samples": 0,
+        "dynamic_contact_samples": 0
+      }
+    },
+    "all3_visibility_histogram": {
+      "0": 0,
+      "1": 5,
+      "2": 221,
+      "3": 2122
+    }
+  },
+  "safety": {
+    "static_contact_samples_le_zero": 0,
+    "dynamic_contact_samples_le_zero": 0,
+    "min_static_clearance_m": 0.245478,
+    "min_dynamic_clearance_m": 0.313696,
+    "swarm_violation_samples": 0,
+    "min_swarm_separation_m": 1.4370439060007876,
+    "unvalidated_executed_samples": 0,
+    "liveness_counters": {
+      "MIN_BUDGET_APPLIED": 0,
+      "TERMINAL_HOLD_ENTER": 0,
+      "MOVING_SUCCESSOR_STARVATION": 0,
+      "PVA_MISMATCH": 0,
+      "PARTIAL_TEAM_ACTIVATION": 0,
+      "END_BEFORE_NEXT": 0
+    }
+  },
+  "ablation_counters": [
+    "ABLATION_MODE=full",
+    "LOCAL_VIS_COST_EVAL_COUNT=32768",
+    "TEAM_PT_ATTEMPT_COUNT=256",
+    "LOS_TOPOLOGY_DISPATCH_COUNT=32",
+    "DYNAMIC_BODY_TOPOLOGY_DISPATCH_COUNT=32",
+    "TARGET_FACING_ASTAR_ATTEMPT_COUNT=16",
+    "SAFE_SEED_RETENTION_USED_COUNT=2",
+    "LOCAL_GAP_COST_EVAL_COUNT=262144",
+    "RUNTIME_COMPONENT_MODES=[ablation-config] component=planner_manager mode=FULL;[ablation-config] component=poly_traj_optimizer mode=FULL;[ablation-config] component=topology_coordinator mode=FULL;"
+  ]
+}

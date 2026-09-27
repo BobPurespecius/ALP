@@ -1,0 +1,2 @@
+This nested EGO-Planner workspace is sourced at runtime from devel/setup.bash.
+The parent MUSK workspace should not recurse into it during catkin build.

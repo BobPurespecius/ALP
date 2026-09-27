@@ -1,0 +1,107 @@
+{
+  "number": 3,
+  "targetTracking": {
+    "mode": "waypoints",
+    "speed": 0.928,
+    "takeoffHeight": 1.5,
+    "targetHeight": 1.5,
+    "useWaypointZ": false,
+    "lockEgoTrackingHeight": true,
+    "trackMaxControlZ": 1.5,
+    "waypointsENU": [
+      [-33.0, 0.0, 1.5],
+      [0.0, 0.0, 1.5]
+    ]
+  },
+  "obstacleData": {
+    "0": {
+      "modelName": "validation_far_north",
+      "centerENU": [-20.0, 8.0],
+      "radius": 0.4,
+      "height": 3.6
+    },
+    "1": {
+      "modelName": "validation_far_south",
+      "centerENU": [-20.0, -8.0],
+      "radius": 0.4,
+      "height": 3.6
+    }
+  },
+  "movingObstacleData": {
+    "0": {
+      "modelName": "validation_force_uav0_inward_0",
+      "centerENU": [-28.0, -2.05],
+      "radius": 0.25,
+      "height": 3.6,
+      "axisENU": [1.0, 0.0],
+      "amplitude": 0.0,
+      "period": 10.0,
+      "phase": 0.0
+    },
+    "1": {
+      "modelName": "validation_force_uav2_inward_0",
+      "centerENU": [-28.0, 2.05],
+      "radius": 0.25,
+      "height": 3.6,
+      "axisENU": [1.0, 0.0],
+      "amplitude": 0.0,
+      "period": 10.0,
+      "phase": 0.0
+    },
+    "2": {
+      "modelName": "validation_force_uav0_inward_1",
+      "centerENU": [-25.5, -2.05],
+      "radius": 0.25,
+      "height": 3.6,
+      "axisENU": [1.0, 0.0],
+      "amplitude": 0.0,
+      "period": 10.0,
+      "phase": 0.0
+    },
+    "3": {
+      "modelName": "validation_force_uav2_inward_1",
+      "centerENU": [-25.5, 2.05],
+      "radius": 0.25,
+      "height": 3.6,
+      "axisENU": [1.0, 0.0],
+      "amplitude": 0.0,
+      "period": 10.0,
+      "phase": 0.0
+    },
+    "4": {
+      "modelName": "validation_force_uav0_inward_2",
+      "centerENU": [-23.0, -2.05],
+      "radius": 0.25,
+      "height": 3.6,
+      "axisENU": [1.0, 0.0],
+      "amplitude": 0.0,
+      "period": 10.0,
+      "phase": 0.0
+    },
+    "5": {
+      "modelName": "validation_force_uav2_inward_2",
+      "centerENU": [-23.0, 2.05],
+      "radius": 0.25,
+      "height": 3.6,
+      "axisENU": [1.0, 0.0],
+      "amplitude": 0.0,
+      "period": 10.0,
+      "phase": 0.0
+    }
+  },
+  "nMovingObstacle": 6,
+  "egoPlanner": {
+    "movingObstaclePredictionHorizon": 3.0,
+    "movingObstaclePredictionDt": 0.25,
+    "movingObstaclePredictionRadiusGrowth": 0.0,
+    "movingObstaclePredictionMaxExtraRadius": 0.0,
+    "obstacleHeight": 3.6
+  },
+  "validationMetadata": {
+    "purpose": "Two short outer dynamic-obstacle rows create an overlapping risk window in which UAV0 and UAV2 locally prefer inward SIDE trajectories near the center UAV; joint selection should retain world-space-safe NOMINAL alternatives.",
+    "benchmarkScene": false,
+    "validationLaunchOverrides": "none; use the production default initial and relative-tracking offsets",
+    "expectedLocalSignatureNearOuterRows": "UAV0=SIDE_MINUS,UAV1=NOMINAL,UAV2=SIDE_PLUS",
+    "sideLabelsAreDiagnosticOnly": true
+  }
+}

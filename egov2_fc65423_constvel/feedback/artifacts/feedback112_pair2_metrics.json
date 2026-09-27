@@ -1,0 +1,1136 @@
+{
+  "20260925_151131_158119": {
+    "exit_status": [
+      "RUN_ID=20260925_151131_158119",
+      "CORE_EXIT_CODE=0",
+      "RVIZ_EXIT_CODE=NOT_STARTED",
+      "CLEANUP_STATUS=OK",
+      "FINAL_EXIT_CODE=0",
+      "LAST_BOOT_STAGE=BOOT-12",
+      "SIMULATION_REACHED_BOOT_12=YES"
+    ],
+    "k3": {
+      "alignment_max_m": null,
+      "alignment_p95_m": null,
+      "alignment_samples": 0,
+      "close_reasons": {},
+      "contracts": 35,
+      "escalation_events": 0,
+      "event_rows": {},
+      "forecast_recovered_but_executed_window_all_invisible": 0,
+      "live_snapshot_drift_max_m": null,
+      "live_snapshot_drift_p95_m": null,
+      "progress_activated": 0,
+      "progress_candidates": 0,
+      "progress_selected": 0,
+      "recovered_events": 0,
+      "result_count": 0,
+      "side_both_failed": 0,
+      "sources": {
+        "LOCAL_HARD_PREFLIGHT_FAILED:1": 17,
+        "TEAM_SCP_FAILED:1": 14
+      },
+      "tail_reasons": {}
+    },
+    "liveness_log_mentions": {
+      "MIN_BUDGET_APPLIED": 16
+    },
+    "m2_risk_world_times": [
+      1790320306.690258,
+      1790320307.0034993,
+      1790320307.0580542,
+      1790320309.9981968,
+      1790320310.0666373,
+      1790320324.4266691,
+      1790320324.4899378,
+      1790320324.4856946,
+      1790320324.4663756,
+      1790320324.4680052,
+      1790320371.9727476,
+      1790320372.3315475,
+      1790320372.3332963
+    ],
+    "process_status": [
+      "BOOT12_TARGET_MOVING=YES",
+      "BOOT12_UAV0_MOVING=YES",
+      "BOOT12_UAV1_MOVING=YES",
+      "BOOT12_UAV2_MOVING=YES",
+      "CLEANUP_REASON=RUN_COMPLETE",
+      "CLEANUP_TARGET_PGID=158226",
+      "CLEANUP_OWNED_PROCESS_COUNT=29",
+      "CLEANUP_FORCE_KILLED=0",
+      "CLEANUP_REMAINING_OWNED=0",
+      "CLEANUP_KILLED_FOREIGN_PROCESSES=0",
+      "CORE_TERMINATED_BY_RUNNER=1",
+      "CORE_EXIT_CODE_RAW=0",
+      "RViz \u662f\u5426\u88ab\u5355\u72ec\u89c2\u6d4b\uff1a\u672c\u6b21\u7531 roslaunch \u6258\u7ba1\uff0crequired=false\uff0c\u5176\u9000\u51fa\u4e0d\u5f71\u54cd\u4e0a\u8ff0\u9000\u51fa\u7801"
+    ],
+    "run_id": "20260925_151131_158119",
+    "safety": {
+      "dynamic_contact_samples": 0,
+      "min_dynamic_clearance_m": 0.298178,
+      "min_static_clearance_m": 0.219812,
+      "static_contact_samples": 0,
+      "unvalidated_executed_samples": 0
+    },
+    "visibility": {
+      "accumulated_camera_visible_time_s": 224.8902389999999,
+      "all3_ratio": 0.8815509160630592,
+      "blackout_samples": 0,
+      "duration_s": 78.193421,
+      "k2_ratio": 0.9944610140605028,
+      "k3_loss_total_s": 9.261562999999999,
+      "longest_all3_loss_s": 1.9336260000000038,
+      "longest_k2_loss_s": 0.39942299999999875,
+      "loss_intervals": [
+        {
+          "begin_s": 8.069265,
+          "duration_s": 0.7321539999999995,
+          "end_s": 8.801419
+        },
+        {
+          "begin_s": 10.767194,
+          "duration_s": 1.1007049999999996,
+          "end_s": 11.867899
+        },
+        {
+          "begin_s": 25.300535,
+          "duration_s": 1.2007800000000017,
+          "end_s": 26.501315
+        },
+        {
+          "begin_s": 35.040823,
+          "duration_s": 1.0603479999999976,
+          "end_s": 36.101171
+        },
+        {
+          "begin_s": 56.333754,
+          "duration_s": 0.03372099999999989,
+          "end_s": 56.367475
+        },
+        {
+          "begin_s": 56.900888,
+          "duration_s": 0.29993999999999943,
+          "end_s": 57.200828
+        },
+        {
+          "begin_s": 64.06704,
+          "duration_s": 1.0007859999999908,
+          "end_s": 65.067826
+        },
+        {
+          "begin_s": 70.333749,
+          "duration_s": 1.9336260000000038,
+          "end_s": 72.267375
+        },
+        {
+          "begin_s": 73.400961,
+          "duration_s": 1.599975999999998,
+          "end_s": 75.000937
+        }
+      ],
+      "mean_visible": 2.876011930123562,
+      "samples": 2347,
+      "visible_ratio": [
+        0.9416276097145292,
+        0.9850873455475074,
+        0.9492969748615253
+      ]
+    },
+    "world_offset_s": 1790320298.225103
+  },
+  "20260925_151633_160309": {
+    "exit_status": [
+      "RUN_ID=20260925_151633_160309",
+      "CORE_EXIT_CODE=0",
+      "RVIZ_EXIT_CODE=NOT_STARTED",
+      "CLEANUP_STATUS=OK",
+      "FINAL_EXIT_CODE=0",
+      "LAST_BOOT_STAGE=BOOT-12",
+      "SIMULATION_REACHED_BOOT_12=YES"
+    ],
+    "k3": {
+      "alignment_max_m": 0.0,
+      "alignment_p95_m": 0.0,
+      "alignment_samples": 66,
+      "close_reasons": {
+        "RECOVERY_OBSERVED": 4,
+        "SUPERSEDED_BY_NEW_EVENT": 9,
+        "TAIL_STALE_OR_M2_PREEMPTED": 4
+      },
+      "contracts": 23,
+      "escalation_events": 17,
+      "event_rows": {
+        "1": {
+          "confirmed": [],
+          "detected": {
+            "K2_at_detect": "1.000000",
+            "K3_at_detect": "0.727273",
+            "blocker": "LIVE_WITNESS_MATCH",
+            "contract_id": "2",
+            "event_id": "1",
+            "forecast_time": "1790320608.400000095",
+            "margin_at_detect": "-3.390618",
+            "motion": "STATIC",
+            "normal_visibility_authority_horizon": "2.000000",
+            "outside_normal_authority": "0",
+            "required_margin": "0.200000",
+            "revision": "8834649231469860234",
+            "target_uav": "0",
+            "time_to_cross": "0.681385",
+            "window_begin": "1790320608.400000095",
+            "window_end": "1790320608.600000143"
+          },
+          "executed_window": {
+            "begin_s": 8.5062255859375,
+            "end_s": 8.706225633621216,
+            "sample_count": 6,
+            "target_dynamic_blocked_samples": 0,
+            "target_invisible_samples": 6,
+            "target_static_blocked_samples": 6
+          },
+          "progress": [],
+          "result": {
+            "activated_progress_count": "0",
+            "binary_k3_recovered": "0",
+            "close_reason": "SUPERSEDED_BY_NEW_EVENT",
+            "event_id": "1",
+            "failure_stage": "SIDE_INFEASIBLE",
+            "k3_better_candidate_count": "0",
+            "k3_better_selected_count": "0",
+            "outside_normal_authority": "0",
+            "side_both_failed_count": "1",
+            "side_trigger_count": "1",
+            "time_to_recovery": "0.000000"
+          },
+          "tail": []
+        },
+        "10": {
+          "confirmed": [],
+          "detected": {
+            "K2_at_detect": "1.000000",
+            "K3_at_detect": "0.250000",
+            "blocker": "LIVE_WITNESS_MATCH",
+            "contract_id": "18",
+            "event_id": "10",
+            "forecast_time": "1790320664.100000143",
+            "margin_at_detect": "-6.130864",
+            "motion": "STATIC",
+            "normal_visibility_authority_horizon": "2.000000",
+            "outside_normal_authority": "0",
+            "required_margin": "0.200000",
+            "revision": "8834649231469860234",
+            "target_uav": "0",
+            "time_to_cross": "0.644742",
+            "window_begin": "1790320664.100000143",
+            "window_end": "1790320664.900000095"
+          },
+          "executed_window": {
+            "begin_s": 64.20622563362122,
+            "end_s": 65.0062255859375,
+            "sample_count": 24,
+            "target_dynamic_blocked_samples": 0,
+            "target_invisible_samples": 24,
+            "target_static_blocked_samples": 24
+          },
+          "progress": [
+            {
+              "C3_after": "0.000",
+              "C3_before": "0.000",
+              "D3_after": "3.490",
+              "D3_before": "3.339",
+              "activated": "0",
+              "blocker": "LIVE_WITNESS_MATCH",
+              "candidate_id": "495",
+              "committed": "1",
+              "coordinated": "0",
+              "drone": "0",
+              "dynamics_valid": "1",
+              "event_id": "10",
+              "feature3_after_joint": "1",
+              "kind": "SIDE_PLUS",
+              "selected_side": "SIDE_PLUS",
+              "selection_reason": "LOCAL_GEOMETRY_PRESERVATION_OR_RECOVERY",
+              "swarm_after_min": "2.779961",
+              "swarm_after_valid": "1",
+              "swarm_before_min": "2.779961",
+              "swarm_before_valid": "1",
+              "target": "0",
+              "trajectory_id": "231"
+            }
+          ],
+          "result": {
+            "activated_progress_count": "0",
+            "binary_k3_recovered": "0",
+            "close_reason": "SUPERSEDED_BY_NEW_EVENT",
+            "event_id": "10",
+            "failure_stage": "SIDE_INFEASIBLE",
+            "k3_better_candidate_count": "0",
+            "k3_better_selected_count": "1",
+            "outside_normal_authority": "0",
+            "side_both_failed_count": "1",
+            "side_trigger_count": "1",
+            "time_to_recovery": "0.000000"
+          },
+          "tail": []
+        },
+        "11": {
+          "confirmed": [],
+          "detected": {
+            "K2_at_detect": "1.000000",
+            "K3_at_detect": "0.454545",
+            "blocker": "LIVE_WITNESS_MATCH",
+            "contract_id": "19",
+            "event_id": "11",
+            "forecast_time": "1790320664.400000095",
+            "margin_at_detect": "-6.455156",
+            "motion": "STATIC",
+            "normal_visibility_authority_horizon": "2.000000",
+            "outside_normal_authority": "0",
+            "required_margin": "0.200000",
+            "revision": "8834649231469860234",
+            "target_uav": "0",
+            "time_to_cross": "0.682098",
+            "window_begin": "1790320664.400000095",
+            "window_end": "1790320664.900000095"
+          },
+          "executed_window": {
+            "begin_s": 64.5062255859375,
+            "end_s": 65.0062255859375,
+            "sample_count": 15,
+            "target_dynamic_blocked_samples": 0,
+            "target_invisible_samples": 15,
+            "target_static_blocked_samples": 15
+          },
+          "progress": [],
+          "result": {
+            "activated_progress_count": "0",
+            "binary_k3_recovered": "0",
+            "close_reason": "SUPERSEDED_BY_NEW_EVENT",
+            "event_id": "11",
+            "failure_stage": "SIDE_INFEASIBLE",
+            "k3_better_candidate_count": "0",
+            "k3_better_selected_count": "0",
+            "outside_normal_authority": "0",
+            "side_both_failed_count": "2",
+            "side_trigger_count": "2",
+            "time_to_recovery": "0.000000"
+          },
+          "tail": []
+        },
+        "12": {
+          "confirmed": [],
+          "detected": {
+            "K2_at_detect": "1.000000",
+            "K3_at_detect": "0.916667",
+            "blocker": "LIVE_WITNESS_MATCH",
+            "contract_id": "20",
+            "event_id": "12",
+            "forecast_time": "1790320664.900000095",
+            "margin_at_detect": "-1.510028",
+            "motion": "STATIC",
+            "normal_visibility_authority_horizon": "2.000000",
+            "outside_normal_authority": "0",
+            "required_margin": "0.200000",
+            "revision": "8834649231469860234",
+            "target_uav": "0",
+            "time_to_cross": "0.631250",
+            "window_begin": "1790320664.900000095",
+            "window_end": "1790320665.000000000"
+          },
+          "executed_window": {
+            "begin_s": 65.0062255859375,
+            "end_s": 65.10622549057007,
+            "sample_count": 3,
+            "target_dynamic_blocked_samples": 0,
+            "target_invisible_samples": 3,
+            "target_static_blocked_samples": 3
+          },
+          "progress": [],
+          "result": {
+            "activated_progress_count": "0",
+            "binary_k3_recovered": "1",
+            "close_reason": "RECOVERY_OBSERVED",
+            "event_id": "12",
+            "failure_stage": "RECOVERED",
+            "k3_better_candidate_count": "0",
+            "k3_better_selected_count": "0",
+            "outside_normal_authority": "0",
+            "side_both_failed_count": "2",
+            "side_trigger_count": "2",
+            "time_to_recovery": "0.000000"
+          },
+          "tail": []
+        },
+        "13": {
+          "confirmed": [],
+          "detected": {
+            "K2_at_detect": "1.000000",
+            "K3_at_detect": "0.384615",
+            "blocker": "LIVE_WITNESS_MATCH",
+            "contract_id": "21",
+            "event_id": "13",
+            "forecast_time": "1790320667.000000000",
+            "margin_at_detect": "-3.298098",
+            "motion": "UNKNOWN",
+            "normal_visibility_authority_horizon": "2.000000",
+            "outside_normal_authority": "0",
+            "required_margin": "0.200000",
+            "revision": "8834649231469860234",
+            "target_uav": "0",
+            "time_to_cross": "1.095780",
+            "window_begin": "1790320667.000000000",
+            "window_end": "1790320667.700000048"
+          },
+          "executed_window": {
+            "begin_s": 67.10622549057007,
+            "end_s": 67.80622553825378,
+            "sample_count": 21,
+            "target_dynamic_blocked_samples": 0,
+            "target_invisible_samples": 0,
+            "target_static_blocked_samples": 0
+          },
+          "progress": [],
+          "result": {
+            "activated_progress_count": "0",
+            "binary_k3_recovered": "1",
+            "close_reason": "RECOVERY_OBSERVED",
+            "event_id": "13",
+            "failure_stage": "RECOVERED",
+            "k3_better_candidate_count": "1",
+            "k3_better_selected_count": "0",
+            "outside_normal_authority": "0",
+            "side_both_failed_count": "1",
+            "side_trigger_count": "0",
+            "time_to_recovery": "0.000000"
+          },
+          "tail": []
+        },
+        "14": {
+          "confirmed": [],
+          "detected": {
+            "K2_at_detect": "1.000000",
+            "K3_at_detect": "0.090909",
+            "blocker": "LIVE_WITNESS_MATCH",
+            "contract_id": "22",
+            "event_id": "14",
+            "forecast_time": "1790320670.500000000",
+            "margin_at_detect": "-4.340220",
+            "motion": "STATIC",
+            "normal_visibility_authority_horizon": "2.000000",
+            "outside_normal_authority": "0",
+            "required_margin": "0.200000",
+            "revision": "8834649231469860234",
+            "target_uav": "2",
+            "time_to_cross": "0.766060",
+            "window_begin": "1790320670.500000000",
+            "window_end": "1790320671.400000095"
+          },
+          "executed_window": {
+            "begin_s": 70.60622549057007,
+            "end_s": 71.5062255859375,
+            "sample_count": 27,
+            "target_dynamic_blocked_samples": 23,
+            "target_invisible_samples": 25,
+            "target_static_blocked_samples": 5
+          },
+          "progress": [],
+          "result": {
+            "activated_progress_count": "0",
+            "binary_k3_recovered": "0",
+            "close_reason": "TAIL_STALE_OR_M2_PREEMPTED",
+            "event_id": "14",
+            "failure_stage": "COMPARATOR_REJECTED_K3_BETTER",
+            "k3_better_candidate_count": "2",
+            "k3_better_selected_count": "0",
+            "outside_normal_authority": "0",
+            "side_both_failed_count": "6",
+            "side_trigger_count": "6",
+            "time_to_recovery": "0.000000"
+          },
+          "tail": [
+            {
+              "C3_after": "0.000000",
+              "C3_before": "0.000000",
+              "D3_after": "0.000000",
+              "D3_before": "0.000000",
+              "K2_healthy": "0",
+              "age": "0.590",
+              "blocker_still_valid": "0",
+              "event_id": "14",
+              "primary_window_end": "1790320671.400000095",
+              "reason": "CONTRACT_REPLACED_OR_M2",
+              "tail_active": "0",
+              "tail_cycle_count": "0",
+              "target": "2"
+            }
+          ]
+        },
+        "15": {
+          "confirmed": [],
+          "detected": {
+            "K2_at_detect": "1.000000",
+            "K3_at_detect": "0.363636",
+            "blocker": "LIVE_WITNESS_MATCH",
+            "contract_id": "24",
+            "event_id": "15",
+            "forecast_time": "1790320671.200000048",
+            "margin_at_detect": "-5.721593",
+            "motion": "STATIC",
+            "normal_visibility_authority_horizon": "2.000000",
+            "outside_normal_authority": "0",
+            "required_margin": "0.200000",
+            "revision": "8834649231469860234",
+            "target_uav": "2",
+            "time_to_cross": "0.659451",
+            "window_begin": "1790320671.200000048",
+            "window_end": "1790320671.800000191"
+          },
+          "executed_window": {
+            "begin_s": 71.30622553825378,
+            "end_s": 71.90622568130493,
+            "sample_count": 18,
+            "target_dynamic_blocked_samples": 4,
+            "target_invisible_samples": 18,
+            "target_static_blocked_samples": 17
+          },
+          "progress": [],
+          "result": {
+            "activated_progress_count": "0",
+            "binary_k3_recovered": "0",
+            "close_reason": "SUPERSEDED_BY_NEW_EVENT",
+            "event_id": "15",
+            "failure_stage": "SIDE_INFEASIBLE",
+            "k3_better_candidate_count": "0",
+            "k3_better_selected_count": "0",
+            "outside_normal_authority": "0",
+            "side_both_failed_count": "1",
+            "side_trigger_count": "1",
+            "time_to_recovery": "0.000000"
+          },
+          "tail": []
+        },
+        "16": {
+          "confirmed": [],
+          "detected": {
+            "K2_at_detect": "1.000000",
+            "K3_at_detect": "0.416667",
+            "blocker": "LIVE_WITNESS_MATCH",
+            "contract_id": "25",
+            "event_id": "16",
+            "forecast_time": "1790320671.400000095",
+            "margin_at_detect": "-6.349690",
+            "motion": "STATIC",
+            "normal_visibility_authority_horizon": "2.000000",
+            "outside_normal_authority": "0",
+            "required_margin": "0.200000",
+            "revision": "8834649231469860234",
+            "target_uav": "2",
+            "time_to_cross": "0.595779",
+            "window_begin": "1790320671.400000095",
+            "window_end": "1790320672.000000000"
+          },
+          "executed_window": {
+            "begin_s": 71.5062255859375,
+            "end_s": 72.10622549057007,
+            "sample_count": 18,
+            "target_dynamic_blocked_samples": 0,
+            "target_invisible_samples": 17,
+            "target_static_blocked_samples": 17
+          },
+          "progress": [],
+          "result": {
+            "activated_progress_count": "0",
+            "binary_k3_recovered": "0",
+            "close_reason": "SUPERSEDED_BY_NEW_EVENT",
+            "event_id": "16",
+            "failure_stage": "COMPARATOR_REJECTED_K3_BETTER",
+            "k3_better_candidate_count": "2",
+            "k3_better_selected_count": "0",
+            "outside_normal_authority": "0",
+            "side_both_failed_count": "3",
+            "side_trigger_count": "3",
+            "time_to_recovery": "0.000000"
+          },
+          "tail": []
+        },
+        "17": {
+          "confirmed": [],
+          "detected": {
+            "K2_at_detect": "1.000000",
+            "K3_at_detect": "0.916667",
+            "blocker": "LIVE_WITNESS_MATCH",
+            "contract_id": "27",
+            "event_id": "17",
+            "forecast_time": "1790320673.100000143",
+            "margin_at_detect": "-1.044771",
+            "motion": "STATIC",
+            "normal_visibility_authority_horizon": "1.933113",
+            "outside_normal_authority": "0",
+            "required_margin": "0.200000",
+            "revision": "8834649231469860234",
+            "target_uav": "2",
+            "time_to_cross": "1.736116",
+            "window_begin": "1790320673.100000143",
+            "window_end": "1790320673.200000048"
+          },
+          "executed_window": {
+            "begin_s": 73.20622563362122,
+            "end_s": 73.30622553825378,
+            "sample_count": 3,
+            "target_dynamic_blocked_samples": 0,
+            "target_invisible_samples": 0,
+            "target_static_blocked_samples": 0
+          },
+          "progress": [],
+          "result": {
+            "activated_progress_count": "0",
+            "binary_k3_recovered": "0",
+            "close_reason": "TAIL_STALE_OR_M2_PREEMPTED",
+            "event_id": "17",
+            "failure_stage": "NO_SIDE_DISPATCH",
+            "k3_better_candidate_count": "1",
+            "k3_better_selected_count": "0",
+            "outside_normal_authority": "0",
+            "side_both_failed_count": "1",
+            "side_trigger_count": "0",
+            "time_to_recovery": "0.000000"
+          },
+          "tail": [
+            {
+              "C3_after": "0.000000",
+              "C3_before": "0.000000",
+              "D3_after": "0.000000",
+              "D3_before": "0.000000",
+              "K2_healthy": "0",
+              "age": "0.393",
+              "blocker_still_valid": "0",
+              "event_id": "17",
+              "primary_window_end": "1790320673.200000048",
+              "reason": "CONTRACT_REPLACED_OR_M2",
+              "tail_active": "0",
+              "tail_cycle_count": "0",
+              "target": "2"
+            }
+          ]
+        },
+        "2": {
+          "confirmed": [],
+          "detected": {
+            "K2_at_detect": "1.000000",
+            "K3_at_detect": "0.916667",
+            "blocker": "LIVE_WITNESS_MATCH",
+            "contract_id": "3",
+            "event_id": "2",
+            "forecast_time": "1790320608.600000143",
+            "margin_at_detect": "-1.228079",
+            "motion": "STATIC",
+            "normal_visibility_authority_horizon": "2.000000",
+            "outside_normal_authority": "0",
+            "required_margin": "0.200000",
+            "revision": "8834649231469860234",
+            "target_uav": "0",
+            "time_to_cross": "0.602659",
+            "window_begin": "1790320608.600000143",
+            "window_end": "1790320608.700000048"
+          },
+          "executed_window": {
+            "begin_s": 8.706225633621216,
+            "end_s": 8.806225538253784,
+            "sample_count": 3,
+            "target_dynamic_blocked_samples": 0,
+            "target_invisible_samples": 3,
+            "target_static_blocked_samples": 3
+          },
+          "progress": [],
+          "result": {
+            "activated_progress_count": "0",
+            "binary_k3_recovered": "1",
+            "close_reason": "RECOVERY_OBSERVED",
+            "event_id": "2",
+            "failure_stage": "RECOVERED",
+            "k3_better_candidate_count": "2",
+            "k3_better_selected_count": "0",
+            "outside_normal_authority": "0",
+            "side_both_failed_count": "2",
+            "side_trigger_count": "2",
+            "time_to_recovery": "0.000000"
+          },
+          "tail": []
+        },
+        "3": {
+          "confirmed": [],
+          "detected": {
+            "K2_at_detect": "1.000000",
+            "K3_at_detect": "0.571429",
+            "blocker": "LIVE_WITNESS_MATCH",
+            "contract_id": "4",
+            "event_id": "3",
+            "forecast_time": "1790320610.600000143",
+            "margin_at_detect": "-5.961553",
+            "motion": "STATIC",
+            "normal_visibility_authority_horizon": "2.000000",
+            "outside_normal_authority": "0",
+            "required_margin": "0.200000",
+            "revision": "8834649231469860234",
+            "target_uav": "0",
+            "time_to_cross": "1.415420",
+            "window_begin": "1790320610.600000143",
+            "window_end": "1790320611.100000143"
+          },
+          "executed_window": {
+            "begin_s": 10.706225633621216,
+            "end_s": 11.206225633621216,
+            "sample_count": 15,
+            "target_dynamic_blocked_samples": 0,
+            "target_invisible_samples": 9,
+            "target_static_blocked_samples": 9
+          },
+          "progress": [
+            {
+              "C3_after": "0.600",
+              "C3_before": "0.000",
+              "D3_after": "0.326",
+              "D3_before": "2.414",
+              "activated": "0",
+              "activation": "1790320609.433742046",
+              "blocker": "LIVE_WITNESS_MATCH",
+              "candidate": "60",
+              "committed": "1",
+              "drone": "0",
+              "dynamics_valid": "1",
+              "event": "CANDIDATE_METADATA_RECOMPUTED_AFTER_REANCHOR",
+              "event_id": "3",
+              "geometry_valid": "1",
+              "revision": "2",
+              "risk_valid": "1",
+              "selected_side": "SIDE_PLUS",
+              "static_valid": "1",
+              "target": "0",
+              "trajectory_id": "36",
+              "visibility_valid": "1"
+            }
+          ],
+          "result": {
+            "activated_progress_count": "0",
+            "binary_k3_recovered": "0",
+            "close_reason": "SUPERSEDED_BY_NEW_EVENT",
+            "event_id": "3",
+            "failure_stage": "ACTIVATION_NOT_REACHED",
+            "k3_better_candidate_count": "3",
+            "k3_better_selected_count": "1",
+            "outside_normal_authority": "0",
+            "side_both_failed_count": "1",
+            "side_trigger_count": "1",
+            "time_to_recovery": "0.000000"
+          },
+          "tail": []
+        },
+        "4": {
+          "confirmed": [],
+          "detected": {
+            "K2_at_detect": "1.000000",
+            "K3_at_detect": "0.692308",
+            "blocker": "LIVE_WITNESS_MATCH",
+            "contract_id": "5",
+            "event_id": "4",
+            "forecast_time": "1790320611.000000000",
+            "margin_at_detect": "-4.357562",
+            "motion": "STATIC",
+            "normal_visibility_authority_horizon": "2.000000",
+            "outside_normal_authority": "0",
+            "required_margin": "0.200000",
+            "revision": "8834649231469860234",
+            "target_uav": "0",
+            "time_to_cross": "1.538034",
+            "window_begin": "1790320611.000000000",
+            "window_end": "1790320611.300000191"
+          },
+          "executed_window": {
+            "begin_s": 11.106225490570068,
+            "end_s": 11.406225681304932,
+            "sample_count": 9,
+            "target_dynamic_blocked_samples": 0,
+            "target_invisible_samples": 9,
+            "target_static_blocked_samples": 9
+          },
+          "progress": [],
+          "result": {
+            "activated_progress_count": "0",
+            "binary_k3_recovered": "0",
+            "close_reason": "TAIL_STALE_OR_M2_PREEMPTED",
+            "event_id": "4",
+            "failure_stage": "COMPARATOR_REJECTED_K3_BETTER",
+            "k3_better_candidate_count": "1",
+            "k3_better_selected_count": "0",
+            "outside_normal_authority": "0",
+            "side_both_failed_count": "1",
+            "side_trigger_count": "1",
+            "time_to_recovery": "0.000000"
+          },
+          "tail": [
+            {
+              "C3_after": "0.000000",
+              "C3_before": "0.000000",
+              "D3_after": "0.000000",
+              "D3_before": "0.000000",
+              "K2_healthy": "0",
+              "age": "0.420",
+              "blocker_still_valid": "0",
+              "event_id": "4",
+              "primary_window_end": "1790320611.300000191",
+              "reason": "CONTRACT_REPLACED_OR_M2",
+              "tail_active": "0",
+              "tail_cycle_count": "0",
+              "target": "0"
+            }
+          ]
+        },
+        "5": {
+          "confirmed": [],
+          "detected": {
+            "K2_at_detect": "1.000000",
+            "K3_at_detect": "0.642857",
+            "blocker": "LIVE_WITNESS_MATCH",
+            "contract_id": "9",
+            "event_id": "5",
+            "forecast_time": "1790320611.400000095",
+            "margin_at_detect": "-7.134831",
+            "motion": "STATIC",
+            "normal_visibility_authority_horizon": "2.000000",
+            "outside_normal_authority": "0",
+            "required_margin": "0.200000",
+            "revision": "8834649231469860234",
+            "target_uav": "0",
+            "time_to_cross": "0.551780",
+            "window_begin": "1790320611.400000095",
+            "window_end": "1790320611.800000191"
+          },
+          "executed_window": {
+            "begin_s": 11.5062255859375,
+            "end_s": 11.906225681304932,
+            "sample_count": 12,
+            "target_dynamic_blocked_samples": 0,
+            "target_invisible_samples": 12,
+            "target_static_blocked_samples": 12
+          },
+          "progress": [],
+          "result": {
+            "activated_progress_count": "0",
+            "binary_k3_recovered": "0",
+            "close_reason": "SUPERSEDED_BY_NEW_EVENT",
+            "event_id": "5",
+            "failure_stage": "SIDE_INFEASIBLE",
+            "k3_better_candidate_count": "0",
+            "k3_better_selected_count": "0",
+            "outside_normal_authority": "0",
+            "side_both_failed_count": "1",
+            "side_trigger_count": "1",
+            "time_to_recovery": "0.000000"
+          },
+          "tail": []
+        },
+        "6": {
+          "confirmed": [],
+          "detected": {
+            "K2_at_detect": "1.000000",
+            "K3_at_detect": "0.846154",
+            "blocker": "LIVE_WITNESS_MATCH",
+            "contract_id": "10",
+            "event_id": "6",
+            "forecast_time": "1790320611.700000048",
+            "margin_at_detect": "-2.464299",
+            "motion": "STATIC",
+            "normal_visibility_authority_horizon": "2.000000",
+            "outside_normal_authority": "0",
+            "required_margin": "0.200000",
+            "revision": "8834649231469860234",
+            "target_uav": "0",
+            "time_to_cross": "0.580364",
+            "window_begin": "1790320611.700000048",
+            "window_end": "1790320611.800000191"
+          },
+          "executed_window": {
+            "begin_s": 11.806225538253784,
+            "end_s": 11.906225681304932,
+            "sample_count": 3,
+            "target_dynamic_blocked_samples": 0,
+            "target_invisible_samples": 3,
+            "target_static_blocked_samples": 3
+          },
+          "progress": [],
+          "result": {
+            "activated_progress_count": "0",
+            "binary_k3_recovered": "1",
+            "close_reason": "RECOVERY_OBSERVED",
+            "event_id": "6",
+            "failure_stage": "RECOVERED",
+            "k3_better_candidate_count": "0",
+            "k3_better_selected_count": "0",
+            "outside_normal_authority": "0",
+            "side_both_failed_count": "2",
+            "side_trigger_count": "2",
+            "time_to_recovery": "0.100000"
+          },
+          "tail": []
+        },
+        "7": {
+          "confirmed": [],
+          "detected": {
+            "K2_at_detect": "1.000000",
+            "K3_at_detect": "0.916667",
+            "blocker": "LIVE_WITNESS_MATCH",
+            "contract_id": "11",
+            "event_id": "7",
+            "forecast_time": "1790320624.900000095",
+            "margin_at_detect": "-1.102928",
+            "motion": "STATIC",
+            "normal_visibility_authority_horizon": "2.000000",
+            "outside_normal_authority": "0",
+            "required_margin": "0.200000",
+            "revision": "8834649231469860234",
+            "target_uav": "0",
+            "time_to_cross": "1.755242",
+            "window_begin": "1790320624.900000095",
+            "window_end": "1790320625.000000000"
+          },
+          "executed_window": {
+            "begin_s": 25.0062255859375,
+            "end_s": 25.10622549057007,
+            "sample_count": 3,
+            "target_dynamic_blocked_samples": 0,
+            "target_invisible_samples": 0,
+            "target_static_blocked_samples": 0
+          },
+          "progress": [],
+          "result": {
+            "activated_progress_count": "0",
+            "binary_k3_recovered": "0",
+            "close_reason": "TAIL_STALE_OR_M2_PREEMPTED",
+            "event_id": "7",
+            "failure_stage": "COMPARATOR_REJECTED_K3_BETTER",
+            "k3_better_candidate_count": "9",
+            "k3_better_selected_count": "0",
+            "outside_normal_authority": "0",
+            "side_both_failed_count": "4",
+            "side_trigger_count": "4",
+            "time_to_recovery": "0.000000"
+          },
+          "tail": [
+            {
+              "C3_after": "0.000000",
+              "C3_before": "0.000000",
+              "D3_after": "0.000000",
+              "D3_before": "0.000000",
+              "K2_healthy": "0",
+              "age": "1.200",
+              "blocker_still_valid": "0",
+              "event_id": "7",
+              "primary_window_end": "1790320625.000000000",
+              "reason": "CONTRACT_REPLACED_OR_M2",
+              "tail_active": "0",
+              "tail_cycle_count": "0",
+              "target": "0"
+            }
+          ]
+        },
+        "8": {
+          "confirmed": [],
+          "detected": {
+            "K2_at_detect": "1.000000",
+            "K3_at_detect": "0.750000",
+            "blocker": "LIVE_WITNESS_MATCH",
+            "contract_id": "16",
+            "event_id": "8",
+            "forecast_time": "1790320663.900000095",
+            "margin_at_detect": "-3.438129",
+            "motion": "STATIC",
+            "normal_visibility_authority_horizon": "2.000000",
+            "outside_normal_authority": "0",
+            "required_margin": "0.200000",
+            "revision": "8834649231469860234",
+            "target_uav": "0",
+            "time_to_cross": "1.580772",
+            "window_begin": "1790320663.900000095",
+            "window_end": "1790320664.100000143"
+          },
+          "executed_window": {
+            "begin_s": 64.0062255859375,
+            "end_s": 64.20622563362122,
+            "sample_count": 6,
+            "target_dynamic_blocked_samples": 0,
+            "target_invisible_samples": 4,
+            "target_static_blocked_samples": 4
+          },
+          "progress": [],
+          "result": {
+            "activated_progress_count": "0",
+            "binary_k3_recovered": "0",
+            "close_reason": "SUPERSEDED_BY_NEW_EVENT",
+            "event_id": "8",
+            "failure_stage": "COMPARATOR_REJECTED_K3_BETTER",
+            "k3_better_candidate_count": "5",
+            "k3_better_selected_count": "0",
+            "outside_normal_authority": "0",
+            "side_both_failed_count": "2",
+            "side_trigger_count": "2",
+            "time_to_recovery": "0.000000"
+          },
+          "tail": []
+        },
+        "9": {
+          "confirmed": [],
+          "detected": {
+            "K2_at_detect": "1.000000",
+            "K3_at_detect": "0.454545",
+            "blocker": "LIVE_WITNESS_MATCH",
+            "contract_id": "17",
+            "event_id": "9",
+            "forecast_time": "1790320664.100000143",
+            "margin_at_detect": "-6.178325",
+            "motion": "STATIC",
+            "normal_visibility_authority_horizon": "2.000000",
+            "outside_normal_authority": "0",
+            "required_margin": "0.200000",
+            "revision": "8834649231469860234",
+            "target_uav": "0",
+            "time_to_cross": "1.206314",
+            "window_begin": "1790320664.100000143",
+            "window_end": "1790320664.600000143"
+          },
+          "executed_window": {
+            "begin_s": 64.20622563362122,
+            "end_s": 64.70622563362122,
+            "sample_count": 15,
+            "target_dynamic_blocked_samples": 0,
+            "target_invisible_samples": 15,
+            "target_static_blocked_samples": 15
+          },
+          "progress": [],
+          "result": {
+            "activated_progress_count": "0",
+            "binary_k3_recovered": "0",
+            "close_reason": "SUPERSEDED_BY_NEW_EVENT",
+            "event_id": "9",
+            "failure_stage": "COMPARATOR_REJECTED_K3_BETTER",
+            "k3_better_candidate_count": "6",
+            "k3_better_selected_count": "0",
+            "outside_normal_authority": "0",
+            "side_both_failed_count": "2",
+            "side_trigger_count": "2",
+            "time_to_recovery": "0.000000"
+          },
+          "tail": []
+        }
+      },
+      "forecast_recovered_but_executed_window_all_invisible": 3,
+      "live_snapshot_drift_max_m": 0.0,
+      "live_snapshot_drift_p95_m": 0.0,
+      "progress_activated": 0,
+      "progress_candidates": 32,
+      "progress_selected": 2,
+      "recovered_events": 4,
+      "result_count": 17,
+      "side_both_failed": 33,
+      "sources": {
+        "LOCAL_HARD_PREFLIGHT_FAILED:1": 7,
+        "TEAM_SCP_FAILED:1": 10
+      },
+      "tail_reasons": {
+        "CONTRACT_REPLACED_OR_M2": 4
+      }
+    },
+    "liveness_log_mentions": {
+      "MIN_BUDGET_APPLIED": 1
+    },
+    "m2_risk_world_times": [
+      1790320608.1330464,
+      1790320608.7357333,
+      1790320608.6622343,
+      1790320611.6987283,
+      1790320611.7006228,
+      1790320626.136252,
+      1790320626.1240394,
+      1790320626.1155682,
+      1790320626.145241,
+      1790320671.922513,
+      1790320673.5217369,
+      1790320673.7790291,
+      1790320674.199596,
+      1790320674.3195696
+    ],
+    "process_status": [
+      "BOOT12_TARGET_MOVING=YES",
+      "BOOT12_UAV0_MOVING=YES",
+      "BOOT12_UAV1_MOVING=YES",
+      "BOOT12_UAV2_MOVING=YES",
+      "CLEANUP_REASON=RUN_COMPLETE",
+      "CLEANUP_TARGET_PGID=160416",
+      "CLEANUP_OWNED_PROCESS_COUNT=29",
+      "CLEANUP_FORCE_KILLED=0",
+      "CLEANUP_REMAINING_OWNED=0",
+      "CLEANUP_KILLED_FOREIGN_PROCESSES=0",
+      "CORE_TERMINATED_BY_RUNNER=1",
+      "CORE_EXIT_CODE_RAW=0",
+      "RViz \u662f\u5426\u88ab\u5355\u72ec\u89c2\u6d4b\uff1a\u672c\u6b21\u7531 roslaunch \u6258\u7ba1\uff0crequired=false\uff0c\u5176\u9000\u51fa\u4e0d\u5f71\u54cd\u4e0a\u8ff0\u9000\u51fa\u7801"
+    ],
+    "run_id": "20260925_151633_160309",
+    "safety": {
+      "dynamic_contact_samples": 0,
+      "min_dynamic_clearance_m": 0.312568,
+      "min_static_clearance_m": 0.227203,
+      "static_contact_samples": 0,
+      "unvalidated_executed_samples": 0
+    },
+    "visibility": {
+      "accumulated_camera_visible_time_s": 227.5160899999995,
+      "all3_ratio": 0.9165602383993189,
+      "blackout_samples": 0,
+      "duration_s": 78.26997800000001,
+      "k2_ratio": 0.9902085994040017,
+      "k3_loss_total_s": 6.527073000000009,
+      "longest_all3_loss_s": 1.3570330000000013,
+      "longest_k2_loss_s": 0.7327700000000021,
+      "loss_intervals": [
+        {
+          "begin_s": 8.013469,
+          "duration_s": 0.7672169999999987,
+          "end_s": 8.780686
+        },
+        {
+          "begin_s": 10.913838,
+          "duration_s": 1.033194,
+          "end_s": 11.947032
+        },
+        {
+          "begin_s": 25.290653,
+          "duration_s": 1.156485,
+          "end_s": 26.447138
+        },
+        {
+          "begin_s": 64.082952,
+          "duration_s": 1.031723999999997,
+          "end_s": 65.114676
+        },
+        {
+          "begin_s": 70.689981,
+          "duration_s": 1.3570330000000013,
+          "end_s": 72.047014
+        },
+        {
+          "begin_s": 73.747135,
+          "duration_s": 0.9665169999999961,
+          "end_s": 74.713652
+        }
+      ],
+      "mean_visible": 2.9067688378033205,
+      "samples": 2349,
+      "visible_ratio": [
+        0.9472115793954874,
+        0.9872286079182631,
+        0.9723286504895701
+      ]
+    },
+    "world_offset_s": 1790320599.8937745
+  }
+}

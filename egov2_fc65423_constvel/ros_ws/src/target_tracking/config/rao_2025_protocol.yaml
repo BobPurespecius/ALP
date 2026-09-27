@@ -1,0 +1,131 @@
+schema_version: rao_2025_protocol/v1
+
+paper:
+  title: Multi-UAV trajectory planning with field-of-view sharing mechanism in cluttered environments
+  year: 2025
+  algorithm:
+    uav_count: 3
+    target_prediction: constant_velocity_ekf
+    target_motion_model: bicycle
+    target_path_planner: kinodynamic_hybrid_a_star
+    front_end: motion_primitives_with_pontryagin_heuristic
+    corridor: ellipsoid_dilation_convex_polyhedra
+    trajectory: minco_position_and_yaw
+    optimizer: lbfgs_lite
+    distributed_per_uav: true
+  common_parameters:
+    initial_uav_positions_m:
+      - [0.75, 1.4, 1.0]
+      - [-1.5, 0.0, 1.0]
+      - [0.75, -1.4, 1.0]
+    camera_fov_deg: [85.0, 72.0]
+    uav_max_velocity_mps: 3.0
+    uav_max_acceleration_mps2: 6.0
+    uav_max_jerk_mps3: 20.0
+    target_max_velocity_mps: 2.2
+    cube_width_range_m: [0.3, 0.8]
+    cube_height_range_m: [2.0, 3.0]
+    annulus_diameter_range_m: [0.5, 0.7]
+    annulus_tilt_rad: [-0.5, 0.5]
+  profiles:
+    simulation:
+      paper_section: "4.1"
+      purpose: figures_5_to_7
+      scene_size_m: [65.0, 30.0, 4.0]
+      obstacle_count: 140
+    comparison:
+      paper_section: "4.2"
+      purpose: figures_8_to_10_and_table_1
+      scene_size_m: [50.0, 30.0, 5.0]
+      obstacle_count: 155
+      reference_visibility_percent:
+        proposed: {visible_3: 57.6, visible_2: 32.2, visible_1: 10.2, visible_0: 0.0}
+        zhou: {visible_3: 10.8, visible_2: 8.2, visible_1: 67.2, visible_0: 13.8}
+  unreported_parameters:
+    - obstacle_random_seed
+    - cube_and_annulus_counts
+    - annulus_inner_diameter_and_wall_thickness
+    - annulus_3d_geometry_interpretation
+    - target_initial_state_and_hybrid_a_star_route
+    - target_wheelbase
+    - target_collision_clearance_and_goal_tolerance
+    - target_hybrid_a_star_discretization_and_cost_weights
+    - ekf_covariances_and_measurement_noise
+    - prediction_interval_and_horizon
+    - replanning_frequency
+    - simulation_duration
+    - desired_relative_formation_vectors
+    - camera_range_limits
+    - objective_weights
+
+reproduction:
+  # These values make our experiment deterministic. They are not values
+  # claimed by the paper unless they also appear under paper above.
+  master_seed: 2025
+  seed_derivation: sha256_31bit_v1
+  deterministic_streams:
+    - scene
+    - target_planner
+    - sensor_uav1
+    - sensor_uav2
+    - sensor_uav3
+  timing:
+    clock: ros_sim_time
+    control_rate_hz: 20.0
+    prediction_interval_s: 0.3
+    prediction_count: 8
+    evaluation_duration_s: 60.0
+    warmup_s: 0.0
+  replanning:
+    trigger: fixed_period
+    period_s: 0.5
+    concurrent_plans_per_uav: 1
+    tick_while_busy: skip
+    success_action: replace_at_next_control_tick
+    failure_action: continue_last_valid_trajectory_until_expiry_then_hold
+    target_update_triggers_immediate_replan: false
+    execution_safety_projection: false
+  scene_generation:
+    annulus_fraction: 0.18
+    annulus_wall_thickness_m: 0.10
+    annulus_model: vertical_ring_axis_in_xy
+    annulus_center_margin_m: 0.20
+  target:
+    altitude_m: 1.0
+    wheelbase_m: 2.5
+    collision_clearance_m: 0.45
+    goal_tolerance_m: 1.4
+    steering_set_rad: [-0.49, 0.0, 0.49]
+    acceleration_set_mps2: [-0.45, 0.0, 0.45]
+    steering_cost_weight: 0.35
+    acceleration_cost_weight: 0.05
+    action_dt_s: 0.3
+    max_expansions: 6000
+    grid_resolution_m: 0.5
+    yaw_resolution_deg: 5.0
+    speed_resolution_mps: 0.5
+    initial_state:
+      simulation: [-20.0, 0.0, 0.0, 1.5, 0.0, 0.0, 0.0, 0.0]
+      comparison: [-15.0, 0.0, 0.0, 1.5, 0.0, 0.0, 0.0, 0.0]
+    waypoints:
+      simulation: [[-10.0, -6.0], [5.0, -8.0], [20.0, -5.0], [26.0, 4.0], [17.0, 10.0], [2.0, 11.0], [-13.0, 8.0], [-25.0, 1.0]]
+      comparison: [[-6.0, 0.0], [4.0, -4.0], [14.0, 0.0], [6.0, 6.0], [-6.0, 6.0], [-14.0, 0.0], [-12.0, -8.0]]
+  metrics:
+    sample_rate_hz: 20.0
+    visibility_source: executed_pose_sensor_geometry_before_sharing
+    visibility_buckets: [visible_3, visible_2, visible_1, visible_0]
+    visibility_denominator: all_evaluation_samples
+    collision_source: executed_geometry
+    zero_visibility_target: 0.0
+    required_outputs:
+      - visibility_percent
+      - obstacle_collision_samples
+      - uav_collision_samples
+      - ekf_error_m
+      - tracking_distance_error_m
+      - formation_angular_error_rad
+      - fov_margin_rad
+      - planner_latency_s
+      - trajectory_age_s
+      - optimizer_success
+      - optimizer_cost_breakdown

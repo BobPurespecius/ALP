@@ -1,0 +1,52 @@
+Panels:
+  - Class: rviz/Displays
+    Name: Displays
+  - Class: rviz/Views
+    Name: Views
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Class: rviz/Grid
+      Name: Grid
+      Enabled: true
+      Cell Size: 1
+      Plane: XY
+      Plane Cell Count: 60
+      Reference Frame: world
+    - Class: rviz/MarkerArray
+      Name: Scene obstacles
+      Enabled: true
+      Marker Topic: /rao_2025/scene/markers
+    - Class: rviz/Path
+      Name: Target path
+      Enabled: true
+      Topic: /rao_2025/target/path
+      Color: 0.1; 0.9; 0.9
+      Line Style: Lines
+      Line Width: 0.08
+    - Class: rviz/Odometry
+      Name: Target odometry
+      Enabled: true
+      Topic: /rao_2025/target/ground_truth
+      Keep: 50
+      Shape: Arrow
+      Color: 0.1; 0.9; 0.9
+    - Class: rviz/Marker
+      Name: Target heading
+      Enabled: true
+      Marker Topic: /rao_2025/target/marker
+  Global Options:
+    Background Color: 48; 48; 48
+    Fixed Frame: world
+    Frame Rate: 30
+  Name: Rao 2025 Stage 2
+  Tools:
+    - Class: rviz/Interact
+    - Class: rviz/MoveCamera
+    - Class: rviz/Select
+  Views:
+    Current:
+      Class: rviz/TopDownOrtho
+      Scale: 45
+      X: 0
+      Y: 0

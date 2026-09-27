@@ -1,0 +1,846 @@
+{
+  "number": 3,
+  "leaders": 1,
+  "head": 1,
+  "velocityVectorENU": [
+    0.2,
+    0.0,
+    0.0
+  ],
+  "formationTime": 190,
+  "useGazeboTruthForFeedback": true,
+  "safety": {
+    "xMin": -39.0,
+    "xMax": 39.0,
+    "yMin": -13.5,
+    "yMax": 13.5,
+    "minHeight": 0.15,
+    "maxHeight": 4.5
+  },
+  "mavrosLocalOffsetENU": [
+    [
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "takeoffPointENU": [
+    [
+      -35.2,
+      -1.0,
+      1.5
+    ],
+    [
+      -35.2,
+      0.0,
+      1.5
+    ],
+    [
+      -35.2,
+      1.0,
+      1.5
+    ]
+  ],
+  "preparePointENU": [
+    [
+      -35.2,
+      -1.0,
+      1.5
+    ],
+    [
+      -35.2,
+      0.0,
+      1.5
+    ],
+    [
+      -35.2,
+      1.0,
+      1.5
+    ]
+  ],
+  "targetTracking": {
+    "mode": "waypoints",
+    "speed": 0.928,
+    "takeoffHeight": 1.5,
+    "targetHeight": 1.5,
+    "useWaypointZ": false,
+    "lockEgoTrackingHeight": true,
+    "trackMaxControlZ": 1.5,
+    "waypointsENU": [
+      [
+        -33.0,
+        0.0,
+        1.5
+      ],
+      [
+        -29.0,
+        1.2,
+        1.5
+      ],
+      [
+        -25.0,
+        2.9,
+        1.5
+      ],
+      [
+        -21.0,
+        3.5,
+        1.5
+      ],
+      [
+        -18.5,
+        4.0,
+        1.5
+      ],
+      [
+        -16.0,
+        3.7,
+        1.5
+      ],
+      [
+        -12.0,
+        2.25,
+        1.5
+      ],
+      [
+        -11.0,
+        2.25,
+        1.5
+      ],
+      [
+        -9.7,
+        2.3,
+        1.5
+      ],
+      [
+        -8.2,
+        1.5,
+        1.5
+      ],
+      [
+        -6.0,
+        -1.0,
+        1.5
+      ],
+      [
+        -2.0,
+        -0.25,
+        1.5
+      ],
+      [
+        -1.0,
+        0.25,
+        1.5
+      ],
+      [
+        3.0,
+        0.6,
+        1.5
+      ],
+      [
+        7.0,
+        1.75,
+        1.5
+      ],
+      [
+        11.0,
+        2.25,
+        1.5
+      ],
+      [
+        15.0,
+        2.25,
+        1.5
+      ],
+      [
+        17.5,
+        2.75,
+        1.5
+      ],
+      [
+        18.5,
+        2.0,
+        1.5
+      ],
+      [
+        22.5,
+        -1.0,
+        1.5
+      ],
+      [
+        24.5,
+        -2.75,
+        1.5
+      ],
+      [
+        25.5,
+        -3.0,
+        1.5
+      ],
+      [
+        29.5,
+        -1.5,
+        1.5
+      ],
+      [
+        32.5,
+        0.25,
+        1.5
+      ],
+      [
+        33.5,
+        0.5,
+        1.5
+      ],
+      [
+        36.0,
+        0.0,
+        1.5
+      ]
+    ]
+  },
+  "obstacleColorRGBA": [
+    0.08,
+    0.55,
+    0.16,
+    0.92
+  ],
+  "obstacleData": {
+    "0": {
+      "modelName": "long_forest_cylinder_00",
+      "centerENU": [
+        -26.09,
+        1.58
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "1": {
+      "modelName": "long_forest_cylinder_01",
+      "centerENU": [
+        -25.94,
+        -0.65
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "2": {
+      "modelName": "long_forest_cylinder_02",
+      "centerENU": [
+        -18.65,
+        6.9
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "3": {
+      "modelName": "long_forest_cylinder_03",
+      "centerENU": [
+        -17.75,
+        3.13
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "4": {
+      "modelName": "long_forest_cylinder_04",
+      "centerENU": [
+        -9.5,
+        4.29
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "5": {
+      "modelName": "long_forest_cylinder_05",
+      "centerENU": [
+        -9.15,
+        0.9
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "6": {
+      "modelName": "long_forest_cylinder_06",
+      "centerENU": [
+        -1.51,
+        1.77
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "7": {
+      "modelName": "long_forest_cylinder_07",
+      "centerENU": [
+        -1.51,
+        -1.75
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "8": {
+      "modelName": "long_forest_cylinder_08",
+      "centerENU": [
+        10.0,
+        6.8
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "9": {
+      "modelName": "long_forest_cylinder_09",
+      "centerENU": [
+        7.42,
+        -0.4
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "10": {
+      "modelName": "long_forest_cylinder_10",
+      "centerENU": [
+        16.03,
+        4.45
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "11": {
+      "modelName": "long_forest_cylinder_11",
+      "centerENU": [
+        16.5,
+        -5.8
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "12": {
+      "modelName": "long_forest_cylinder_12",
+      "centerENU": [
+        25.06,
+        5.8
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "13": {
+      "modelName": "long_forest_cylinder_13",
+      "centerENU": [
+        24.44,
+        1.71
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "14": {
+      "modelName": "long_forest_cylinder_14",
+      "centerENU": [
+        31.23,
+        2.69
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "15": {
+      "modelName": "long_forest_cylinder_15",
+      "centerENU": [
+        31.5,
+        -4.8
+      ],
+      "radius": 0.43,
+      "height": 3.6
+    },
+    "16": {
+      "modelName": "long_forest_cylinder_16",
+      "centerENU": [
+        -20.85,
+        0.0
+      ],
+      "radius": 0.5,
+      "height": 3.6
+    },
+    "17": {
+      "modelName": "long_forest_cylinder_17",
+      "centerENU": [
+        -11.95,
+        5.34
+      ],
+      "radius": 0.5,
+      "height": 3.6
+    },
+    "18": {
+      "modelName": "long_forest_cylinder_18",
+      "centerENU": [
+        -6.23,
+        -3.75
+      ],
+      "radius": 0.5,
+      "height": 3.6
+    },
+    "19": {
+      "modelName": "long_forest_cylinder_19",
+      "centerENU": [
+        2.69,
+        5.15
+      ],
+      "radius": 0.5,
+      "height": 3.6
+    },
+    "20": {
+      "modelName": "long_forest_cylinder_20",
+      "centerENU": [
+        12.31,
+        -1.02
+      ],
+      "radius": 0.5,
+      "height": 3.6
+    },
+    "21": {
+      "modelName": "long_forest_cylinder_21",
+      "centerENU": [
+        20.27,
+        6.21
+      ],
+      "radius": 0.5,
+      "height": 3.6
+    },
+    "22": {
+      "modelName": "long_forest_cylinder_22",
+      "centerENU": [
+        28.0,
+        -5.2
+      ],
+      "radius": 0.5,
+      "height": 3.6
+    },
+    "23": {
+      "modelName": "long_forest_cylinder_23",
+      "centerENU": [
+        34.27,
+        3.78
+      ],
+      "radius": 0.5,
+      "height": 3.6
+    },
+    "24": {
+      "modelName": "long_forest_cylinder_24",
+      "centerENU": [
+        -31.0,
+        -3.8
+      ],
+      "radius": 0.55,
+      "height": 3.6
+    },
+    "25": {
+      "modelName": "long_forest_cylinder_25",
+      "centerENU": [
+        -29.0,
+        5.5
+      ],
+      "radius": 0.55,
+      "height": 3.6
+    },
+    "26": {
+      "modelName": "long_forest_cylinder_26",
+      "centerENU": [
+        -23.0,
+        -3.5
+      ],
+      "radius": 0.55,
+      "height": 3.6
+    },
+    "27": {
+      "modelName": "long_forest_cylinder_27",
+      "centerENU": [
+        -14.0,
+        7.2
+      ],
+      "radius": 0.55,
+      "height": 3.6
+    },
+    "28": {
+      "modelName": "long_forest_cylinder_28",
+      "centerENU": [
+        -10.0,
+        -3.0
+      ],
+      "radius": 0.55,
+      "height": 3.6
+    },
+    "29": {
+      "modelName": "long_forest_cylinder_29",
+      "centerENU": [
+        -5.0,
+        5.2
+      ],
+      "radius": 0.55,
+      "height": 3.6
+    },
+    "30": {
+      "modelName": "long_forest_cylinder_30",
+      "centerENU": [
+        1.0,
+        5.0
+      ],
+      "radius": 0.55,
+      "height": 3.6
+    },
+    "31": {
+      "modelName": "long_forest_cylinder_31",
+      "centerENU": [
+        5.0,
+        -3.2
+      ],
+      "radius": 0.55,
+      "height": 3.6
+    },
+    "32": {
+      "modelName": "long_forest_cylinder_32",
+      "centerENU": [
+        12.0,
+        -3.0
+      ],
+      "radius": 0.55,
+      "height": 3.6
+    },
+    "33": {
+      "modelName": "long_forest_cylinder_33",
+      "centerENU": [
+        19.0,
+        -3.2
+      ],
+      "radius": 0.55,
+      "height": 3.6
+    },
+    "34": {
+      "modelName": "long_forest_cylinder_34",
+      "centerENU": [
+        27.0,
+        5.7
+      ],
+      "radius": 0.55,
+      "height": 3.6
+    },
+    "35": {
+      "modelName": "long_forest_cylinder_35",
+      "centerENU": [
+        34.0,
+        5.8
+      ],
+      "radius": 0.55,
+      "height": 3.6
+    },
+    "36": {
+      "modelName": "dynamic_gate_C1_blocker_0",
+      "centerENU": [
+        6.014206946917842,
+        0.3673444246572664
+      ],
+      "radius": 0.55,
+      "height": 3.6
+    },
+    "37": {
+      "modelName": "dynamic_gate_C1_blocker_1",
+      "centerENU": [
+        8.295806946917843,
+        0.6525444246572665
+      ],
+      "radius": 0.55,
+      "height": 3.6
+    },
+    "38": {
+      "modelName": "dynamic_gate_C2_blocker_0",
+      "centerENU": [
+        18.21,
+        3.53
+      ],
+      "radius": 0.55,
+      "height": 3.6
+    },
+    "39": {
+      "modelName": "dynamic_gate_C2_blocker_1",
+      "centerENU": [
+        20.05,
+        2.15
+      ],
+      "radius": 0.55,
+      "height": 3.6
+    }
+  },
+  "egoPlanner": {
+    "enabled": true,
+    "mapSizeENU": [
+      82.0,
+      28.0,
+      5.0
+    ],
+    "goalsENU": [
+      [
+        34.55,
+        -0.85,
+        1.5
+      ],
+      [
+        34.3,
+        0.0,
+        1.5
+      ],
+      [
+        34.55,
+        0.85,
+        1.5
+      ]
+    ],
+    "maxVel": 1.2,
+    "maxAcc": 1.8,
+    "planningHorizon": 6.5,
+    "obstacleInflation": 0.35,
+    "plannerObstacleClearance": 0.5,
+    "swarmClearance": 0.5,
+    "cloudResolution": 0.22,
+    "cloudPublishPeriod": 0.5,
+    "obstacleHeight": 3.6,
+    "obstacleClearance": 0.6,
+    "earlyAvoidanceEnabled": false,
+    "movingObstacleTimeAwareCostEnabled": false,
+    "movingObstaclePredictionHorizon": 3.0,
+    "movingObstaclePredictionDt": 0.5,
+    "movingObstaclePredictionRadiusGrowth": 0.04,
+    "movingObstaclePredictionMaxExtraRadius": 0.18
+  },
+  "movingObstacleData": {
+    "0": {
+      "modelName": "dynamic_gate_A1",
+      "centerENU": [
+        -18.5,
+        4.0
+      ],
+      "radius": 0.28,
+      "height": 3.6,
+      "axisENU": [
+        0.196,
+        0.981
+      ],
+      "amplitude": 1.1,
+      "period": 12.566371,
+      "phase": -10.452014
+    },
+    "1": {
+      "modelName": "dynamic_gate_B1",
+      "centerENU": [
+        -6.184,
+        -0.017
+      ],
+      "radius": 0.28,
+      "height": 3.6,
+      "axisENU": [
+        -0.184,
+        0.983
+      ],
+      "amplitude": 1.0,
+      "period": 12.0,
+      "phase": -20.973046
+    },
+    "2": {
+      "modelName": "dynamic_gate_C1",
+      "centerENU": [
+        6.8884,
+        2.6428
+      ],
+      "radius": 0.28,
+      "height": 3.6,
+      "axisENU": [
+        -0.124,
+        0.992
+      ],
+      "amplitude": 0.9,
+      "period": 11.5,
+      "phase": -29.764836
+    },
+    "3": {
+      "modelName": "dynamic_gate_C2",
+      "centerENU": [
+        19.04,
+        2.72
+      ],
+      "radius": 0.28,
+      "height": 3.6,
+      "axisENU": [
+        0.6,
+        0.8
+      ],
+      "amplitude": 0.9,
+      "period": 11.5,
+      "phase": -36.800531
+    },
+    "4": {
+      "modelName": "dynamic_gate_A2",
+      "centerENU": [
+        29.5,
+        -1.5
+      ],
+      "radius": 0.28,
+      "height": 3.6,
+      "axisENU": [
+        0.351,
+        -0.936
+      ],
+      "amplitude": 1.1,
+      "period": 12.566371,
+      "phase": -35.752041
+    }
+  },
+  "nMovingObstacle": 5,
+  "dynamicGateDesign": {
+    "source_scene": "long_cylinder_forest_dynamic_gates.json",
+    "route_coordinate_definition": "t=route tangent, n=left horizontal normal",
+    "uav_radius_m": 0.3,
+    "dynamic_radius_m": 0.28,
+    "static_gate_blocker_radius_m": 0.55,
+    "dynamic_center_distance_contract_m": 1.1,
+    "gate_spacing_policy_s": ">= 8 s",
+    "gates": [
+      {
+        "id": "A1",
+        "type": "CROSSING",
+        "encounter_time": 16.454028,
+        "center": [
+          -18.5,
+          4.0
+        ],
+        "t": [
+          0.981,
+          -0.196
+        ],
+        "n": [
+          0.196,
+          0.981
+        ],
+        "amplitude": 1.1,
+        "period": 12.566370614359172,
+        "direction": "UP",
+        "intended_topology": "EITHER",
+        "uav_corridor_event_time": 18.254028,
+        "phase_motion_clock_event_time": 20.904028
+      },
+      {
+        "id": "B1",
+        "type": "DWELL",
+        "encounter_time": 31.805567,
+        "center": [
+          -6.0,
+          -1.0
+        ],
+        "t": [
+          0.983,
+          0.184
+        ],
+        "n": [
+          -0.184,
+          0.983
+        ],
+        "amplitude": 1.0,
+        "period": 12.0,
+        "direction": "CENTER_TURNING_POINT",
+        "intended_topology": "EITHER",
+        "uav_corridor_event_time": 34.405567,
+        "phase_motion_clock_event_time": 37.055567
+      },
+      {
+        "id": "C1",
+        "type": "LEFT_OPEN",
+        "encounter_time": 46.353038,
+        "center": [
+          7.0,
+          1.75
+        ],
+        "t": [
+          0.992,
+          0.124
+        ],
+        "n": [
+          -0.124,
+          0.992
+        ],
+        "amplitude": 0.9,
+        "period": 11.5,
+        "direction": "CENTER_TURNING_POINT",
+        "intended_topology": "LEFT",
+        "uav_corridor_event_time": 48.953038,
+        "phase_motion_clock_event_time": 51.603038
+      },
+      {
+        "id": "C2",
+        "type": "RIGHT_OPEN",
+        "encounter_time": 59.230344,
+        "center": [
+          18.5,
+          2.0
+        ],
+        "t": [
+          0.8,
+          -0.6
+        ],
+        "n": [
+          0.6,
+          0.8
+        ],
+        "amplitude": 0.9,
+        "period": 11.5,
+        "direction": "CENTER_TURNING_POINT",
+        "intended_topology": "RIGHT",
+        "uav_corridor_event_time": 61.830344,
+        "phase_motion_clock_event_time": 64.480344
+      },
+      {
+        "id": "A2",
+        "type": "CROSSING",
+        "encounter_time": 73.33727,
+        "center": [
+          29.5,
+          -1.5
+        ],
+        "t": [
+          0.936,
+          0.351
+        ],
+        "n": [
+          -0.351,
+          0.936
+        ],
+        "amplitude": 1.1,
+        "period": 12.566370614359172,
+        "direction": "DOWN",
+        "intended_topology": "EITHER",
+        "uav_corridor_event_time": 75.13727,
+        "phase_motion_clock_event_time": 77.78727
+      }
+    ],
+    "background_dynamic_obstacles": 0,
+    "target_static_clearance_requirement_m": 0.3,
+    "v2_changes": [
+      "removed five route-irrelevant background movers",
+      "locally repaired target waypoints around static cylinders 00 and 05",
+      "raised the approach to C1 to preserve target-body static clearance",
+      "retimed Gate phases behind the red target so all methods use the same nominal target speed schedule"
+    ]
+  },
+  "sceneRevision": {
+    "c1_relaxed": {
+      "source_scene": "long_cylinder_forest_dynamic_gates_v2.json",
+      "change": "move two C1 blocked-side pillars 0.20 m farther right",
+      "pillar_radii_unchanged": true,
+      "dynamic_gate_unchanged": true
+    }
+  }
+}

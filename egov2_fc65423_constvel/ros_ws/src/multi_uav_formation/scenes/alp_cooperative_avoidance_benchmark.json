@@ -1,0 +1,1911 @@
+{
+  "number": 3,
+  "leaders": 1,
+  "head": 1,
+  "velocityVectorENU": [
+    0.2,
+    0.0,
+    0.0
+  ],
+  "formationTime": 190,
+  "useGazeboTruthForFeedback": true,
+  "safety": {
+    "xMin": -39.0,
+    "xMax": 39.0,
+    "yMin": -13.5,
+    "yMax": 13.5,
+    "minHeight": 0.15,
+    "maxHeight": 4.5
+  },
+  "mavrosLocalOffsetENU": [
+    [
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "takeoffPointENU": [
+    [
+      -35.2,
+      -1.0,
+      1.5
+    ],
+    [
+      -35.2,
+      0.0,
+      1.5
+    ],
+    [
+      -35.2,
+      1.0,
+      1.5
+    ]
+  ],
+  "preparePointENU": [
+    [
+      -35.2,
+      -1.0,
+      1.5
+    ],
+    [
+      -35.2,
+      0.0,
+      1.5
+    ],
+    [
+      -35.2,
+      1.0,
+      1.5
+    ]
+  ],
+  "targetTracking": {
+    "mode": "waypoints",
+    "speed": 0.928,
+    "takeoffHeight": 1.5,
+    "targetHeight": 1.5,
+    "useWaypointZ": false,
+    "lockEgoTrackingHeight": true,
+    "trackMaxControlZ": 1.5,
+    "waypointsENU": [
+      [
+        -33.0,
+        0.0,
+        1.5
+      ],
+      [
+        -29.0,
+        1.2,
+        1.5
+      ],
+      [
+        -25.0,
+        2.9,
+        1.5
+      ],
+      [
+        -21.0,
+        3.5,
+        1.5
+      ],
+      [
+        -18.5,
+        4.0,
+        1.5
+      ],
+      [
+        -16.0,
+        3.7,
+        1.5
+      ],
+      [
+        -12.0,
+        2.25,
+        1.5
+      ],
+      [
+        -11.0,
+        2.25,
+        1.5
+      ],
+      [
+        -9.7,
+        2.3,
+        1.5
+      ],
+      [
+        -8.2,
+        1.5,
+        1.5
+      ],
+      [
+        -6.0,
+        -1.0,
+        1.5
+      ],
+      [
+        -2.0,
+        -0.25,
+        1.5
+      ],
+      [
+        -1.0,
+        0.25,
+        1.5
+      ],
+      [
+        3.0,
+        0.6,
+        1.5
+      ],
+      [
+        7.0,
+        1.75,
+        1.5
+      ],
+      [
+        11.0,
+        2.25,
+        1.5
+      ],
+      [
+        15.0,
+        2.25,
+        1.5
+      ],
+      [
+        17.5,
+        2.75,
+        1.5
+      ],
+      [
+        18.5,
+        2.0,
+        1.5
+      ],
+      [
+        22.5,
+        -1.0,
+        1.5
+      ],
+      [
+        24.5,
+        -2.75,
+        1.5
+      ],
+      [
+        25.5,
+        -3.0,
+        1.5
+      ],
+      [
+        29.5,
+        -1.5,
+        1.5
+      ],
+      [
+        32.5,
+        0.25,
+        1.5
+      ],
+      [
+        33.5,
+        0.5,
+        1.5
+      ],
+      [
+        36.0,
+        0.0,
+        1.5
+      ]
+    ],
+    "dynamicObstacleAvoidanceEnabled": false
+  },
+  "obstacleColorRGBA": [
+    0.08,
+    0.55,
+    0.16,
+    0.92
+  ],
+  "obstacleData": {
+    "0": {
+      "modelName": "avoidance_shell_station_01",
+      "centerENU": [
+        -26.793802,
+        1.405756
+      ],
+      "radius": 0.308,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "station": 1,
+        "route_arc_length_m": 8.0,
+        "target_center": [
+          -25.480767,
+          2.695674
+        ],
+        "targeted_drone": 0,
+        "preferred_tracking_offset": [
+          -1.5,
+          -0.85
+        ],
+        "outward_shift_formula": "radius + visibility_margin + los_gap",
+        "outward_shift_m": 0.478,
+        "nominal_static_surface_clearance_m": 0.12,
+        "nominal_los_surface_gap_m": 0.04,
+        "pressure_role": "tracking_shell_blocker"
+      }
+    },
+    "1": {
+      "modelName": "avoidance_shell_station_02",
+      "centerENU": [
+        -17.256625,
+        4.91703
+      ],
+      "radius": 0.308,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "station": 2,
+        "route_arc_length_m": 17.738302,
+        "target_center": [
+          -15.902487,
+          3.664652
+        ],
+        "targeted_drone": 2,
+        "preferred_tracking_offset": [
+          -1.5,
+          0.85
+        ],
+        "outward_shift_formula": "radius + visibility_margin + los_gap",
+        "outward_shift_m": 0.428,
+        "nominal_static_surface_clearance_m": 0.12,
+        "nominal_los_surface_gap_m": 0.04,
+        "pressure_role": "tracking_shell_blocker"
+      }
+    },
+    "2": {
+      "modelName": "avoidance_shell_station_03",
+      "centerENU": [
+        -8.973312,
+        -0.82365
+      ],
+      "radius": 0.308,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "station": 3,
+        "route_arc_length_m": 27.476605,
+        "target_center": [
+          -7.152007,
+          0.309098
+        ],
+        "targeted_drone": 0,
+        "preferred_tracking_offset": [
+          -1.5,
+          -0.85
+        ],
+        "outward_shift_formula": "radius + visibility_margin + los_gap",
+        "outward_shift_m": 0.428,
+        "nominal_static_surface_clearance_m": 0.12,
+        "nominal_los_surface_gap_m": 0.04,
+        "pressure_role": "tracking_shell_blocker"
+      }
+    },
+    "3": {
+      "modelName": "avoidance_shell_station_04",
+      "centerENU": [
+        0.258767,
+        1.771027
+      ],
+      "radius": 0.308,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "station": 4,
+        "route_arc_length_m": 37.214907,
+        "target_center": [
+          1.796074,
+          0.494657
+        ],
+        "targeted_drone": 2,
+        "preferred_tracking_offset": [
+          -1.5,
+          0.85
+        ],
+        "outward_shift_formula": "radius + visibility_margin + los_gap",
+        "outward_shift_m": 0.428,
+        "nominal_static_surface_clearance_m": 0.12,
+        "nominal_los_surface_gap_m": 0.04,
+        "pressure_role": "tracking_shell_blocker"
+      }
+    },
+    "4": {
+      "modelName": "avoidance_shell_station_05",
+      "centerENU": [
+        9.836617,
+        0.972
+      ],
+      "radius": 0.308,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "station": 5,
+        "route_arc_length_m": 46.953209,
+        "target_center": [
+          11.336617,
+          2.25
+        ],
+        "targeted_drone": 0,
+        "preferred_tracking_offset": [
+          -1.5,
+          -0.85
+        ],
+        "outward_shift_formula": "radius + visibility_margin + los_gap",
+        "outward_shift_m": 0.428,
+        "nominal_static_surface_clearance_m": 0.12,
+        "nominal_los_surface_gap_m": 0.04,
+        "pressure_role": "tracking_shell_blocker"
+      }
+    },
+    "5": {
+      "modelName": "avoidance_shell_station_06",
+      "centerENU": [
+        18.533528,
+        1.102354
+      ],
+      "radius": 0.308,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "station": 6,
+        "route_arc_length_m": 56.691512,
+        "target_center": [
+          20.320328,
+          0.634754
+        ],
+        "targeted_drone": 2,
+        "preferred_tracking_offset": [
+          -1.5,
+          0.85
+        ],
+        "outward_shift_formula": "radius + visibility_margin + los_gap",
+        "outward_shift_m": 0.478,
+        "nominal_static_surface_clearance_m": 0.12,
+        "nominal_los_surface_gap_m": 0.04,
+        "pressure_role": "tracking_shell_blocker"
+      }
+    },
+    "6": {
+      "modelName": "avoidance_shell_station_07",
+      "centerENU": [
+        27.263949,
+        -3.083123
+      ],
+      "radius": 0.308,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "station": 7,
+        "route_arc_length_m": 66.429814,
+        "target_center": [
+          28.613668,
+          -1.832374
+        ],
+        "targeted_drone": 0,
+        "preferred_tracking_offset": [
+          -1.5,
+          -0.85
+        ],
+        "outward_shift_formula": "radius + visibility_margin + los_gap",
+        "outward_shift_m": 0.428,
+        "nominal_static_surface_clearance_m": 0.12,
+        "nominal_los_surface_gap_m": 0.04,
+        "pressure_role": "tracking_shell_blocker"
+      }
+    },
+    "7": {
+      "modelName": "avoidance_local_astar_repair_point",
+      "centerENU": [
+        -8.520632,
+        -0.425292
+      ],
+      "radius": 0.253,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "station": 3,
+        "targeted_drone": 0,
+        "side_seed_fraction": 0.25,
+        "side_offset_from_planner_source_m": 0.7,
+        "intent": "SIDE seed intersects locally; tangential detour remains open",
+        "pressure_role": "rejoin_blocker"
+      }
+    },
+    "8": {
+      "modelName": "avoidance_forest_01",
+      "centerENU": [
+        -29.877486,
+        -0.629292
+      ],
+      "radius": 0.42,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 1,
+        "route_arc_length_m": 2.81,
+        "band": "constraint",
+        "intent": "alternating motion constraint and local chicane",
+        "pressure_role": "tracking_shell_blocker"
+      }
+    },
+    "9": {
+      "modelName": "avoidance_forest_02",
+      "centerENU": [
+        -30.978029,
+        3.039183
+      ],
+      "radius": 0.48,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 1,
+        "route_arc_length_m": 2.81,
+        "band": "cluster_edge",
+        "intent": "alternating motion constraint and local chicane",
+        "pressure_role": "topology_shaper"
+      }
+    },
+    "10": {
+      "modelName": "avoidance_forest_03",
+      "centerENU": [
+        -31.512496,
+        4.82074
+      ],
+      "radius": 0.28,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 1,
+        "route_arc_length_m": 2.81,
+        "band": "outer",
+        "intent": "near-shell outer bypass boundary",
+        "pressure_role": "background_forest"
+      }
+    },
+    "11": {
+      "modelName": "avoidance_forest_04",
+      "centerENU": [
+        -27.10547,
+        3.830606
+      ],
+      "radius": 0.5,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 2,
+        "route_arc_length_m": 6.948654,
+        "band": "constraint",
+        "intent": "alternating motion constraint and local chicane",
+        "pressure_role": "tracking_shell_blocker"
+      }
+    },
+    "12": {
+      "modelName": "avoidance_forest_05",
+      "centerENU": [
+        -25.618905,
+        -0.894373
+      ],
+      "radius": 0.62,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 2,
+        "route_arc_length_m": 6.948654,
+        "band": "cluster_edge",
+        "intent": "alternating motion constraint and local chicane",
+        "pressure_role": "topology_shaper"
+      }
+    },
+    "13": {
+      "modelName": "avoidance_forest_06",
+      "centerENU": [
+        -27.96989,
+        5.864537
+      ],
+      "radius": 0.34,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 2,
+        "route_arc_length_m": 6.948654,
+        "band": "outer",
+        "intent": "near-shell outer bypass boundary",
+        "pressure_role": "background_forest"
+      }
+    },
+    "14": {
+      "modelName": "avoidance_forest_07",
+      "centerENU": [
+        -21.406281,
+        1.558249
+      ],
+      "radius": 0.58,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 3,
+        "route_arc_length_m": 11.877309,
+        "band": "constraint",
+        "intent": "alternating motion constraint and local chicane",
+        "pressure_role": "tracking_shell_blocker"
+      }
+    },
+    "15": {
+      "modelName": "avoidance_forest_08",
+      "centerENU": [
+        -22.053046,
+        5.870012
+      ],
+      "radius": 0.78,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 3,
+        "route_arc_length_m": 11.877309,
+        "band": "cluster_edge",
+        "intent": "alternating motion constraint and local chicane",
+        "pressure_role": "topology_shaper"
+      }
+    },
+    "16": {
+      "modelName": "avoidance_forest_09",
+      "centerENU": [
+        -21.063615,
+        -0.726194
+      ],
+      "radius": 0.44,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 3,
+        "route_arc_length_m": 11.877309,
+        "band": "outer",
+        "intent": "near-shell outer bypass boundary",
+        "pressure_role": "background_forest"
+      }
+    },
+    "17": {
+      "modelName": "avoidance_forest_10",
+      "centerENU": [
+        -17.223043,
+        6.253912
+      ],
+      "radius": 0.66,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 4,
+        "route_arc_length_m": 16.115963,
+        "band": "constraint",
+        "intent": "alternating motion constraint and local chicane",
+        "pressure_role": "tracking_shell_blocker"
+      }
+    },
+    "18": {
+      "modelName": "avoidance_forest_11",
+      "centerENU": [
+        -17.792557,
+        1.50796
+      ],
+      "radius": 0.54,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 4,
+        "route_arc_length_m": 16.115963,
+        "band": "cluster_edge",
+        "intent": "alternating motion constraint and local chicane",
+        "pressure_role": "topology_shaper"
+      }
+    },
+    "19": {
+      "modelName": "avoidance_forest_12",
+      "centerENU": [
+        -18.071357,
+        -0.815371
+      ],
+      "radius": 0.82,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 4,
+        "route_arc_length_m": 16.115963,
+        "band": "outer",
+        "intent": "near-shell outer bypass boundary",
+        "pressure_role": "background_forest"
+      }
+    },
+    "20": {
+      "modelName": "avoidance_forest_13",
+      "centerENU": [
+        -13.076142,
+        0.93822
+      ],
+      "radius": 0.42,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 5,
+        "route_arc_length_m": 21.324617,
+        "band": "constraint",
+        "intent": "alternating motion constraint and local chicane",
+        "pressure_role": "tracking_shell_blocker"
+      }
+    },
+    "21": {
+      "modelName": "avoidance_forest_14",
+      "centerENU": [
+        -11.692497,
+        4.755173
+      ],
+      "radius": 0.48,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 5,
+        "route_arc_length_m": 21.324617,
+        "band": "cluster_edge",
+        "intent": "alternating motion constraint and local chicane",
+        "pressure_role": "topology_shaper"
+      }
+    },
+    "22": {
+      "modelName": "avoidance_forest_15",
+      "centerENU": [
+        -13.836125,
+        -1.158283
+      ],
+      "radius": 0.28,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 5,
+        "route_arc_length_m": 21.324617,
+        "band": "outer",
+        "intent": "near-shell outer bypass boundary",
+        "pressure_role": "background_forest"
+      }
+    },
+    "23": {
+      "modelName": "avoidance_forest_16",
+      "centerENU": [
+        -7.739094,
+        3.271517
+      ],
+      "radius": 0.5,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 6,
+        "route_arc_length_m": 25.463271,
+        "band": "constraint",
+        "intent": "alternating motion constraint and local chicane",
+        "pressure_role": "tracking_shell_blocker"
+      }
+    },
+    "24": {
+      "modelName": "avoidance_forest_17",
+      "centerENU": [
+        -10.101447,
+        -0.137895
+      ],
+      "radius": 0.62,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 6,
+        "route_arc_length_m": 25.463271,
+        "band": "cluster_edge",
+        "intent": "alternating motion constraint and local chicane",
+        "pressure_role": "topology_shaper"
+      }
+    },
+    "25": {
+      "modelName": "avoidance_forest_18",
+      "centerENU": [
+        -6.661447,
+        5.292105
+      ],
+      "radius": 0.34,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 6,
+        "route_arc_length_m": 25.463271,
+        "band": "outer",
+        "intent": "near-shell outer bypass boundary",
+        "pressure_role": "background_forest"
+      }
+    },
+    "26": {
+      "modelName": "avoidance_forest_19",
+      "centerENU": [
+        -4.542631,
+        -2.415671
+      ],
+      "radius": 0.58,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 7,
+        "route_arc_length_m": 30.391926,
+        "band": "constraint",
+        "intent": "alternating motion constraint and local chicane",
+        "pressure_role": "tracking_shell_blocker"
+      }
+    },
+    "27": {
+      "modelName": "avoidance_forest_20",
+      "centerENU": [
+        -5.333229,
+        1.800851
+      ],
+      "radius": 0.78,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 7,
+        "route_arc_length_m": 30.391926,
+        "band": "cluster_edge",
+        "intent": "alternating motion constraint and local chicane",
+        "pressure_role": "topology_shaper"
+      }
+    },
+    "28": {
+      "modelName": "avoidance_forest_21",
+      "centerENU": [
+        -5.650205,
+        3.491391
+      ],
+      "radius": 0.44,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 7,
+        "route_arc_length_m": 30.391926,
+        "band": "outer",
+        "intent": "near-shell outer bypass boundary",
+        "pressure_role": "background_forest"
+      }
+    },
+    "29": {
+      "modelName": "avoidance_forest_22",
+      "centerENU": [
+        -0.938803,
+        2.102385
+      ],
+      "radius": 0.66,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 8,
+        "route_arc_length_m": 34.63058,
+        "band": "constraint",
+        "intent": "alternating motion constraint and local chicane",
+        "pressure_role": "tracking_shell_blocker"
+      }
+    },
+    "30": {
+      "modelName": "avoidance_forest_23",
+      "centerENU": [
+        -0.558755,
+        -2.24102
+      ],
+      "radius": 0.54,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 8,
+        "route_arc_length_m": 34.63058,
+        "band": "cluster_edge",
+        "intent": "alternating motion constraint and local chicane",
+        "pressure_role": "topology_shaper"
+      }
+    },
+    "31": {
+      "modelName": "avoidance_forest_24",
+      "centerENU": [
+        -1.159336,
+        4.622755
+      ],
+      "radius": 0.82,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 8,
+        "route_arc_length_m": 34.63058,
+        "band": "outer",
+        "intent": "near-shell outer bypass boundary",
+        "pressure_role": "background_forest"
+      }
+    },
+    "32": {
+      "modelName": "avoidance_forest_25",
+      "centerENU": [
+        4.830406,
+        -0.642621
+      ],
+      "radius": 0.42,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 9,
+        "route_arc_length_m": 39.839234,
+        "band": "constraint",
+        "intent": "alternating motion constraint and local chicane",
+        "pressure_role": "tracking_shell_blocker"
+      }
+    },
+    "33": {
+      "modelName": "avoidance_forest_26",
+      "centerENU": [
+        3.752807,
+        3.105549
+      ],
+      "radius": 0.48,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 9,
+        "route_arc_length_m": 39.839234,
+        "band": "cluster_edge",
+        "intent": "alternating motion constraint and local chicane",
+        "pressure_role": "topology_shaper"
+      }
+    },
+    "34": {
+      "modelName": "avoidance_forest_27",
+      "centerENU": [
+        5.468676,
+        -2.862691
+      ],
+      "radius": 0.28,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 9,
+        "route_arc_length_m": 39.839234,
+        "band": "outer",
+        "intent": "near-shell outer bypass boundary",
+        "pressure_role": "background_forest"
+      }
+    },
+    "35": {
+      "modelName": "avoidance_forest_28",
+      "centerENU": [
+        8.185698,
+        3.490508
+      ],
+      "radius": 0.5,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 10,
+        "route_arc_length_m": 43.977888,
+        "band": "constraint",
+        "intent": "alternating motion constraint and local chicane",
+        "pressure_role": "tracking_shell_blocker"
+      }
+    },
+    "36": {
+      "modelName": "avoidance_forest_29",
+      "centerENU": [
+        8.688038,
+        -0.528217
+      ],
+      "radius": 0.62,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 10,
+        "route_arc_length_m": 43.977888,
+        "band": "cluster_edge",
+        "intent": "alternating motion constraint and local chicane",
+        "pressure_role": "topology_shaper"
+      }
+    },
+    "37": {
+      "modelName": "avoidance_forest_30",
+      "centerENU": [
+        8.90882,
+        -2.294472
+      ],
+      "radius": 0.34,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 10,
+        "route_arc_length_m": 43.977888,
+        "band": "outer",
+        "intent": "near-shell outer bypass boundary",
+        "pressure_role": "background_forest"
+      }
+    },
+    "38": {
+      "modelName": "avoidance_forest_31",
+      "centerENU": [
+        13.28995,
+        0.49
+      ],
+      "radius": 0.58,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 11,
+        "route_arc_length_m": 48.906543,
+        "band": "constraint",
+        "intent": "alternating motion constraint and local chicane",
+        "pressure_role": "tracking_shell_blocker"
+      }
+    },
+    "39": {
+      "modelName": "avoidance_forest_32",
+      "centerENU": [
+        13.28995,
+        5.01
+      ],
+      "radius": 0.78,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 11,
+        "route_arc_length_m": 48.906543,
+        "band": "cluster_edge",
+        "intent": "alternating motion constraint and local chicane",
+        "pressure_role": "topology_shaper"
+      }
+    },
+    "40": {
+      "modelName": "avoidance_forest_33",
+      "centerENU": [
+        13.28995,
+        -1.74
+      ],
+      "radius": 0.44,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 11,
+        "route_arc_length_m": 48.906543,
+        "band": "outer",
+        "intent": "near-shell outer bypass boundary",
+        "pressure_role": "background_forest"
+      }
+    },
+    "41": {
+      "modelName": "avoidance_forest_34",
+      "centerENU": [
+        17.099036,
+        4.648227
+      ],
+      "radius": 0.66,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 12,
+        "route_arc_length_m": 53.145197,
+        "band": "constraint",
+        "intent": "alternating motion constraint and local chicane",
+        "pressure_role": "tracking_shell_blocker"
+      }
+    },
+    "42": {
+      "modelName": "avoidance_forest_35",
+      "centerENU": [
+        17.452045,
+        0.435652
+      ],
+      "radius": 0.54,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 12,
+        "route_arc_length_m": 53.145197,
+        "band": "cluster_edge",
+        "intent": "alternating motion constraint and local chicane",
+        "pressure_role": "topology_shaper"
+      }
+    },
+    "43": {
+      "modelName": "avoidance_forest_36",
+      "centerENU": [
+        16.587172,
+        7.207542
+      ],
+      "radius": 0.82,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 12,
+        "route_arc_length_m": 53.145197,
+        "band": "outer",
+        "intent": "near-shell outer bypass boundary",
+        "pressure_role": "background_forest"
+      }
+    },
+    "44": {
+      "modelName": "avoidance_forest_37",
+      "centerENU": [
+        20.750199,
+        -1.562649
+      ],
+      "radius": 0.42,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 13,
+        "route_arc_length_m": 58.353851,
+        "band": "constraint",
+        "intent": "alternating motion constraint and local chicane",
+        "pressure_role": "tracking_shell_blocker"
+      }
+    },
+    "45": {
+      "modelName": "avoidance_forest_38",
+      "centerENU": [
+        23.048199,
+        1.501351
+      ],
+      "radius": 0.48,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 13,
+        "route_arc_length_m": 58.353851,
+        "band": "cluster_edge",
+        "intent": "alternating motion constraint and local chicane",
+        "pressure_role": "topology_shaper"
+      }
+    },
+    "46": {
+      "modelName": "avoidance_forest_39",
+      "centerENU": [
+        24.164199,
+        2.989351
+      ],
+      "radius": 0.28,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 13,
+        "route_arc_length_m": 58.353851,
+        "band": "outer",
+        "intent": "near-shell outer bypass boundary",
+        "pressure_role": "background_forest"
+      }
+    },
+    "47": {
+      "modelName": "avoidance_forest_40",
+      "centerENU": [
+        25.31382,
+        -1.221751
+      ],
+      "radius": 0.5,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 14,
+        "route_arc_length_m": 62.492505,
+        "band": "constraint",
+        "intent": "alternating motion constraint and local chicane",
+        "pressure_role": "tracking_shell_blocker"
+      }
+    },
+    "48": {
+      "modelName": "avoidance_forest_41",
+      "centerENU": [
+        24.275768,
+        -5.373961
+      ],
+      "radius": 0.62,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 14,
+        "route_arc_length_m": 62.492505,
+        "band": "cluster_edge",
+        "intent": "alternating motion constraint and local chicane",
+        "pressure_role": "topology_shaper"
+      }
+    },
+    "49": {
+      "modelName": "avoidance_forest_42",
+      "centerENU": [
+        25.849824,
+        0.922264
+      ],
+      "radius": 0.34,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 14,
+        "route_arc_length_m": 62.492505,
+        "band": "outer",
+        "intent": "near-shell outer bypass boundary",
+        "pressure_role": "background_forest"
+      }
+    },
+    "50": {
+      "modelName": "avoidance_forest_43",
+      "centerENU": [
+        30.475848,
+        -3.084084
+      ],
+      "radius": 0.58,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 15,
+        "route_arc_length_m": 67.42116,
+        "band": "constraint",
+        "intent": "alternating motion constraint and local chicane",
+        "pressure_role": "tracking_shell_blocker"
+      }
+    },
+    "51": {
+      "modelName": "avoidance_forest_44",
+      "centerENU": [
+        28.27897,
+        0.681992
+      ],
+      "radius": 0.78,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 15,
+        "route_arc_length_m": 67.42116,
+        "band": "cluster_edge",
+        "intent": "alternating motion constraint and local chicane",
+        "pressure_role": "topology_shaper"
+      }
+    },
+    "52": {
+      "modelName": "avoidance_forest_45",
+      "centerENU": [
+        31.63979,
+        -5.079413
+      ],
+      "radius": 0.44,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 15,
+        "route_arc_length_m": 67.42116,
+        "band": "outer",
+        "intent": "near-shell outer bypass boundary",
+        "pressure_role": "background_forest"
+      }
+    },
+    "53": {
+      "modelName": "avoidance_forest_46",
+      "centerENU": [
+        32.864081,
+        2.134571
+      ],
+      "radius": 0.66,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 16,
+        "route_arc_length_m": 71.659814,
+        "band": "constraint",
+        "intent": "alternating motion constraint and local chicane",
+        "pressure_role": "tracking_shell_blocker"
+      }
+    },
+    "54": {
+      "modelName": "avoidance_forest_47",
+      "centerENU": [
+        33.865753,
+        -1.872117
+      ],
+      "radius": 0.54,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 16,
+        "route_arc_length_m": 71.659814,
+        "band": "cluster_edge",
+        "intent": "alternating motion constraint and local chicane",
+        "pressure_role": "topology_shaper"
+      }
+    },
+    "55": {
+      "modelName": "avoidance_forest_48",
+      "centerENU": [
+        34.433287,
+        -4.142251
+      ],
+      "radius": 0.82,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "deterministic_staggered_mixed_scale_stress_forest",
+        "column": 16,
+        "route_arc_length_m": 71.659814,
+        "band": "outer",
+        "intent": "near-shell outer bypass boundary",
+        "pressure_role": "background_forest"
+      }
+    }
+  },
+  "egoPlanner": {
+    "enabled": true,
+    "mapSizeENU": [
+      82.0,
+      28.0,
+      5.0
+    ],
+    "goalsENU": [
+      [
+        34.5,
+        -0.85,
+        1.5
+      ],
+      [
+        34.3,
+        0.0,
+        1.5
+      ],
+      [
+        34.5,
+        0.85,
+        1.5
+      ]
+    ],
+    "maxVel": 1.2,
+    "maxAcc": 1.8,
+    "planningHorizon": 6.5,
+    "obstacleInflation": 0.35,
+    "plannerObstacleClearance": 0.5,
+    "swarmClearance": 0.5,
+    "cloudResolution": 0.22,
+    "cloudPublishPeriod": 0.5,
+    "obstacleHeight": 3.6,
+    "obstacleClearance": 0.6,
+    "earlyAvoidanceEnabled": false,
+    "movingObstacleTimeAwareCostEnabled": false,
+    "movingObstaclePredictionHorizon": 3.0,
+    "movingObstaclePredictionDt": 0.5,
+    "movingObstaclePredictionRadiusGrowth": 0.04,
+    "movingObstaclePredictionMaxExtraRadius": 0.18
+  },
+  "movingObstacleData": {
+    "0": {
+      "modelName": "avoidance_dynamic_crossing_01",
+      "centerENU": [
+        -25.701967,
+        0.933166
+      ],
+      "radius": 0.28,
+      "height": 5.0,
+      "axisENU": [
+        0.391141,
+        -0.920331
+      ],
+      "amplitude": 0.9,
+      "period": 8.548919,
+      "phase": -6.924965585,
+      "benchmarkDerivation": {
+        "station": 1,
+        "targeted_drone": 0,
+        "tangent_shift_m": 0.82,
+        "outward_shift_m": 0.84,
+        "placement": "analytic target/static-safe search",
+        "encounter_time_s": 8.62069,
+        "desired_center_at_encounter": [
+          -25.897537,
+          1.393332
+        ],
+        "desired_axis_offset_m": -0.5,
+        "derived_crossing_speed_mps": 0.55,
+        "phase_formula": "asin(offset/amplitude)-2*pi*t/period with velocity branch"
+      }
+    },
+    "1": {
+      "modelName": "avoidance_dynamic_crossing_02",
+      "centerENU": [
+        -16.324856,
+        5.081319
+      ],
+      "radius": 0.28,
+      "height": 5.0,
+      "axisENU": [
+        0.340799,
+        0.940136
+      ],
+      "amplitude": 0.9,
+      "period": 8.548919,
+      "phase": -10.317966581,
+      "benchmarkDerivation": {
+        "station": 2,
+        "targeted_drone": 2,
+        "tangent_shift_m": 0.82,
+        "outward_shift_m": 0.4,
+        "placement": "analytic target/static-safe search",
+        "encounter_time_s": 19.11455,
+        "desired_center_at_encounter": [
+          -16.495256,
+          4.611251
+        ],
+        "desired_axis_offset_m": -0.5,
+        "derived_crossing_speed_mps": -0.55,
+        "phase_formula": "asin(offset/amplitude)-2*pi*t/period with velocity branch"
+      }
+    },
+    "2": {
+      "modelName": "avoidance_dynamic_crossing_03",
+      "centerENU": [
+        -8.785934,
+        -1.751053
+      ],
+      "radius": 0.28,
+      "height": 5.0,
+      "axisENU": [
+        -0.750714,
+        -0.660628
+      ],
+      "amplitude": 0.9,
+      "period": 8.548919,
+      "phase": -22.350277558,
+      "benchmarkDerivation": {
+        "station": 3,
+        "targeted_drone": 0,
+        "tangent_shift_m": 0.82,
+        "outward_shift_m": 0.4,
+        "placement": "analytic target/static-safe search",
+        "encounter_time_s": 29.608411,
+        "desired_center_at_encounter": [
+          -8.410578,
+          -1.420739
+        ],
+        "desired_axis_offset_m": -0.5,
+        "derived_crossing_speed_mps": 0.55,
+        "phase_formula": "asin(offset/amplitude)-2*pi*t/period with velocity branch"
+      }
+    },
+    "3": {
+      "modelName": "avoidance_dynamic_crossing_04",
+      "centerENU": [
+        10.656617,
+        0.5
+      ],
+      "radius": 0.28,
+      "height": 5.0,
+      "axisENU": [
+        0.0,
+        -1.0
+      ],
+      "amplitude": 0.9,
+      "period": 8.548919,
+      "phase": -33.455934146,
+      "benchmarkDerivation": {
+        "station": 5,
+        "targeted_drone": 0,
+        "tangent_shift_m": 0.82,
+        "outward_shift_m": 0.4,
+        "placement": "analytic target/static-safe search",
+        "encounter_time_s": 50.59613,
+        "desired_center_at_encounter": [
+          10.656617,
+          1.0
+        ],
+        "desired_axis_offset_m": -0.5,
+        "derived_crossing_speed_mps": -0.55,
+        "phase_formula": "asin(offset/amplitude)-2*pi*t/period with velocity branch"
+      }
+    },
+    "4": {
+      "modelName": "avoidance_dynamic_crossing_05",
+      "centerENU": [
+        18.672328,
+        -0.079246
+      ],
+      "radius": 0.28,
+      "height": 5.0,
+      "axisENU": [
+        -0.6,
+        -0.8
+      ],
+      "amplitude": 0.9,
+      "period": 8.548919,
+      "phase": -45.488245122,
+      "benchmarkDerivation": {
+        "station": 6,
+        "targeted_drone": 2,
+        "tangent_shift_m": 0.82,
+        "outward_shift_m": 0.84,
+        "placement": "analytic target/static-safe search",
+        "encounter_time_s": 61.089991,
+        "desired_center_at_encounter": [
+          18.972328,
+          0.320754
+        ],
+        "desired_axis_offset_m": -0.5,
+        "derived_crossing_speed_mps": 0.55,
+        "phase_formula": "asin(offset/amplitude)-2*pi*t/period with velocity branch"
+      }
+    },
+    "5": {
+      "modelName": "avoidance_topology_blocker_south",
+      "centerENU": [
+        1.346625,
+        -2.104413
+      ],
+      "radius": 0.24,
+      "height": 5.0,
+      "axisENU": [
+        0.087167,
+        -0.996194
+      ],
+      "amplitude": 0.9,
+      "period": 8.548919,
+      "phase": -30.062933149,
+      "benchmarkDerivation": {
+        "station": 4,
+        "topology_conflict_member": true,
+        "world_space_local_combination": [
+          "MINUS",
+          "NOMINAL",
+          "PLUS"
+        ],
+        "world_space_alternative_combination": [
+          "NOMINAL",
+          "NOMINAL",
+          "NOMINAL"
+        ],
+        "encounter_time_s": 40.10227,
+        "desired_center_at_encounter": [
+          1.303042,
+          -1.606317
+        ],
+        "desired_axis_offset_m": -0.5,
+        "derived_crossing_speed_mps": 0.55,
+        "phase_formula": "asin(offset/amplitude)-2*pi*t/period with velocity branch"
+      }
+    },
+    "6": {
+      "modelName": "avoidance_topology_blocker_north",
+      "centerENU": [
+        0.902074,
+        2.976176
+      ],
+      "radius": 0.24,
+      "height": 5.0,
+      "axisENU": [
+        -0.087167,
+        0.996194
+      ],
+      "amplitude": 0.9,
+      "period": 8.548919,
+      "phase": -25.743278555,
+      "benchmarkDerivation": {
+        "station": 4,
+        "topology_conflict_member": true,
+        "world_space_local_combination": [
+          "MINUS",
+          "NOMINAL",
+          "PLUS"
+        ],
+        "world_space_alternative_combination": [
+          "NOMINAL",
+          "NOMINAL",
+          "NOMINAL"
+        ],
+        "encounter_time_s": 40.10227,
+        "desired_center_at_encounter": [
+          0.945657,
+          2.478079
+        ],
+        "desired_axis_offset_m": -0.5,
+        "derived_crossing_speed_mps": -0.55,
+        "phase_formula": "asin(offset/amplitude)-2*pi*t/period with velocity branch"
+      }
+    }
+  },
+  "nMovingObstacle": 7,
+  "benchmarkDesign": {
+    "generator": "generate_cooperative_benchmark_scenes.py",
+    "benchmark": "cooperative_avoidance",
+    "source_scene": "long_cylinder_forest_visibility_stress.json",
+    "route_policy": "preserve every waypoint of the production forest route",
+    "station_count": 7,
+    "station_spacing_m": 9.738302,
+    "static_stations": [
+      {
+        "station": 1,
+        "route_arc_length_m": 8.0,
+        "target_center": [
+          -25.480767,
+          2.695674
+        ],
+        "tangent": [
+          0.920331,
+          0.391141
+        ],
+        "normal": [
+          -0.391141,
+          0.920331
+        ],
+        "targeted_drone": 0,
+        "static_obstacle": "avoidance_shell_station_01"
+      },
+      {
+        "station": 2,
+        "route_arc_length_m": 17.738302,
+        "target_center": [
+          -15.902487,
+          3.664652
+        ],
+        "tangent": [
+          0.940136,
+          -0.340799
+        ],
+        "normal": [
+          0.340799,
+          0.940136
+        ],
+        "targeted_drone": 2,
+        "static_obstacle": "avoidance_shell_station_02"
+      },
+      {
+        "station": 3,
+        "route_arc_length_m": 27.476605,
+        "target_center": [
+          -7.152007,
+          0.309098
+        ],
+        "tangent": [
+          0.660628,
+          -0.750714
+        ],
+        "normal": [
+          0.750714,
+          0.660628
+        ],
+        "targeted_drone": 0,
+        "static_obstacle": "avoidance_shell_station_03"
+      },
+      {
+        "station": 4,
+        "route_arc_length_m": 37.214907,
+        "target_center": [
+          1.796074,
+          0.494657
+        ],
+        "tangent": [
+          0.996194,
+          0.087167
+        ],
+        "normal": [
+          -0.087167,
+          0.996194
+        ],
+        "targeted_drone": 2,
+        "static_obstacle": "avoidance_shell_station_04"
+      },
+      {
+        "station": 5,
+        "route_arc_length_m": 46.953209,
+        "target_center": [
+          11.336617,
+          2.25
+        ],
+        "tangent": [
+          1.0,
+          0.0
+        ],
+        "normal": [
+          -0.0,
+          1.0
+        ],
+        "targeted_drone": 0,
+        "static_obstacle": "avoidance_shell_station_05"
+      },
+      {
+        "station": 6,
+        "route_arc_length_m": 56.691512,
+        "target_center": [
+          20.320328,
+          0.634754
+        ],
+        "tangent": [
+          0.8,
+          -0.6
+        ],
+        "normal": [
+          0.6,
+          0.8
+        ],
+        "targeted_drone": 2,
+        "static_obstacle": "avoidance_shell_station_06"
+      },
+      {
+        "station": 7,
+        "route_arc_length_m": 66.429814,
+        "target_center": [
+          28.613668,
+          -1.832374
+        ],
+        "tangent": [
+          0.936329,
+          0.351123
+        ],
+        "normal": [
+          -0.351123,
+          0.936329
+        ],
+        "targeted_drone": 0,
+        "static_obstacle": "avoidance_shell_station_07"
+      }
+    ],
+    "dynamic_crossing_station_count": 6,
+    "dynamic_obstacle_count": 7,
+    "static_obstacle_count": 56,
+    "background_forest_count": 48,
+    "map_area_m2": 2106.0,
+    "static_density_per_m2": 0.026590693,
+    "astar_repair_station": 3,
+    "topology_conflict_station": {
+      "blocker_lateral_offset_m": 2.05,
+      "blocker_radius_m": 0.24,
+      "blocker_centers_at_encounter": [
+        [
+          0.29607399999999995,
+          -1.5553429999999997
+        ],
+        [
+          0.29607399999999995,
+          2.544657
+        ]
+      ],
+      "local_combination": [
+        "MINUS",
+        "NOMINAL",
+        "PLUS"
+      ],
+      "local_pairwise_min_distance_m": 0.20645256125136838,
+      "alternative_combination": [
+        "NOMINAL",
+        "NOMINAL",
+        "NOMINAL"
+      ],
+      "alternative_pairwise_min_distance_m": 0.8732124598286488,
+      "candidate_obstacle_clearance_m": [
+        {
+          "NOMINAL": 0.9554413100254022,
+          "PLUS": 0.25761139054286797,
+          "MINUS": 1.6440971412580674
+        },
+        {
+          "NOMINAL": 1.7848839896260726,
+          "PLUS": 1.119785549286081,
+          "MINUS": 1.1043149129418424
+        },
+        {
+          "NOMINAL": 0.9554413100254022,
+          "PLUS": 1.6440971412580674,
+          "MINUS": 0.2576113905428682
+        }
+      ],
+      "world_space_samples": 81,
+      "station": 4,
+      "route_arc_length_m": 37.214907,
+      "target_center": [
+        1.796074,
+        0.494657
+      ]
+    },
+    "formulae": {
+      "static_radius": "max(1.4*cloud_resolution, 0.85*obstacle_inflation)",
+      "static_center": "target_station + preferred_tracking_offset + outward_shift*route_normal",
+      "dynamic_phase": "analytic sinusoid phase at route_distance/target_speed",
+      "dynamic_tangent_shift": "0.82 m along route to separate moving swept volumes from statics",
+      "background_forest": "deterministic staggered inner/outer bands with clearance filtering",
+      "side_seed": "planner_source_side_offset*sin(pi*u)*world_right_normal"
+    },
+    "productionParameters": {
+      "tracking_offsets": [
+        [
+          -1.5,
+          -0.85,
+          0.0
+        ],
+        [
+          -1.7,
+          0.0,
+          0.0
+        ],
+        [
+          -1.5,
+          0.85,
+          0.0
+        ]
+      ],
+      "tracking_radii_m": [
+        1.724094,
+        1.7,
+        1.724094
+      ],
+      "preferred_bearings_deg": [
+        -150.461218,
+        180.0,
+        150.461218
+      ],
+      "side_offset_m": 0.7,
+      "planner_static_clearance_m": 0.5,
+      "moving_clearance_m": 1.1,
+      "swarm_clearance_m": 0.5,
+      "visibility_occlusion_margin_m": 0.08
+    },
+    "selfCheck": {
+      "target_centerline_static_free": true,
+      "target_centerline_min_static_surface_clearance_m": 0.36557,
+      "target_body_radius_m": 0.25,
+      "target_scene_margin_m": 0.05,
+      "target_route_residual_margin_m": 0.06557,
+      "target_static_intersections": 0,
+      "target_static_intersection_details": [],
+      "closest_static_obstacle_to_target_route": "avoidance_shell_station_01",
+      "target_dynamic_trajectory_free": true,
+      "target_min_dynamic_safety_clearance_m": 0.080394,
+      "closest_target_dynamic_event": {
+        "time_s": 7.5457231479309765,
+        "target": [
+          -26.39886092285691,
+          2.305484107785812
+        ],
+        "obstacle": "avoidance_dynamic_crossing_01",
+        "center": [
+          -26.04754539133551,
+          1.7462909510437503
+        ]
+      },
+      "dynamic_static_swept_volume_free": true,
+      "dynamic_static_swept_margin_m": 0.08,
+      "minimum_dynamic_static_swept_clearance_m": 0.054807,
+      "closest_dynamic_static_sweep": {
+        "moving": "avoidance_dynamic_crossing_01",
+        "static": "avoidance_forest_05",
+        "swept_segment_start": [
+          -26.053994,
+          1.761464
+        ],
+        "swept_segment_end": [
+          -25.34994,
+          0.104868
+        ]
+      },
+      "dynamic_pair_no_unreasonable_overlap": true,
+      "minimum_dynamic_pair_clearance_m": 3.620001,
+      "closest_dynamic_pair_event": {
+        "time_s": 31.553918,
+        "first": "avoidance_topology_blocker_south",
+        "second": "avoidance_topology_blocker_north"
+      },
+      "uav_initial_positions_static_free": true,
+      "minimum_uav_initial_static_clearance_m": 4.208636,
+      "closest_uav_initial_static": {
+        "drone": 2,
+        "static": "avoidance_forest_02"
+      },
+      "minimum_static_pair_clearance_m": 0.041999,
+      "closest_static_pair": {
+        "first": "avoidance_shell_station_03",
+        "second": "avoidance_local_astar_repair_point"
+      },
+      "radius_distribution": {
+        "minimum_m": 0.253,
+        "mean_m": 0.504446,
+        "maximum_m": 0.82,
+        "fine_count": 16,
+        "medium_count": 32,
+        "coarse_count": 8
+      },
+      "effective_pressure_classification": {
+        "motion_affecting_count": 37,
+        "visibility_occluding_count": 27,
+        "tracking_shell_near_count": 56,
+        "background_only_count": 0
+      },
+      "pressure_role_counts": {
+        "tracking_shell_blocker": 23,
+        "topology_shaper": 16,
+        "rejoin_blocker": 1,
+        "background_forest": 16
+      },
+      "route_segment_static_pressure": [
+        {
+          "segment": 1,
+          "arc_length_range_m": [
+            0.0,
+            9.303727
+          ],
+          "tracking_shell_static_count": 10
+        },
+        {
+          "segment": 2,
+          "arc_length_range_m": [
+            9.303727,
+            18.607453
+          ],
+          "tracking_shell_static_count": 14
+        },
+        {
+          "segment": 3,
+          "arc_length_range_m": [
+            18.607453,
+            27.91118
+          ],
+          "tracking_shell_static_count": 14
+        },
+        {
+          "segment": 4,
+          "arc_length_range_m": [
+            27.91118,
+            37.214907
+          ],
+          "tracking_shell_static_count": 13
+        },
+        {
+          "segment": 5,
+          "arc_length_range_m": [
+            37.214907,
+            46.518634
+          ],
+          "tracking_shell_static_count": 14
+        },
+        {
+          "segment": 6,
+          "arc_length_range_m": [
+            46.518634,
+            55.82236
+          ],
+          "tracking_shell_static_count": 11
+        },
+        {
+          "segment": 7,
+          "arc_length_range_m": [
+            55.82236,
+            65.126087
+          ],
+          "tracking_shell_static_count": 12
+        },
+        {
+          "segment": 8,
+          "arc_length_range_m": [
+            65.126087,
+            74.429814
+          ],
+          "tracking_shell_static_count": 10
+        }
+      ],
+      "tracking_shell_interaction_stations": 7,
+      "open_bypass_stations": 7,
+      "all_obstacles_inside_map_bounds": true,
+      "obstacle_height_covers_flight": true,
+      "operational_uav_max_z_m": 4.5,
+      "interaction_obstacles_below_flight_ceiling": 0,
+      "topology_conflict_found": true
+    },
+    "sharedBenchmarkContract": {
+      "target_start": true,
+      "target_goal": true,
+      "target_speed": true,
+      "uav_initial_state": true,
+      "safety_bounds": true,
+      "ego_planner_limits": true
+    }
+  }
+}

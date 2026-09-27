@@ -1,0 +1,2324 @@
+{
+  "number": 3,
+  "leaders": 1,
+  "head": 1,
+  "velocityVectorENU": [
+    0.2,
+    0.0,
+    0.0
+  ],
+  "formationTime": 190,
+  "useGazeboTruthForFeedback": true,
+  "safety": {
+    "xMin": -39.0,
+    "xMax": 39.0,
+    "yMin": -13.5,
+    "yMax": 13.5,
+    "minHeight": 0.15,
+    "maxHeight": 4.5
+  },
+  "mavrosLocalOffsetENU": [
+    [
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "takeoffPointENU": [
+    [
+      -35.2,
+      -1.0,
+      1.5
+    ],
+    [
+      -35.2,
+      0.0,
+      1.5
+    ],
+    [
+      -35.2,
+      1.0,
+      1.5
+    ]
+  ],
+  "preparePointENU": [
+    [
+      -35.2,
+      -1.0,
+      1.5
+    ],
+    [
+      -35.2,
+      0.0,
+      1.5
+    ],
+    [
+      -35.2,
+      1.0,
+      1.5
+    ]
+  ],
+  "targetTracking": {
+    "mode": "waypoints",
+    "speed": 0.928,
+    "takeoffHeight": 1.5,
+    "targetHeight": 1.5,
+    "useWaypointZ": false,
+    "lockEgoTrackingHeight": true,
+    "trackMaxControlZ": 1.5,
+    "waypointsENU": [
+      [
+        -33.0,
+        0.0,
+        1.5
+      ],
+      [
+        -29.0,
+        1.2,
+        1.5
+      ],
+      [
+        -25.0,
+        2.9,
+        1.5
+      ],
+      [
+        -21.0,
+        3.5,
+        1.5
+      ],
+      [
+        -18.5,
+        4.0,
+        1.5
+      ],
+      [
+        -16.0,
+        3.7,
+        1.5
+      ],
+      [
+        -12.0,
+        2.25,
+        1.5
+      ],
+      [
+        -11.0,
+        2.25,
+        1.5
+      ],
+      [
+        -9.7,
+        2.3,
+        1.5
+      ],
+      [
+        -8.2,
+        1.5,
+        1.5
+      ],
+      [
+        -6.0,
+        -1.0,
+        1.5
+      ],
+      [
+        -2.0,
+        -0.25,
+        1.5
+      ],
+      [
+        -1.0,
+        0.25,
+        1.5
+      ],
+      [
+        3.0,
+        0.6,
+        1.5
+      ],
+      [
+        7.0,
+        1.75,
+        1.5
+      ],
+      [
+        11.0,
+        2.25,
+        1.5
+      ],
+      [
+        15.0,
+        2.25,
+        1.5
+      ],
+      [
+        17.5,
+        2.75,
+        1.5
+      ],
+      [
+        18.5,
+        2.0,
+        1.5
+      ],
+      [
+        22.5,
+        -1.0,
+        1.5
+      ],
+      [
+        24.5,
+        -2.75,
+        1.5
+      ],
+      [
+        25.5,
+        -3.0,
+        1.5
+      ],
+      [
+        29.5,
+        -1.5,
+        1.5
+      ],
+      [
+        32.5,
+        0.25,
+        1.5
+      ],
+      [
+        33.5,
+        0.5,
+        1.5
+      ],
+      [
+        36.0,
+        0.0,
+        1.5
+      ]
+    ],
+    "dynamicObstacleAvoidanceEnabled": false
+  },
+  "obstacleColorRGBA": [
+    0.08,
+    0.55,
+    0.16,
+    0.92
+  ],
+  "obstacleData": {
+    "0": {
+      "modelName": "visibility_station_01_block_uav2",
+      "centerENU": [
+        -26.829302,
+        3.459843
+      ],
+      "radius": 0.43,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "station": 1,
+        "blocked_drone": 2,
+        "target_center": [
+          -25.480767,
+          2.695674
+        ],
+        "preferred_bearing_deg": 150.461218,
+        "occluder_center_bearing_deg": 150.461218,
+        "occluder_distance_from_target_m": 1.55,
+        "original_center": [
+          -25.915778,
+          2.94218
+        ],
+        "original_radius_m": 0.065,
+        "original_height_m": 5.0,
+        "core_role": "single_station_visibility_occluder",
+        "target_route_margin_m": 0.33999999999999997,
+        "desired_physical_occlusion_angle_deg": 118.633166,
+        "radius_formula": "role radius; center moves radially on unchanged LOS bearing",
+        "central_line_bias_deg": 0.0
+      }
+    },
+    "1": {
+      "modelName": "visibility_station_02_block_uav0",
+      "centerENU": [
+        -17.251022,
+        2.900482
+      ],
+      "radius": 0.43,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "station": 2,
+        "blocked_drone": 0,
+        "target_center": [
+          -15.902487,
+          3.664652
+        ],
+        "preferred_bearing_deg": -150.461218,
+        "occluder_center_bearing_deg": -150.461218,
+        "occluder_distance_from_target_m": 1.55,
+        "original_center": [
+          -16.337498,
+          3.418145
+        ],
+        "original_radius_m": 0.065,
+        "original_height_m": 5.0,
+        "core_role": "single_station_visibility_occluder",
+        "target_route_margin_m": 0.33999999999999997,
+        "desired_physical_occlusion_angle_deg": 118.633166,
+        "radius_formula": "role radius; center moves radially on unchanged LOS bearing",
+        "central_line_bias_deg": 0.0
+      }
+    },
+    "2": {
+      "modelName": "visibility_station_03_block_uav0",
+      "centerENU": [
+        -8.500541,
+        -0.455071
+      ],
+      "radius": 0.43,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "station": 3,
+        "blocked_drone": 0,
+        "target_center": [
+          -7.152007,
+          0.309098
+        ],
+        "preferred_bearing_deg": -150.461218,
+        "occluder_center_bearing_deg": -150.461218,
+        "occluder_distance_from_target_m": 1.55,
+        "original_center": [
+          -7.587018,
+          0.062592
+        ],
+        "original_radius_m": 0.065,
+        "original_height_m": 5.0,
+        "core_role": "single_station_visibility_occluder",
+        "target_route_margin_m": 0.33999999999999997,
+        "desired_physical_occlusion_angle_deg": 118.633166,
+        "radius_formula": "role radius; center moves radially on unchanged LOS bearing",
+        "central_line_bias_deg": 0.0
+      }
+    },
+    "3": {
+      "modelName": "visibility_station_05_block_uav0",
+      "centerENU": [
+        9.90108,
+        1.436529
+      ],
+      "radius": 0.31,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "station": 5,
+        "blocked_drone": 0,
+        "target_center": [
+          11.336617,
+          2.25
+        ],
+        "preferred_bearing_deg": -150.461218,
+        "occluder_center_bearing_deg": -150.461218,
+        "occluder_distance_from_target_m": 1.65,
+        "original_center": [
+          10.901606,
+          2.003494
+        ],
+        "original_radius_m": 0.065,
+        "original_height_m": 5.0,
+        "core_role": "single_station_visibility_occluder",
+        "target_route_margin_m": 0.33999999999999997,
+        "desired_physical_occlusion_angle_deg": 76.632269,
+        "radius_formula": "role radius; center moves radially on unchanged LOS bearing",
+        "central_line_bias_deg": 0.0
+      }
+    },
+    "4": {
+      "modelName": "visibility_station_06_block_uav0",
+      "centerENU": [
+        18.971793,
+        -0.129415
+      ],
+      "radius": 0.43,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "station": 6,
+        "blocked_drone": 0,
+        "target_center": [
+          20.320328,
+          0.634754
+        ],
+        "preferred_bearing_deg": -150.461218,
+        "occluder_center_bearing_deg": -150.461218,
+        "occluder_distance_from_target_m": 1.55,
+        "original_center": [
+          19.885317,
+          0.388248
+        ],
+        "original_radius_m": 0.065,
+        "original_height_m": 5.0,
+        "core_role": "single_station_visibility_occluder",
+        "target_route_margin_m": 0.33999999999999997,
+        "desired_physical_occlusion_angle_deg": 118.633166,
+        "radius_formula": "role radius; center moves radially on unchanged LOS bearing",
+        "central_line_bias_deg": 0.0
+      }
+    },
+    "5": {
+      "modelName": "visibility_cluster_01",
+      "centerENU": [
+        -12.28183,
+        3.02
+      ],
+      "radius": 0.3,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "compact_three_cylinder_visibility_cluster",
+        "between_stations": [
+          2,
+          3
+        ],
+        "band": "los_companion",
+        "intent": "stable finite-width LOS and viewpoint perturbation",
+        "pressure_role": "cylinder_cluster"
+      }
+    },
+    "6": {
+      "modelName": "visibility_cluster_02",
+      "centerENU": [
+        -12.78183,
+        3.7
+      ],
+      "radius": 0.38,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "compact_three_cylinder_visibility_cluster",
+        "between_stations": [
+          2,
+          3
+        ],
+        "band": "cluster_shoulder",
+        "intent": "stable finite-width LOS and viewpoint perturbation",
+        "pressure_role": "cylinder_cluster"
+      }
+    },
+    "7": {
+      "modelName": "visibility_cluster_03",
+      "centerENU": [
+        -10.88183,
+        4.55
+      ],
+      "radius": 0.5,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "compact_three_cylinder_visibility_cluster",
+        "between_stations": [
+          2,
+          3
+        ],
+        "band": "cluster_outer",
+        "intent": "stable finite-width LOS and viewpoint perturbation",
+        "pressure_role": "cylinder_cluster"
+      }
+    },
+    "8": {
+      "modelName": "visibility_cluster_04",
+      "centerENU": [
+        15.329248,
+        1.652977
+      ],
+      "radius": 0.3,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "compact_three_cylinder_visibility_cluster",
+        "between_stations": [
+          5,
+          6
+        ],
+        "band": "los_companion",
+        "intent": "stable finite-width LOS and viewpoint perturbation",
+        "pressure_role": "cylinder_cluster"
+      }
+    },
+    "9": {
+      "modelName": "visibility_cluster_05",
+      "centerENU": [
+        14.99585,
+        0.770454
+      ],
+      "radius": 0.38,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "compact_three_cylinder_visibility_cluster",
+        "between_stations": [
+          5,
+          6
+        ],
+        "band": "cluster_shoulder",
+        "intent": "stable finite-width LOS and viewpoint perturbation",
+        "pressure_role": "cylinder_cluster"
+      }
+    },
+    "10": {
+      "modelName": "visibility_cluster_06",
+      "centerENU": [
+        17.025652,
+        0.309581
+      ],
+      "radius": 0.5,
+      "height": 5.0,
+      "benchmarkDerivation": {
+        "layout": "compact_three_cylinder_visibility_cluster",
+        "between_stations": [
+          5,
+          6
+        ],
+        "band": "cluster_outer",
+        "intent": "stable finite-width LOS and viewpoint perturbation",
+        "pressure_role": "cylinder_cluster"
+      }
+    }
+  },
+  "egoPlanner": {
+    "enabled": true,
+    "mapSizeENU": [
+      82.0,
+      28.0,
+      5.0
+    ],
+    "goalsENU": [
+      [
+        34.5,
+        -0.85,
+        1.5
+      ],
+      [
+        34.3,
+        0.0,
+        1.5
+      ],
+      [
+        34.5,
+        0.85,
+        1.5
+      ]
+    ],
+    "maxVel": 1.2,
+    "maxAcc": 1.8,
+    "planningHorizon": 6.5,
+    "obstacleInflation": 0.35,
+    "plannerObstacleClearance": 0.5,
+    "swarmClearance": 0.5,
+    "cloudResolution": 0.22,
+    "cloudPublishPeriod": 0.5,
+    "obstacleHeight": 3.6,
+    "obstacleClearance": 0.6,
+    "earlyAvoidanceEnabled": false,
+    "movingObstacleTimeAwareCostEnabled": false,
+    "movingObstaclePredictionHorizon": 3.0,
+    "movingObstaclePredictionDt": 0.5,
+    "movingObstaclePredictionRadiusGrowth": 0.04,
+    "movingObstaclePredictionMaxExtraRadius": 0.18
+  },
+  "movingObstacleData": {
+    "0": {
+      "modelName": "visibility_candidate_enabler_01",
+      "centerENU": [
+        0.398495,
+        -1.525871
+      ],
+      "radius": 0.08,
+      "height": 5.0,
+      "axisENU": [
+        -0.087167,
+        0.996194
+      ],
+      "amplitude": 0.0,
+      "period": 10.0,
+      "phase": 0.0,
+      "benchmarkDerivation": {
+        "station": 4,
+        "targeted_drone": 0,
+        "role": "low-interference candidate-set enabler for production K-of-N ranking",
+        "nominal_center_distance_m": 1.175,
+        "hard_moving_clearance_m": 1.1,
+        "candidate_trigger_distance_m": 1.25,
+        "placement_formula": "target_station + preferred_offset + (moving_clearance + 0.5*trigger_margin)*outward_normal",
+        "outside_tracking_shell": true,
+        "stationary_runtime_probe": true
+      }
+    },
+    "1": {
+      "modelName": "visibility_candidate_enabler_02",
+      "centerENU": [
+        26.701098,
+        0.117813
+      ],
+      "radius": 0.08,
+      "height": 5.0,
+      "axisENU": [
+        -0.351123,
+        0.936329
+      ],
+      "amplitude": 0.0,
+      "period": 10.0,
+      "phase": 0.0,
+      "benchmarkDerivation": {
+        "station": 7,
+        "targeted_drone": 2,
+        "role": "low-interference candidate-set enabler for production K-of-N ranking",
+        "nominal_center_distance_m": 1.175,
+        "hard_moving_clearance_m": 1.1,
+        "candidate_trigger_distance_m": 1.25,
+        "placement_formula": "target_station + preferred_offset + (moving_clearance + 0.5*trigger_margin)*outward_normal",
+        "outside_tracking_shell": true,
+        "stationary_runtime_probe": true
+      }
+    },
+    "2": {
+      "modelName": "visibility_dynamic_los_crossing_01",
+      "centerENU": [
+        -24.188966,
+        3.795655
+      ],
+      "radius": 0.16,
+      "height": 5.0,
+      "axisENU": [
+        0.988936,
+        0.14834
+      ],
+      "amplitude": 0.5,
+      "period": 7.853982,
+      "phase": -8.995323772,
+      "benchmarkDerivation": {
+        "between_stations": [
+          1,
+          2
+        ],
+        "targeted_drone": 2,
+        "role": "LOS crossing + candidate-specific tracking-shell pressure",
+        "sight_ray_fraction": 0.72,
+        "tangent_shift_m": 0.0,
+        "encounter_time_s": 11.244155,
+        "desired_center_at_encounter": [
+          -24.188966,
+          3.795655
+        ],
+        "desired_axis_offset_m": 0.0,
+        "derived_crossing_speed_mps": 0.4,
+        "phase_formula": "asin(offset/amplitude)-2*pi*t/period with velocity branch"
+      }
+    },
+    "3": {
+      "modelName": "visibility_dynamic_los_crossing_02",
+      "centerENU": [
+        -14.693655,
+        2.22295
+      ],
+      "radius": 0.16,
+      "height": 5.0,
+      "axisENU": [
+        0.940136,
+        -0.340799
+      ],
+      "amplitude": 0.5,
+      "period": 7.853982,
+      "phase": -14.24881931,
+      "benchmarkDerivation": {
+        "between_stations": [
+          2,
+          3
+        ],
+        "targeted_drone": 0,
+        "role": "LOS crossing + candidate-specific tracking-shell pressure",
+        "sight_ray_fraction": 0.72,
+        "tangent_shift_m": 0.0,
+        "encounter_time_s": 21.738015,
+        "desired_center_at_encounter": [
+          -14.693655,
+          2.22295
+        ],
+        "desired_axis_offset_m": 0.0,
+        "derived_crossing_speed_mps": -0.4,
+        "phase_formula": "asin(offset/amplitude)-2*pi*t/period with velocity branch"
+      }
+    },
+    "4": {
+      "modelName": "visibility_dynamic_los_crossing_03",
+      "centerENU": [
+        -6.401061,
+        -0.260699
+      ],
+      "radius": 0.16,
+      "height": 5.0,
+      "axisENU": [
+        0.982872,
+        0.184289
+      ],
+      "amplitude": 0.5,
+      "period": 7.853982,
+      "phase": -22.643907501,
+      "benchmarkDerivation": {
+        "between_stations": [
+          3,
+          4
+        ],
+        "targeted_drone": 2,
+        "role": "LOS crossing + candidate-specific tracking-shell pressure",
+        "sight_ray_fraction": 0.72,
+        "tangent_shift_m": 0.0,
+        "encounter_time_s": 32.231875,
+        "desired_center_at_encounter": [
+          -6.401061,
+          -0.260699
+        ],
+        "desired_axis_offset_m": 0.0,
+        "derived_crossing_speed_mps": -0.4,
+        "phase_formula": "asin(offset/amplitude)-2*pi*t/period with velocity branch"
+      }
+    },
+    "5": {
+      "modelName": "visibility_dynamic_los_crossing_04",
+      "centerENU": [
+        12.691193,
+        1.638
+      ],
+      "radius": 0.16,
+      "height": 5.0,
+      "axisENU": [
+        1.0,
+        0.0
+      ],
+      "amplitude": 0.5,
+      "period": 7.853982,
+      "phase": -39.434083883,
+      "benchmarkDerivation": {
+        "between_stations": [
+          5,
+          6
+        ],
+        "targeted_drone": 0,
+        "role": "LOS crossing + candidate-specific tracking-shell pressure",
+        "sight_ray_fraction": 0.72,
+        "tangent_shift_m": 0.0,
+        "encounter_time_s": 53.219596,
+        "desired_center_at_encounter": [
+          12.691193,
+          1.638
+        ],
+        "desired_axis_offset_m": 0.0,
+        "derived_crossing_speed_mps": -0.4,
+        "phase_formula": "asin(offset/amplitude)-2*pi*t/period with velocity branch"
+      }
+    },
+    "6": {
+      "modelName": "visibility_dynamic_los_crossing_05",
+      "centerENU": [
+        3.098319,
+        1.550767
+      ],
+      "radius": 0.16,
+      "height": 5.0,
+      "axisENU": [
+        0.961069,
+        0.276307
+      ],
+      "amplitude": 0.5,
+      "period": 7.853982,
+      "phase": -31.038995692,
+      "benchmarkDerivation": {
+        "between_stations": [
+          4,
+          5
+        ],
+        "targeted_drone": 2,
+        "role": "LOS crossing + candidate-specific tracking-shell pressure",
+        "sight_ray_fraction": 0.72,
+        "tangent_shift_m": 0.0,
+        "encounter_time_s": 42.725735,
+        "desired_center_at_encounter": [
+          3.098319,
+          1.550767
+        ],
+        "desired_axis_offset_m": 0.0,
+        "derived_crossing_speed_mps": -0.4,
+        "phase_formula": "asin(offset/amplitude)-2*pi*t/period with velocity branch"
+      }
+    }
+  },
+  "nMovingObstacle": 7,
+  "wallData": {
+    "0": {
+      "modelName": "visibility_station_04_screen_uav0",
+      "centerENU": [
+        1.017317,
+        -1.159522
+      ],
+      "sizeENU": [
+        2.4,
+        0.2,
+        5.0
+      ],
+      "yawRad": 1.65807404,
+      "benchmarkDerivation": {
+        "station": 4,
+        "blocked_drone": 0,
+        "target_center": [
+          1.796074,
+          0.494657
+        ],
+        "preferred_bearing_deg": -150.461218,
+        "original_center": [
+          1.361063,
+          0.24815
+        ],
+        "original_radius_m": 0.065,
+        "original_height_m": 5.0,
+        "core_role": "primary_double_station_wall",
+        "target_route_margin_m": 0.38,
+        "sight_ray_fraction": 0.586581,
+        "replacement": "normal wall replaces route-unsafe thin column",
+        "yaw_before_rad": 0.087277713,
+        "yaw_after_rad": 1.65807404,
+        "rotation_fix_rad": 1.570796327,
+        "orientation": "transverse_to_target_route_and_los"
+      }
+    },
+    "1": {
+      "modelName": "visibility_station_04_screen_uav2",
+      "centerENU": [
+        1.050469,
+        2.015453
+      ],
+      "sizeENU": [
+        2.4,
+        0.2,
+        5.0
+      ],
+      "yawRad": 1.65807404,
+      "benchmarkDerivation": {
+        "station": 4,
+        "blocked_drone": 2,
+        "target_center": [
+          1.796074,
+          0.494657
+        ],
+        "preferred_bearing_deg": 150.461218,
+        "original_center": [
+          1.361063,
+          0.741163
+        ],
+        "original_radius_m": 0.065,
+        "original_height_m": 5.0,
+        "core_role": "primary_double_station_wall",
+        "target_route_margin_m": 0.38,
+        "sight_ray_fraction": 0.429661,
+        "replacement": "normal wall replaces route-unsafe thin column",
+        "yaw_before_rad": 0.087277713,
+        "yaw_after_rad": 1.65807404,
+        "rotation_fix_rad": 1.570796327,
+        "orientation": "transverse_to_target_route_and_los"
+      }
+    },
+    "2": {
+      "modelName": "visibility_station_07_screen_uav0",
+      "centerENU": [
+        27.559595,
+        -3.871513
+      ],
+      "sizeENU": [
+        2.4,
+        0.2,
+        5.0
+      ],
+      "yawRad": 1.929566997,
+      "benchmarkDerivation": {
+        "station": 7,
+        "blocked_drone": 0,
+        "target_center": [
+          28.613668,
+          -1.832374
+        ],
+        "preferred_bearing_deg": -150.461218,
+        "original_center": [
+          28.178657,
+          -2.078881
+        ],
+        "original_radius_m": 0.065,
+        "original_height_m": 5.0,
+        "core_role": "primary_double_station_wall",
+        "target_route_margin_m": 0.339195,
+        "sight_ray_fraction": 1.0,
+        "replacement": "normal wall replaces route-unsafe thin column",
+        "yaw_before_rad": 0.35877067,
+        "yaw_after_rad": 1.929566997,
+        "rotation_fix_rad": 1.570796327,
+        "orientation": "transverse_to_target_route_and_los"
+      }
+    },
+    "3": {
+      "modelName": "visibility_station_07_screen_uav2",
+      "centerENU": [
+        27.730018,
+        -0.476303
+      ],
+      "sizeENU": [
+        2.4,
+        0.2,
+        5.0
+      ],
+      "yawRad": 1.929566997,
+      "benchmarkDerivation": {
+        "station": 7,
+        "blocked_drone": 2,
+        "target_center": [
+          28.613668,
+          -1.832374
+        ],
+        "preferred_bearing_deg": 150.461218,
+        "original_center": [
+          28.178657,
+          -1.585868
+        ],
+        "original_radius_m": 0.065,
+        "original_height_m": 5.0,
+        "core_role": "primary_double_station_wall",
+        "target_route_margin_m": 0.38,
+        "sight_ray_fraction": 0.317565,
+        "replacement": "normal wall replaces route-unsafe thin column",
+        "yaw_before_rad": 0.35877067,
+        "yaw_after_rad": 1.929566997,
+        "rotation_fix_rad": 1.570796327,
+        "orientation": "transverse_to_target_route_and_los"
+      }
+    },
+    "4": {
+      "modelName": "visibility_offset_screen_01",
+      "centerENU": [
+        -21.644493,
+        1.759811
+      ],
+      "sizeENU": [
+        2.4,
+        0.2,
+        5.0
+      ],
+      "yawRad": 1.768191887,
+      "benchmarkDerivation": {
+        "between_stations": [
+          1,
+          2
+        ],
+        "targeted_drone": 0,
+        "role": "short_offset_screen",
+        "sight_ray_fraction": 0.778759,
+        "target_route_inner_clearance_m": 0.38,
+        "orientation": "transverse_to_target_route_and_los",
+        "pressure_role": "visibility_screen",
+        "yaw_before_rad": 0.19739556,
+        "yaw_after_rad": 1.768191887,
+        "rotation_fix_rad": 1.570796327
+      }
+    },
+    "5": {
+      "modelName": "visibility_offset_screen_02",
+      "centerENU": [
+        -4.861625,
+        0.820979
+      ],
+      "sizeENU": [
+        2.4,
+        0.2,
+        5.0
+      ],
+      "yawRad": 1.756144277,
+      "benchmarkDerivation": {
+        "between_stations": [
+          3,
+          4
+        ],
+        "targeted_drone": 1,
+        "role": "staggered_offset_screen",
+        "sight_ray_fraction": 1.0,
+        "target_route_inner_clearance_m": 0.38,
+        "orientation": "transverse_to_target_route_and_los",
+        "pressure_role": "visibility_screen",
+        "yaw_before_rad": 0.18534795,
+        "yaw_after_rad": 1.756144277,
+        "rotation_fix_rad": 1.570796327
+      }
+    },
+    "6": {
+      "modelName": "visibility_offset_screen_03",
+      "centerENU": [
+        5.343481,
+        -0.370251
+      ],
+      "sizeENU": [
+        2.4,
+        0.2,
+        5.0
+      ],
+      "yawRad": 1.850746149,
+      "benchmarkDerivation": {
+        "between_stations": [
+          4,
+          5
+        ],
+        "targeted_drone": 0,
+        "role": "staggered_offset_screen",
+        "sight_ray_fraction": 1.0,
+        "target_route_inner_clearance_m": 0.38,
+        "orientation": "transverse_to_target_route_and_los",
+        "pressure_role": "visibility_screen",
+        "yaw_before_rad": 0.279949823,
+        "yaw_after_rad": 1.850746149,
+        "rotation_fix_rad": 1.570796327
+      }
+    },
+    "7": {
+      "modelName": "visibility_offset_screen_04",
+      "centerENU": [
+        21.802713,
+        -2.489327
+      ],
+      "sizeENU": [
+        2.4,
+        0.2,
+        5.0
+      ],
+      "yawRad": 0.851966327,
+      "benchmarkDerivation": {
+        "between_stations": [
+          6,
+          7
+        ],
+        "targeted_drone": 2,
+        "role": "staggered_offset_screen",
+        "sight_ray_fraction": 1.0,
+        "target_route_inner_clearance_m": 0.38,
+        "orientation": "transverse_to_target_route_and_los",
+        "pressure_role": "visibility_screen",
+        "yaw_before_rad": -0.71883,
+        "yaw_after_rad": 0.851966327,
+        "rotation_fix_rad": 1.570796327
+      }
+    }
+  },
+  "benchmarkDesign": {
+    "generator": "generate_cooperative_benchmark_scenes.py",
+    "benchmark": "cooperative_visibility",
+    "source_scene": "long_cylinder_forest_visibility_stress.json",
+    "route_policy": "preserve every waypoint of the production forest route",
+    "visibility_station_count": 7,
+    "single_occlusion_station_count": 5,
+    "double_occlusion_station_count": 2,
+    "candidate_enabler_count": 2,
+    "dynamic_obstacle_count": 7,
+    "static_obstacle_count": 19,
+    "static_cylinder_count": 11,
+    "wall_count": 8,
+    "cylinder_cluster_count": 2,
+    "supplemental_static_count": 6,
+    "dynamic_pressure_roles": [
+      {
+        "model": "visibility_dynamic_los_crossing_01",
+        "role": "LOS crossing + candidate-specific tracking-shell pressure",
+        "targeted_drone": 2
+      },
+      {
+        "model": "visibility_dynamic_los_crossing_02",
+        "role": "LOS crossing + candidate-specific tracking-shell pressure",
+        "targeted_drone": 0
+      },
+      {
+        "model": "visibility_dynamic_los_crossing_03",
+        "role": "LOS crossing + candidate-specific tracking-shell pressure",
+        "targeted_drone": 2
+      },
+      {
+        "model": "visibility_dynamic_los_crossing_04",
+        "role": "LOS crossing + candidate-specific tracking-shell pressure",
+        "targeted_drone": 0
+      },
+      {
+        "model": "visibility_dynamic_los_crossing_05",
+        "role": "LOS crossing + candidate-specific tracking-shell pressure",
+        "targeted_drone": 2
+      }
+    ],
+    "core_target_route_changed": false,
+    "core_station_centers_changed": false,
+    "original_occluder_centers_changed": true,
+    "core_occluder_names": [
+      "visibility_station_01_block_uav2",
+      "visibility_station_02_block_uav0",
+      "visibility_station_03_block_uav0",
+      "visibility_station_05_block_uav0",
+      "visibility_station_06_block_uav0",
+      "visibility_station_04_screen_uav0",
+      "visibility_station_04_screen_uav2",
+      "visibility_station_07_screen_uav0",
+      "visibility_station_07_screen_uav2"
+    ],
+    "core_occluder_centers": {
+      "visibility_station_01_block_uav2": [
+        -26.829302,
+        3.459843
+      ],
+      "visibility_station_02_block_uav0": [
+        -17.251022,
+        2.900482
+      ],
+      "visibility_station_03_block_uav0": [
+        -8.500541,
+        -0.455071
+      ],
+      "visibility_station_05_block_uav0": [
+        9.90108,
+        1.436529
+      ],
+      "visibility_station_06_block_uav0": [
+        18.971793,
+        -0.129415
+      ],
+      "visibility_station_04_screen_uav0": [
+        1.017317,
+        -1.159522
+      ],
+      "visibility_station_04_screen_uav2": [
+        1.050469,
+        2.015453
+      ],
+      "visibility_station_07_screen_uav0": [
+        27.559595,
+        -3.871513
+      ],
+      "visibility_station_07_screen_uav2": [
+        27.730018,
+        -0.476303
+      ]
+    },
+    "coreObstacleGeometry": [
+      {
+        "id": "visibility_station_01_block_uav2",
+        "role": "single_station_visibility_occluder",
+        "center_before": [
+          -25.915778,
+          2.94218
+        ],
+        "center_after": [
+          -26.829302,
+          3.459843
+        ],
+        "los_bearing_before_deg": 150.461241,
+        "los_bearing_after_deg": 150.461245,
+        "radius_before_m": 0.065,
+        "radius_after_m": 0.43,
+        "height_before_m": 5.0,
+        "height_after_m": 5.0,
+        "target_route_margin_after_m": 3.029843
+      },
+      {
+        "id": "visibility_station_02_block_uav0",
+        "role": "single_station_visibility_occluder",
+        "center_before": [
+          -16.337498,
+          3.418145
+        ],
+        "center_after": [
+          -17.251022,
+          2.900482
+        ],
+        "los_bearing_before_deg": -150.461141,
+        "los_bearing_after_deg": -150.461212,
+        "radius_before_m": 0.065,
+        "radius_after_m": 0.43,
+        "height_before_m": 5.0,
+        "height_after_m": 5.0,
+        "target_route_margin_after_m": 2.470482
+      },
+      {
+        "id": "visibility_station_03_block_uav0",
+        "role": "single_station_visibility_occluder",
+        "center_before": [
+          -7.587018,
+          0.062592
+        ],
+        "center_after": [
+          -8.500541,
+          -0.455071
+        ],
+        "los_bearing_before_deg": -150.461241,
+        "los_bearing_after_deg": -150.461226,
+        "radius_before_m": 0.065,
+        "radius_after_m": 0.43,
+        "height_before_m": 5.0,
+        "height_after_m": 5.0,
+        "target_route_margin_after_m": 0.025071
+      },
+      {
+        "id": "visibility_station_05_block_uav0",
+        "role": "single_station_visibility_occluder",
+        "center_before": [
+          10.901606,
+          2.003494
+        ],
+        "center_after": [
+          9.90108,
+          1.436529
+        ],
+        "los_bearing_before_deg": -150.461241,
+        "los_bearing_after_deg": -150.461217,
+        "radius_before_m": 0.065,
+        "radius_after_m": 0.31,
+        "height_before_m": 5.0,
+        "height_after_m": 5.0,
+        "target_route_margin_after_m": 1.126529
+      },
+      {
+        "id": "visibility_station_06_block_uav0",
+        "role": "single_station_visibility_occluder",
+        "center_before": [
+          19.885317,
+          0.388248
+        ],
+        "center_after": [
+          18.971793,
+          -0.129415
+        ],
+        "los_bearing_before_deg": -150.461241,
+        "los_bearing_after_deg": -150.461245,
+        "radius_before_m": 0.065,
+        "radius_after_m": 0.43,
+        "height_before_m": 5.0,
+        "height_after_m": 5.0,
+        "target_route_margin_after_m": -0.300585
+      },
+      {
+        "id": "visibility_station_04_screen_uav0",
+        "role": "primary_double_station_wall",
+        "primitive": "wall",
+        "center_before": [
+          1.361063,
+          0.24815
+        ],
+        "center_after": [
+          1.017317,
+          -1.159522
+        ],
+        "los_bearing_before_deg": -150.461141,
+        "los_bearing_after_deg": -115.210192,
+        "radius_before_m": 0.065,
+        "size_after_m": [
+          2.4,
+          0.2,
+          5.0
+        ],
+        "height_before_m": 5.0,
+        "height_after_m": 5.0,
+        "target_route_margin_after_m": 0.38
+      },
+      {
+        "id": "visibility_station_04_screen_uav2",
+        "role": "primary_double_station_wall",
+        "primitive": "wall",
+        "center_before": [
+          1.361063,
+          0.741163
+        ],
+        "center_after": [
+          1.050469,
+          2.015453
+        ],
+        "los_bearing_before_deg": 150.461241,
+        "los_bearing_after_deg": 116.117459,
+        "radius_before_m": 0.065,
+        "size_after_m": [
+          2.4,
+          0.2,
+          5.0
+        ],
+        "height_before_m": 5.0,
+        "height_after_m": 5.0,
+        "target_route_margin_after_m": 0.38
+      },
+      {
+        "id": "visibility_station_07_screen_uav0",
+        "role": "primary_double_station_wall",
+        "primitive": "wall",
+        "center_before": [
+          28.178657,
+          -2.078881
+        ],
+        "center_after": [
+          27.559595,
+          -3.871513
+        ],
+        "los_bearing_before_deg": -150.461141,
+        "los_bearing_after_deg": -117.335375,
+        "radius_before_m": 0.065,
+        "size_after_m": [
+          2.4,
+          0.2,
+          5.0
+        ],
+        "height_before_m": 5.0,
+        "height_after_m": 5.0,
+        "target_route_margin_after_m": 0.339195
+      },
+      {
+        "id": "visibility_station_07_screen_uav2",
+        "role": "primary_double_station_wall",
+        "primitive": "wall",
+        "center_before": [
+          28.178657,
+          -1.585868
+        ],
+        "center_after": [
+          27.730018,
+          -0.476303
+        ],
+        "los_bearing_before_deg": 150.461241,
+        "los_bearing_after_deg": 123.089278,
+        "radius_before_m": 0.065,
+        "size_after_m": [
+          2.4,
+          0.2,
+          5.0
+        ],
+        "height_before_m": 5.0,
+        "height_after_m": 5.0,
+        "target_route_margin_after_m": 0.38
+      }
+    ],
+    "wallCandidateChecks": [
+      {
+        "wall": "visibility_offset_screen_01",
+        "between_stations": [
+          1,
+          2
+        ],
+        "targeted_drone": 0,
+        "candidate_los_visible": {
+          "NOMINAL": false,
+          "PLUS": false,
+          "MINUS": true
+        },
+        "candidate_static_clearance_m": {
+          "NOMINAL": 0.262297,
+          "PLUS": 0.262297,
+          "MINUS": 0.600946
+        },
+        "nominal_los_blocked": true,
+        "executable_visible_candidates": [
+          "MINUS"
+        ],
+        "candidate_dependent": true,
+        "target_route_clearance_m": 0.421895
+      },
+      {
+        "wall": "visibility_offset_screen_02",
+        "between_stations": [
+          3,
+          4
+        ],
+        "targeted_drone": 1,
+        "candidate_los_visible": {
+          "NOMINAL": false,
+          "PLUS": true,
+          "MINUS": false
+        },
+        "candidate_static_clearance_m": {
+          "NOMINAL": 0.06671,
+          "PLUS": 0.76671,
+          "MINUS": 0.0
+        },
+        "nominal_los_blocked": true,
+        "executable_visible_candidates": [
+          "PLUS"
+        ],
+        "candidate_dependent": true,
+        "target_route_clearance_m": 0.38
+      },
+      {
+        "wall": "visibility_offset_screen_03",
+        "between_stations": [
+          4,
+          5
+        ],
+        "targeted_drone": 0,
+        "candidate_los_visible": {
+          "NOMINAL": false,
+          "PLUS": false,
+          "MINUS": true
+        },
+        "candidate_static_clearance_m": {
+          "NOMINAL": 0.0,
+          "PLUS": 0.0,
+          "MINUS": 0.677552
+        },
+        "nominal_los_blocked": true,
+        "executable_visible_candidates": [
+          "MINUS"
+        ],
+        "candidate_dependent": true,
+        "target_route_clearance_m": 0.38
+      },
+      {
+        "wall": "visibility_offset_screen_04",
+        "between_stations": [
+          6,
+          7
+        ],
+        "targeted_drone": 2,
+        "candidate_los_visible": {
+          "NOMINAL": false,
+          "PLUS": false,
+          "MINUS": true
+        },
+        "candidate_static_clearance_m": {
+          "NOMINAL": 0.031933,
+          "PLUS": 0.0,
+          "MINUS": 0.731933
+        },
+        "nominal_los_blocked": true,
+        "executable_visible_candidates": [
+          "MINUS"
+        ],
+        "candidate_dependent": true,
+        "target_route_clearance_m": 0.379999
+      }
+    ],
+    "wallImplementation": {
+      "schema": "wallData: centerENU + sizeENU + yawRad",
+      "rviz": "Marker.CUBE plus filled wall point-cloud lattice",
+      "static_map": "same filled wall point-cloud lattice",
+      "runtime_los": "exact segment-vs-oriented-box test",
+      "planner_los": "StaticLosGeometry oriented-box clearance"
+    },
+    "map_area_m2": 2106.0,
+    "static_density_per_m2": 0.009021842,
+    "stations": [
+      {
+        "station": 1,
+        "route_arc_length_m": 8.0,
+        "target_center": [
+          -25.480767,
+          2.695674
+        ],
+        "tangent": [
+          0.920331,
+          0.391141
+        ],
+        "blocked_preferred_drone_ids": [
+          2
+        ],
+        "nominal_preferred_visibility": [
+          true,
+          true,
+          false
+        ],
+        "nominal_visible_count": 2,
+        "free_angular_fraction": 0.894444,
+        "free_endpoint_fraction": 0.816667,
+        "free_viewing_sectors": [
+          {
+            "start_deg": 170.0,
+            "end_deg": 132.0,
+            "width_deg": 322.0
+          }
+        ],
+        "elastic_k2_recoverable": true,
+        "example_recovery_bearings_deg": [
+          0,
+          25
+        ]
+      },
+      {
+        "station": 2,
+        "route_arc_length_m": 17.738302,
+        "target_center": [
+          -15.902487,
+          3.664652
+        ],
+        "tangent": [
+          0.940136,
+          -0.340799
+        ],
+        "blocked_preferred_drone_ids": [
+          0
+        ],
+        "nominal_preferred_visibility": [
+          false,
+          true,
+          true
+        ],
+        "nominal_visible_count": 2,
+        "free_angular_fraction": 0.894444,
+        "free_endpoint_fraction": 0.816667,
+        "free_viewing_sectors": [
+          {
+            "start_deg": 229.0,
+            "end_deg": 191.0,
+            "width_deg": 322.0
+          }
+        ],
+        "elastic_k2_recoverable": true,
+        "example_recovery_bearings_deg": [
+          0,
+          25
+        ]
+      },
+      {
+        "station": 3,
+        "route_arc_length_m": 27.476605,
+        "target_center": [
+          -7.152007,
+          0.309098
+        ],
+        "tangent": [
+          0.660628,
+          -0.750714
+        ],
+        "blocked_preferred_drone_ids": [
+          0
+        ],
+        "nominal_preferred_visibility": [
+          false,
+          true,
+          true
+        ],
+        "nominal_visible_count": 2,
+        "free_angular_fraction": 0.894444,
+        "free_endpoint_fraction": 0.816667,
+        "free_viewing_sectors": [
+          {
+            "start_deg": 229.0,
+            "end_deg": 191.0,
+            "width_deg": 322.0
+          }
+        ],
+        "elastic_k2_recoverable": true,
+        "example_recovery_bearings_deg": [
+          0,
+          25
+        ]
+      },
+      {
+        "station": 4,
+        "route_arc_length_m": 37.214907,
+        "target_center": [
+          1.796074,
+          0.494657
+        ],
+        "tangent": [
+          0.996194,
+          0.087167
+        ],
+        "blocked_preferred_drone_ids": [
+          0,
+          2
+        ],
+        "nominal_preferred_visibility": [
+          false,
+          true,
+          false
+        ],
+        "nominal_visible_count": 1,
+        "free_angular_fraction": 0.719444,
+        "free_endpoint_fraction": 0.638889,
+        "free_viewing_sectors": [
+          {
+            "start_deg": 163.0,
+            "end_deg": 202.0,
+            "width_deg": 39.0
+          },
+          {
+            "start_deg": 250.0,
+            "end_deg": 110.0,
+            "width_deg": 220.0
+          }
+        ],
+        "elastic_k2_recoverable": true,
+        "example_recovery_bearings_deg": [
+          0,
+          25
+        ],
+        "k2Decision": {
+          "decision_uav": 0,
+          "other_occluded_uav": 2,
+          "support_visible_uav": 1,
+          "local_candidate": "NOMINAL",
+          "alternative_candidate": "MINUS",
+          "station": 4,
+          "station_position": [
+            1.796074,
+            0.494657
+          ],
+          "original_alternative_candidate": "MINUS",
+          "local_candidate_los": "BLOCKED",
+          "alternative_candidate_los": "VISIBLE",
+          "other_uav_los": "BLOCKED",
+          "support_uav_los": "VISIBLE",
+          "local_predicted_k2": 0,
+          "alternative_predicted_k2": 1,
+          "candidate_los_angular_separation_deg": 23.95313,
+          "local_candidate_visibility_fraction": 0.703704,
+          "alternative_candidate_visibility_fraction": 1.0,
+          "candidate_visibility_fraction": {
+            "NOMINAL": 0.703704,
+            "PLUS": 0.62963,
+            "MINUS": 1.0
+          },
+          "candidate_station_visible": {
+            "NOMINAL": false,
+            "PLUS": false,
+            "MINUS": true
+          },
+          "candidate_predicted_k2": {
+            "NOMINAL": 0,
+            "PLUS": 0,
+            "MINUS": 1
+          },
+          "local_static_clearance_m": 0.5484,
+          "alternative_static_clearance_m": 0.658201,
+          "candidate_static_clearance_m": {
+            "NOMINAL": 0.5484,
+            "PLUS": 0.5484,
+            "MINUS": 0.658201
+          },
+          "local_static_feasible": true,
+          "alternative_static_feasible": true,
+          "candidate_space_exists": true,
+          "visibility_difference": 0.37037,
+          "occlusion_role_preserved": true,
+          "occluders": [
+            {
+              "type": "wall",
+              "center": [
+                1.017317,
+                -1.159522
+              ],
+              "size": [
+                2.4,
+                0.2,
+                5.0
+              ],
+              "yaw": 1.65807404
+            },
+            {
+              "type": "wall",
+              "center": [
+                1.050469,
+                2.015453
+              ],
+              "size": [
+                2.4,
+                0.2,
+                5.0
+              ],
+              "yaw": 1.65807404
+            }
+          ]
+        }
+      },
+      {
+        "station": 5,
+        "route_arc_length_m": 46.953209,
+        "target_center": [
+          11.336617,
+          2.25
+        ],
+        "tangent": [
+          1.0,
+          0.0
+        ],
+        "blocked_preferred_drone_ids": [
+          0
+        ],
+        "nominal_preferred_visibility": [
+          false,
+          true,
+          true
+        ],
+        "nominal_visible_count": 2,
+        "free_angular_fraction": 0.922222,
+        "free_endpoint_fraction": 0.844444,
+        "free_viewing_sectors": [
+          {
+            "start_deg": 224.0,
+            "end_deg": 196.0,
+            "width_deg": 332.0
+          }
+        ],
+        "elastic_k2_recoverable": true,
+        "example_recovery_bearings_deg": [
+          0,
+          25
+        ]
+      },
+      {
+        "station": 6,
+        "route_arc_length_m": 56.691512,
+        "target_center": [
+          20.320328,
+          0.634754
+        ],
+        "tangent": [
+          0.8,
+          -0.6
+        ],
+        "blocked_preferred_drone_ids": [
+          0
+        ],
+        "nominal_preferred_visibility": [
+          false,
+          true,
+          true
+        ],
+        "nominal_visible_count": 2,
+        "free_angular_fraction": 0.894444,
+        "free_endpoint_fraction": 0.816667,
+        "free_viewing_sectors": [
+          {
+            "start_deg": 229.0,
+            "end_deg": 191.0,
+            "width_deg": 322.0
+          }
+        ],
+        "elastic_k2_recoverable": true,
+        "example_recovery_bearings_deg": [
+          0,
+          25
+        ]
+      },
+      {
+        "station": 7,
+        "route_arc_length_m": 66.429814,
+        "target_center": [
+          28.613668,
+          -1.832374
+        ],
+        "tangent": [
+          0.936329,
+          0.351123
+        ],
+        "blocked_preferred_drone_ids": [
+          0,
+          2
+        ],
+        "nominal_preferred_visibility": [
+          false,
+          true,
+          false
+        ],
+        "nominal_visible_count": 1,
+        "free_angular_fraction": 0.805556,
+        "free_endpoint_fraction": 0.663889,
+        "free_viewing_sectors": [
+          {
+            "start_deg": 169.0,
+            "end_deg": 210.0,
+            "width_deg": 41.0
+          },
+          {
+            "start_deg": 228.0,
+            "end_deg": 117.0,
+            "width_deg": 249.0
+          }
+        ],
+        "elastic_k2_recoverable": true,
+        "example_recovery_bearings_deg": [
+          0,
+          25
+        ],
+        "k2Decision": {
+          "decision_uav": 2,
+          "other_occluded_uav": 0,
+          "support_visible_uav": 1,
+          "local_candidate": "NOMINAL",
+          "alternative_candidate": "PLUS",
+          "station": 7,
+          "station_position": [
+            28.613668,
+            -1.832374
+          ],
+          "original_alternative_candidate": "PLUS",
+          "local_candidate_los": "BLOCKED",
+          "alternative_candidate_los": "VISIBLE",
+          "other_uav_los": "BLOCKED",
+          "support_uav_los": "VISIBLE",
+          "local_predicted_k2": 0,
+          "alternative_predicted_k2": 1,
+          "candidate_los_angular_separation_deg": 20.720623,
+          "local_candidate_visibility_fraction": 0.716049,
+          "alternative_candidate_visibility_fraction": 0.790123,
+          "candidate_visibility_fraction": {
+            "NOMINAL": 0.716049,
+            "PLUS": 0.790123,
+            "MINUS": 0.691358
+          },
+          "candidate_station_visible": {
+            "NOMINAL": false,
+            "PLUS": true,
+            "MINUS": false
+          },
+          "candidate_predicted_k2": {
+            "NOMINAL": 0,
+            "PLUS": 1,
+            "MINUS": 0
+          },
+          "local_static_clearance_m": 0.6548,
+          "alternative_static_clearance_m": 0.6548,
+          "candidate_static_clearance_m": {
+            "NOMINAL": 0.6548,
+            "PLUS": 0.6548,
+            "MINUS": 0.6548
+          },
+          "local_static_feasible": true,
+          "alternative_static_feasible": true,
+          "candidate_space_exists": true,
+          "visibility_difference": 0.098765,
+          "occlusion_role_preserved": true,
+          "occluders": [
+            {
+              "type": "wall",
+              "center": [
+                27.559595,
+                -3.871513
+              ],
+              "size": [
+                2.4,
+                0.2,
+                5.0
+              ],
+              "yaw": 1.929566997
+            },
+            {
+              "type": "wall",
+              "center": [
+                27.730018,
+                -0.476303
+              ],
+              "size": [
+                2.4,
+                0.2,
+                5.0
+              ],
+              "yaw": 1.929566997
+            }
+          ]
+        }
+      }
+    ],
+    "k2DecisionStations": [
+      {
+        "decision_uav": 0,
+        "other_occluded_uav": 2,
+        "support_visible_uav": 1,
+        "local_candidate": "NOMINAL",
+        "alternative_candidate": "MINUS",
+        "station": 4,
+        "station_position": [
+          1.796074,
+          0.494657
+        ],
+        "original_alternative_candidate": "MINUS",
+        "local_candidate_los": "BLOCKED",
+        "alternative_candidate_los": "VISIBLE",
+        "other_uav_los": "BLOCKED",
+        "support_uav_los": "VISIBLE",
+        "local_predicted_k2": 0,
+        "alternative_predicted_k2": 1,
+        "candidate_los_angular_separation_deg": 23.95313,
+        "local_candidate_visibility_fraction": 0.703704,
+        "alternative_candidate_visibility_fraction": 1.0,
+        "candidate_visibility_fraction": {
+          "NOMINAL": 0.703704,
+          "PLUS": 0.62963,
+          "MINUS": 1.0
+        },
+        "candidate_station_visible": {
+          "NOMINAL": false,
+          "PLUS": false,
+          "MINUS": true
+        },
+        "candidate_predicted_k2": {
+          "NOMINAL": 0,
+          "PLUS": 0,
+          "MINUS": 1
+        },
+        "local_static_clearance_m": 0.5484,
+        "alternative_static_clearance_m": 0.658201,
+        "candidate_static_clearance_m": {
+          "NOMINAL": 0.5484,
+          "PLUS": 0.5484,
+          "MINUS": 0.658201
+        },
+        "local_static_feasible": true,
+        "alternative_static_feasible": true,
+        "candidate_space_exists": true,
+        "visibility_difference": 0.37037,
+        "occlusion_role_preserved": true,
+        "occluders": [
+          {
+            "type": "wall",
+            "center": [
+              1.017317,
+              -1.159522
+            ],
+            "size": [
+              2.4,
+              0.2,
+              5.0
+            ],
+            "yaw": 1.65807404
+          },
+          {
+            "type": "wall",
+            "center": [
+              1.050469,
+              2.015453
+            ],
+            "size": [
+              2.4,
+              0.2,
+              5.0
+            ],
+            "yaw": 1.65807404
+          }
+        ]
+      },
+      {
+        "decision_uav": 2,
+        "other_occluded_uav": 0,
+        "support_visible_uav": 1,
+        "local_candidate": "NOMINAL",
+        "alternative_candidate": "PLUS",
+        "station": 7,
+        "station_position": [
+          28.613668,
+          -1.832374
+        ],
+        "original_alternative_candidate": "PLUS",
+        "local_candidate_los": "BLOCKED",
+        "alternative_candidate_los": "VISIBLE",
+        "other_uav_los": "BLOCKED",
+        "support_uav_los": "VISIBLE",
+        "local_predicted_k2": 0,
+        "alternative_predicted_k2": 1,
+        "candidate_los_angular_separation_deg": 20.720623,
+        "local_candidate_visibility_fraction": 0.716049,
+        "alternative_candidate_visibility_fraction": 0.790123,
+        "candidate_visibility_fraction": {
+          "NOMINAL": 0.716049,
+          "PLUS": 0.790123,
+          "MINUS": 0.691358
+        },
+        "candidate_station_visible": {
+          "NOMINAL": false,
+          "PLUS": true,
+          "MINUS": false
+        },
+        "candidate_predicted_k2": {
+          "NOMINAL": 0,
+          "PLUS": 1,
+          "MINUS": 0
+        },
+        "local_static_clearance_m": 0.6548,
+        "alternative_static_clearance_m": 0.6548,
+        "candidate_static_clearance_m": {
+          "NOMINAL": 0.6548,
+          "PLUS": 0.6548,
+          "MINUS": 0.6548
+        },
+        "local_static_feasible": true,
+        "alternative_static_feasible": true,
+        "candidate_space_exists": true,
+        "visibility_difference": 0.098765,
+        "occlusion_role_preserved": true,
+        "occluders": [
+          {
+            "type": "wall",
+            "center": [
+              27.559595,
+              -3.871513
+            ],
+            "size": [
+              2.4,
+              0.2,
+              5.0
+            ],
+            "yaw": 1.929566997
+          },
+          {
+            "type": "wall",
+            "center": [
+              27.730018,
+              -0.476303
+            ],
+            "size": [
+              2.4,
+              0.2,
+              5.0
+            ],
+            "yaw": 1.929566997
+          }
+        ]
+      }
+    ],
+    "formulae": {
+      "occluder_center": "target_station + r_occ*[cos(phi_block), sin(phi_block)]",
+      "occluder_radius": "role radius with radial-only relocation on original LOS bearing",
+      "central_support_view": "kept statically clear because its LOS is collinear with target route",
+      "wall_center": "target_at_interstation_gap + 0.62*outer_tracking_offset",
+      "wall_orientation": "target-route tangent + 90 deg; crosses the true LOS"
+    },
+    "productionParameters": {
+      "tracking_offsets": [
+        [
+          -1.5,
+          -0.85,
+          0.0
+        ],
+        [
+          -1.7,
+          0.0,
+          0.0
+        ],
+        [
+          -1.5,
+          0.85,
+          0.0
+        ]
+      ],
+      "tracking_radii_m": [
+        1.724094,
+        1.7,
+        1.724094
+      ],
+      "preferred_bearings_deg": [
+        -150.461218,
+        180.0,
+        150.461218
+      ],
+      "team_visibility_k": 2,
+      "team_visibility_preferred_separation_deg": 25.0,
+      "visibility_occlusion_margin_m": 0.08,
+      "elastic_delta_phi_max_deg": 45.0,
+      "elastic_radial_slack_max_m": 0.8,
+      "side_offset_m": 0.7,
+      "moving_clearance_m": 1.1,
+      "candidate_trigger_margin_m": 0.15
+    },
+    "benchmarkParameters": {
+      "occluder_distance_from_target_m": 0.5,
+      "single_occlusion_angle_deg": 14.0,
+      "double_occlusion_angle_deg": 14.0,
+      "original_core_radius_m": 0.060935,
+      "core_radius_range_after_m": [
+        0.43,
+        0.43
+      ],
+      "core_target_route_margin_m": 0.33999999999999997,
+      "central_core_target_route_margin_m": 0.33999999999999997,
+      "core_static_pair_margin_m": 0.12,
+      "interaction_obstacle_height_m": 5.0,
+      "central_occluder_bias_deg": 0.0,
+      "central_line_physical_gap_m": 0.0,
+      "target_body_plus_scene_margin_m": 0.3,
+      "screen_length_m": 2.4,
+      "screen_thickness_m": 0.2,
+      "candidate_enabler_nominal_distance_m": 1.175,
+      "candidate_enabler_radius_m": 0.08
+    },
+    "selfCheck": {
+      "target_centerline_physically_free": true,
+      "target_centerline_min_physical_clearance_m": 0.327857,
+      "closest_occluder_to_target_route": "visibility_cluster_01",
+      "closest_target_static_primitive_type": "cylinder",
+      "target_body_radius_m": 0.25,
+      "target_scene_margin_m": 0.05,
+      "target_route_residual_margin_m": 0.027857,
+      "target_static_intersections": 0,
+      "target_static_intersection_details": [],
+      "all_preferred_bearings_blocked_somewhere": false,
+      "all_outer_preferred_bearings_blocked_somewhere": true,
+      "central_support_view_preserved": true,
+      "double_occlusion_station_count": 2,
+      "nominal_k2_threatened_stations": [
+        4,
+        7
+      ],
+      "elastic_k2_recoverable_stations": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "all_double_occlusions_k2_recoverable": true,
+      "minimum_free_tracking_shell_fraction": 0.638889,
+      "recovery_spacing_m": 9.738302,
+      "recovery_spacing_s": 10.49386,
+      "all_obstacles_inside_map_bounds": true,
+      "candidate_enablers_inside_map_bounds": true,
+      "target_dynamic_trajectory_free": true,
+      "target_min_dynamic_safety_clearance_m": 0.104259,
+      "closest_target_dynamic_event": {
+        "time_s": 30.932467738869367,
+        "target": [
+          -6.3402762364748995,
+          -0.6133224585512513
+        ],
+        "obstacle": "visibility_dynamic_los_crossing_03",
+        "center": [
+          -5.977362163483319,
+          -0.1812552526119141
+        ]
+      },
+      "dynamic_static_swept_volume_free": true,
+      "dynamic_static_swept_margin_m": 0.05,
+      "minimum_dynamic_static_swept_clearance_m": 0.4184,
+      "closest_dynamic_static_sweep": {
+        "moving": "visibility_candidate_enabler_01",
+        "wall": "visibility_station_04_screen_uav0",
+        "swept_segment_start": [
+          0.398495,
+          -1.525871
+        ],
+        "swept_segment_end": [
+          0.398495,
+          -1.525871
+        ]
+      },
+      "closest_dynamic_static_primitive_type": "wall",
+      "minimum_dynamic_wall_swept_clearance_m": 0.4184,
+      "dynamic_pair_no_unreasonable_overlap": true,
+      "minimum_dynamic_pair_clearance_m": 3.442382,
+      "closest_dynamic_pair_event": {
+        "time_s": 76.105331,
+        "first": "visibility_candidate_enabler_01",
+        "second": "visibility_dynamic_los_crossing_05"
+      },
+      "uav_initial_positions_static_free": true,
+      "minimum_uav_initial_static_clearance_m": 8.294644,
+      "closest_uav_initial_static": {
+        "drone": 2,
+        "static": "visibility_station_01_block_uav2"
+      },
+      "minimum_static_pair_clearance_m": 0.164038,
+      "closest_static_pair": {
+        "first": "visibility_cluster_01",
+        "second": "visibility_cluster_02"
+      },
+      "core_static_pair_intersection_free": true,
+      "minimum_core_static_pair_clearance_m": 0.767888,
+      "closest_core_static_pair": {
+        "first": "visibility_station_04_screen_uav0",
+        "second": "visibility_station_04_screen_uav2"
+      },
+      "radius_distribution": {
+        "minimum_m": 0.3,
+        "mean_m": 0.399091,
+        "maximum_m": 0.5,
+        "fine_count": 5,
+        "medium_count": 6,
+        "coarse_count": 0
+      },
+      "effective_pressure_classification": {
+        "motion_affecting_count": 11,
+        "visibility_occluding_count": 10,
+        "tracking_shell_near_count": 11,
+        "background_only_count": 0
+      },
+      "obstacle_height_covers_flight": true,
+      "operational_uav_max_z_m": 4.5,
+      "interaction_obstacles_below_flight_ceiling": 0,
+      "static_cylinder_count": 11,
+      "wall_count": 8,
+      "cylinder_cluster_count": 2,
+      "core_thin_columns_remaining": 0,
+      "wall_candidate_checks": [
+        {
+          "wall": "visibility_offset_screen_01",
+          "between_stations": [
+            1,
+            2
+          ],
+          "targeted_drone": 0,
+          "candidate_los_visible": {
+            "NOMINAL": false,
+            "PLUS": false,
+            "MINUS": true
+          },
+          "candidate_static_clearance_m": {
+            "NOMINAL": 0.262297,
+            "PLUS": 0.262297,
+            "MINUS": 0.600946
+          },
+          "nominal_los_blocked": true,
+          "executable_visible_candidates": [
+            "MINUS"
+          ],
+          "candidate_dependent": true,
+          "target_route_clearance_m": 0.421895
+        },
+        {
+          "wall": "visibility_offset_screen_02",
+          "between_stations": [
+            3,
+            4
+          ],
+          "targeted_drone": 1,
+          "candidate_los_visible": {
+            "NOMINAL": false,
+            "PLUS": true,
+            "MINUS": false
+          },
+          "candidate_static_clearance_m": {
+            "NOMINAL": 0.06671,
+            "PLUS": 0.76671,
+            "MINUS": 0.0
+          },
+          "nominal_los_blocked": true,
+          "executable_visible_candidates": [
+            "PLUS"
+          ],
+          "candidate_dependent": true,
+          "target_route_clearance_m": 0.38
+        },
+        {
+          "wall": "visibility_offset_screen_03",
+          "between_stations": [
+            4,
+            5
+          ],
+          "targeted_drone": 0,
+          "candidate_los_visible": {
+            "NOMINAL": false,
+            "PLUS": false,
+            "MINUS": true
+          },
+          "candidate_static_clearance_m": {
+            "NOMINAL": 0.0,
+            "PLUS": 0.0,
+            "MINUS": 0.677552
+          },
+          "nominal_los_blocked": true,
+          "executable_visible_candidates": [
+            "MINUS"
+          ],
+          "candidate_dependent": true,
+          "target_route_clearance_m": 0.38
+        },
+        {
+          "wall": "visibility_offset_screen_04",
+          "between_stations": [
+            6,
+            7
+          ],
+          "targeted_drone": 2,
+          "candidate_los_visible": {
+            "NOMINAL": false,
+            "PLUS": false,
+            "MINUS": true
+          },
+          "candidate_static_clearance_m": {
+            "NOMINAL": 0.031933,
+            "PLUS": 0.0,
+            "MINUS": 0.731933
+          },
+          "nominal_los_blocked": true,
+          "executable_visible_candidates": [
+            "MINUS"
+          ],
+          "candidate_dependent": true,
+          "target_route_clearance_m": 0.379999
+        }
+      ],
+      "all_walls_candidate_dependent": true,
+      "walls_block_all_candidates": false,
+      "dynamic_obstacle_count": 7,
+      "candidate_enabler_count": 2,
+      "k2_decision_station_count": 2,
+      "all_decision_local_k2_fail": true,
+      "all_decision_alternative_k2_recover": true,
+      "all_decision_candidates_static_feasible": true,
+      "all_decision_occlusion_roles_preserved": true,
+      "decision_candidate_clearances": [
+        {
+          "station": 4,
+          "local_m": 0.5484,
+          "alternative_m": 0.658201
+        },
+        {
+          "station": 7,
+          "local_m": 0.6548,
+          "alternative_m": 0.6548
+        }
+      ],
+      "decision_candidate_visibility": [
+        {
+          "station": 4,
+          "local": "NOMINAL",
+          "alternative": "MINUS",
+          "fractions": {
+            "NOMINAL": 0.703704,
+            "PLUS": 0.62963,
+            "MINUS": 1.0
+          },
+          "station_visible": {
+            "NOMINAL": false,
+            "PLUS": false,
+            "MINUS": true
+          },
+          "k2": {
+            "NOMINAL": 0,
+            "PLUS": 0,
+            "MINUS": 1
+          }
+        },
+        {
+          "station": 7,
+          "local": "NOMINAL",
+          "alternative": "PLUS",
+          "fractions": {
+            "NOMINAL": 0.716049,
+            "PLUS": 0.790123,
+            "MINUS": 0.691358
+          },
+          "station_visible": {
+            "NOMINAL": false,
+            "PLUS": true,
+            "MINUS": false
+          },
+          "k2": {
+            "NOMINAL": 0,
+            "PLUS": 1,
+            "MINUS": 0
+          }
+        }
+      ]
+    },
+    "sharedBenchmarkContract": {
+      "target_start": true,
+      "target_goal": true,
+      "target_speed": true,
+      "uav_initial_state": true,
+      "safety_bounds": true,
+      "ego_planner_limits": true
+    }
+  }
+}

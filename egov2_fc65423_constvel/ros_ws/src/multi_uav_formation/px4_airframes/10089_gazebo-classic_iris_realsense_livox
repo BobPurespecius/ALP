@@ -1,0 +1,22 @@
+#!/bin/sh
+#
+# @name Iris Realsense Livox SITL
+#
+# @type Quadrotor Wide
+#
+# Reuse the standard Iris PX4 airframe. The Gazebo SDF carries the
+# Realsense/Livox sensors; the flight dynamics remain Iris-compatible.
+#
+# Keep this on a unique autostart ID. PX4 selects the exact model name first,
+# then sources the last matching "<SYS_AUTOSTART>_*" file, so sharing 10015 with
+# the stock iris makes plain "iris" pick up the vision-only EKF settings below.
+
+. ${R}etc/init.d-posix/airframes/10015_gazebo-classic_iris
+
+# The imported XTDrone model publishes Gazebo vision estimates. Fuse external
+# vision position and heading so PX4 can pass preflight yaw checks.
+param set-default EKF2_EV_DELAY 5
+param set-default EKF2_EV_CTRL 15
+param set-default EKF2_HGT_REF 3
+param set-default EKF2_GPS_CTRL 0
+param set-default ATT_EXT_HDG_M 1

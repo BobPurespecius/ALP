@@ -1,0 +1,280 @@
+{
+    "number": 3,
+    "leaders": 1,
+    "head": 1,
+    "velocityVectorENU": [
+        0.2,
+        0.0,
+        0.0
+    ],
+    "formationTime": 65,
+    "useGazeboTruthForFeedback": true,
+    "safety": {
+        "xMin": -10.5,
+        "xMax": 10.5,
+        "yMin": -4.5,
+        "yMax": 4.5,
+        "minHeight": 0.15,
+        "maxHeight": 4.0
+    },
+    "mavrosLocalOffsetENU": [
+        [
+            0.0,
+            0.0,
+            0.0
+        ],
+        [
+            0.0,
+            0.0,
+            0.0
+        ],
+        [
+            0.0,
+            0.0,
+            0.0
+        ]
+    ],
+    "takeoffPointENU": [
+        [
+            -8.8,
+            -1.0,
+            1.4
+        ],
+        [
+            -8.8,
+            0.0,
+            1.4
+        ],
+        [
+            -8.8,
+            1.0,
+            1.4
+        ]
+    ],
+    "preparePointENU": [
+        [
+            -8.8,
+            -1.0,
+            1.4
+        ],
+        [
+            -8.8,
+            0.0,
+            1.4
+        ],
+        [
+            -8.8,
+            1.0,
+            1.4
+        ]
+    ],
+    "targetTracking": {
+        "mode": "waypoints",
+        "speed": 0.44,
+        "takeoffHeight": 1.4,
+        "targetHeight": 1.4,
+        "useWaypointZ": true,
+        "lockEgoTrackingHeight": false,
+        "trackMaxControlZ": 3.2,
+        "waypointsENU": [
+            [
+                -8.2,
+                0.0,
+                1.4
+            ],
+            [
+                -5.15,
+                0.0,
+                1.4
+            ],
+            [
+                -3.05,
+                0.0,
+                1.4
+            ],
+            [
+                -3.05,
+                0.0,
+                1.58
+            ],
+            [
+                -0.45,
+                0.0,
+                1.58
+            ],
+            [
+                -0.45,
+                0.0,
+                2.18
+            ],
+            [
+                2.05,
+                0.0,
+                2.18
+            ],
+            [
+                2.05,
+                0.0,
+                2.9
+            ],
+            [
+                6.7,
+                0.0,
+                2.9
+            ],
+            [
+                7.4,
+                0.0,
+                2.9
+            ]
+        ],
+        "segmentSpeeds": [
+            0.42,
+            0.42,
+            0.95,
+            0.42,
+            0.95,
+            0.42,
+            0.95,
+            0.42,
+            0.42
+        ]
+    },
+    "obstacleData": {
+        "0": {
+            "centerENU": [
+                -4.9,
+                -2.0
+            ],
+            "radius": 0.38
+        },
+        "1": {
+            "centerENU": [
+                5.3,
+                2.0
+            ],
+            "radius": 0.42
+        }
+    },
+    "boxObstacleData": {
+        "0": {
+            "modelName": "stair_step_0",
+            "centerENU": [
+                -3.8,
+                0.0
+            ],
+            "sizeENU": [
+                2.3,
+                3.4,
+                0.5
+            ]
+        },
+        "1": {
+            "modelName": "stair_step_1",
+            "centerENU": [
+                -1.4,
+                0.0
+            ],
+            "sizeENU": [
+                2.5,
+                3.4,
+                1.15
+            ]
+        },
+        "2": {
+            "modelName": "stair_step_2",
+            "centerENU": [
+                1.1,
+                0.0
+            ],
+            "sizeENU": [
+                2.5,
+                3.4,
+                1.75
+            ]
+        },
+        "3": {
+            "modelName": "upper_landing",
+            "centerENU": [
+                4.2,
+                0.0
+            ],
+            "sizeENU": [
+                3.7,
+                3.4,
+                2.5
+            ]
+        },
+        "4": {
+            "modelName": "stair_side_wall_lower",
+            "centerENU": [
+                0.2,
+                -2.15
+            ],
+            "sizeENU": [
+                9.6,
+                0.22,
+                1.7
+            ]
+        },
+        "5": {
+            "modelName": "stair_side_wall_upper",
+            "centerENU": [
+                0.2,
+                2.15
+            ],
+            "sizeENU": [
+                9.6,
+                0.22,
+                1.7
+            ]
+        }
+    },
+    "egoPlanner": {
+        "enabled": true,
+        "mapSizeENU": [
+            24.0,
+            12.0,
+            6.5
+        ],
+    "goalsENU": [
+            [
+                7.4,
+                -1.0,
+                2.9
+            ],
+            [
+                7.4,
+                0.0,
+                2.9
+            ],
+            [
+                7.4,
+                1.0,
+                2.9
+      ]
+    ],
+    "routeWaypointsENU": [
+      [-3.0, 0.0, 1.58],
+      [-0.6, 0.0, 2.18],
+      [1.6, 0.0, 2.9],
+      [6.7, 0.0, 2.9]
+    ],
+    "maxVel": 0.95,
+    "maxAcc": 1.4,
+    "presetStartDelayStep": 6.0,
+    "trackingErrorReplanThreshold": 1.5,
+    "trackingVelocityErrorReplanThreshold": 1.0,
+        "virtualCeilHeight": 4.0,
+        "planningHorizon": 5.5,
+        "obstacleInflation": 0.1,
+        "plannerObstacleClearance": 0.2,
+        "swarmClearance": 0.45,
+        "cloudResolution": 0.16,
+        "cloudPublishPeriod": 0.5,
+        "obstacleHeight": 2.0,
+        "obstacleClearance": 0.3
+    },
+    "movingObstacleData": {},
+    "nMovingObstacle": 0
+}

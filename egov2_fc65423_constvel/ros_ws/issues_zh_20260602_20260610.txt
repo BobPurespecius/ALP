@@ -1,0 +1,312 @@
+MUSK platform 阶段排障记录
+==========================
+
+文档范围：2026-06-02 至 2026-06-10
+
+本文只记录上一次 more_obstacles 总结之后的新问题、新现象、原因判断和处理
+办法。上一阶段文档为：
+- guidance/ros_ws/issues_zh.txt
+- guidance/ros_ws/changes_zh.txt
+
+
+1. 批量实验结束时间不受输入 duration 控制
+----------------------------------------
+现象：
+- 用户输入：
+  ./batch_run_experiments.sh --scene platform --runs 1 --duration 70
+- 实际运行中出现过 80 s、140 s 甚至真实时间很久仍不停止的情况。
+- 有时无人机已经到达目标附近，仿真仍继续运行。
+
+原因：
+- 旧逻辑混用了多个时间参数，例如仿真持续时间、保存等待时间、停止等待时间。
+- 部分逻辑按真实时间等待，部分逻辑按 Gazebo sim time 判断。
+- 到达目标后的保存/降落/清理顺序也曾互相耦合，导致停止点不清楚。
+
+解决：
+- 新增 batch_run_experiments.sh，统一使用命令行：
+  ./batch_run_experiments.sh --scene platform --runs N --duration SEC
+- 新增 scripts/wait_for_stop_condition.py。
+- 停止条件改为二选一：
+  1. 所有无人机实际到达目标。
+  2. Gazebo sim time 达到输入 duration。
+- 达到停止条件后立即 pause Gazebo，先保存数据，再清理仿真。
+- 不再为了结束实验额外执行降落流程。
+
+
+2. 到达终点后仍不结束，影响成功率和平滑度统计
+----------------------------------------------
+现象：
+- 无人机已经到目标附近悬停，但批量运行仍继续记录。
+- 末段悬停、微调、下沉等数据被纳入轨迹指标。
+- 用户担心平滑度计算被终点后行为污染。
+
+原因：
+- 旧停止逻辑主要看状态机标志，不够直接。
+- 部分 UAV 已经达到目标，但 egoGoalReached 标志或所有无人机完成标志没有及时同步。
+
+解决：
+- wait_for_stop_condition.py 不只看 egoGoalReached 标志，也直接读取 status service 中的
+  egoGoalXYError 和 egoGoalZError。
+- 当所有无人机满足位置误差阈值时，直接停止仿真并保存。
+- analyze_runs.py 仍按保存的轨迹计算指标，但数据段明显缩短，减少终点后无意义悬停
+  对平滑度的影响。
+
+
+3. 结束前无人机逐次降落
+----------------------
+现象：
+- 视觉上看到时间结束前，无人机会一个接一个下降。
+- 这不是用户想要的实验结束方式。
+
+原因：
+- 早期结束逻辑仍保留了 LAND 或平台降落相关分支。
+- 当状态机判断完成后，可能进入降落，而不是直接保存并关闭仿真。
+
+解决：
+- 批量实验停止时不再触发降落。
+- 停止顺序明确为：
+  pause Gazebo -> 调用 /single_run_X/save_log -> 清理节点/仿真。
+- 当前目标是“指定地点悬停”，不是“降落在平台上”。
+
+
+4. platform 目标高度混乱，高空悬停、突然下坠、再拔高
+----------------------------------------------------
+现象：
+- 用户多次修改 json 想让无人机贴近台面悬停，但无人机仍在高处悬停。
+- 轨迹记录中出现高空悬停很久，然后突然下坠，再猛然拔高。
+- 两侧无人机甚至发生坠机。
+
+原因：
+- 高度逻辑曾同时存在多套来源：
+  - egoPlanner.goalsENU 中的 z。
+  - platformData.topZ。
+  - hoverAbovePlatform。
+  - landingTargetZ / landingReferenceZ。
+  - takeoffPointENU / preparePointENU。
+- 一部分逻辑把目标高度当绝对 ENU 高度，另一部分逻辑近似当成相对平台高度。
+- 平台降落逻辑和最终悬停逻辑曾互相交叉。
+
+解决：
+- 当前取消平台降落，只保留最终悬停。
+- 最终悬停目标以 json 中 egoPlanner.goalsENU 为核心。
+- platform 相关辅助函数用于补默认值，但不再让降落逻辑覆盖悬停目标。
+- 后续若要改最终悬停高度，应优先只改 platform.json 中 goalsENU 的 z。
+
+
+5. RViz 和 Gazebo 显示不一致
+---------------------------
+现象：
+- Gazebo 中无人机位置看似正常，RViz 中某些无人机明显落后或位置不一致。
+- 用户要求二者显示必须完全一致。
+
+原因：
+- 早期主要使用 MAVROS local_position 作为反馈，而 Gazebo 显示的是世界真值。
+- uav3 之前已经出现过 MAVROS local frame 与 Gazebo spawn 坐标不一致的问题。
+- platform 阶段为了调试，增加了 Gazebo truth 记录和对比字段。
+
+解决：
+- P230/SingleRun 保留 MAVROS 坐标补偿机制。
+- SingleRun 增加 Gazebo pose 订阅和日志字段：
+  gazeboPositionENU
+  gazeboMePositionErrorENU
+  gazeboMavrosPositionErrorENU
+- platform 场景默认使用 Gazebo truth 作为反馈参考，减少 RViz/Gazebo 视觉差异。
+- analyze_runs.py 支持标记 position_source，并记录 final_gazebo_mavros_error_m。
+
+
+6. Gazebo 中移动障碍物不移动
+---------------------------
+现象：
+- json 和 world 中已经有 movingObstacleData，但 Gazebo 里圆柱仍不动。
+- 用户手动 rosnode list 时曾遇到 ROS master 未启动或 move_obstacles 节点不存在。
+
+原因：
+- Gazebo world 只能生成模型，模型不会自动按 json 运动。
+- 需要额外节点持续向 Gazebo 发送 ModelState。
+- 早期用户进入了新 docker shell，但 roscore/roslaunch 并没有在那个 shell 中启动，
+  所以 rosnode list 无法连接 master。
+
+解决：
+- 新增 scripts/move_obstacles.py。
+- 该脚本读取 scene json 中 movingObstacleData。
+- 按 centerENU、axisENU、amplitude、period、phase 生成周期运动。
+- 通过 /gazebo/set_model_state topic/service 更新 Gazebo 模型状态。
+- launch 中增加移动障碍物节点，并支持自动解析 scene file。
+
+
+7. complex 地图过复杂，部分无人机卡在障碍物后
+----------------------------------------------
+现象：
+- 某些运行中无人机长时间停在障碍物前或障碍物后。
+- 有的无人机很久才反应过来到达终点，有的直接失败。
+- 用户怀疑地图是否在飞控领域算极为复杂。
+
+原因：
+- complex 场景障碍密度偏高，通道狭窄，还叠加移动障碍物。
+- EGO 局部规划在局部极小值附近会产生停滞。
+- 额外的避障 guard 若过强，也可能让无人机无法越过局部障碍。
+
+解决：
+- 将 complex 重命名并演化为 platform 场景。
+- 减少约 25% 障碍物。
+- 降低移动障碍物速度和幅度。
+- 在终点区域增加平台模型。
+- 后续所有批量统计主要针对 platform 场景进行。
+
+
+8. 只想修改一个地方就调整障碍物地图
+------------------------------------
+现象：
+- 之前修改障碍物需要同时改 json、world、RViz marker 等多个地方。
+- 用户要求只在一个地方调整整个障碍物地图。
+
+原因：
+- Gazebo world 和 RViz/规划用 json 曾经是分离配置。
+- 两边容易不同步。
+
+解决：
+- 新增 scripts/generate_world_from_scene.py。
+- batch_run_experiments.sh 每次运行前根据 scene json 自动生成对应 world。
+- platform.json 成为场景的主配置源。
+- Gazebo 静态障碍物、移动障碍物初始模型和平台都从 json 生成。
+
+
+9. 数据分析与统计需求
+--------------------
+现象：
+- 用户需要多次运行统计成功率、轨迹平滑度。
+- 需要读取最新结果，找失败原因，重点关注长时间原地不动、飞远、碰撞卡死等问题。
+
+解决：
+- 新增 scripts/analyze_runs.py。
+- 统计内容包括：
+  - run_success_rate
+  - vehicle_success_rate
+  - final_goal_error_m
+  - final_xy_error_m
+  - final_z_error_m
+  - final_speed_mps
+  - path_length_m
+  - min_obstacle_clearance_m
+  - rms_accel_mps2
+  - rms_jerk_mps3
+  - mean_turn_angle_rad
+  - mean_control_delta
+- batch_run_experiments.sh 自动调用 analyze_runs.py，并输出：
+  run_summary.csv
+  vehicle_summary.csv
+  overall_summary.json
+
+
+10. 到达目标后无人机异常升高
+----------------------------
+现象：
+- 某轮仿真中，无人机到达终点后异常升高。
+
+原因：
+- 最终悬停、平台降落、EGO 输出、速度控制之间存在高度目标冲突。
+- 在接近目标时，某些分支仍可能使用 prepare/takeoff 或平台参考高度。
+
+解决：
+- 收敛阶段统一使用 egoGoalPointENU。
+- 接近最终 XY 后调用 convergeToEgoGoalPoint / holdEgoGoalPoint。
+- 不再让降落目标干扰最终悬停目标。
+
+
+11. 避障后无人机直接下降，而不是绕障
+------------------------------------
+现象：
+- 用户观察到无人机遇到障碍物后不正常横向避让，而是下降。
+
+原因：
+- 速度候选过滤中包含竖直速度。
+- 某些情况下为了避免预测碰撞，过滤器会选择降低高度或减小水平速度。
+- 这会让避障看起来像“往下躲”，不符合用户希望的绕障行为。
+
+解决：
+- 不再依赖复杂候选速度作为主避障逻辑。
+- 简化为危险区切向逃逸：
+  进入危险区后，停止接收 EGO 局部结果。
+  沿障碍物圆柱切向运动。
+  切向选择靠近最终目标的一侧。
+  离开危险区后再交回 EGO。
+- 竖直方向只跟随最终目标高度，小幅校正，不作为主要避障手段。
+
+
+12. 避障退出太早，交回 EGO 后被错误局部点拖住
+----------------------------------------------
+现象：
+- 失败运行中 uav4 后半段一直跟随 EGO 局部目标：
+  (4.51, 5.45, 2.13)
+- 真实目标约为：
+  (10.0, 2.4, 1.25)
+- 无人机不是不会飞，而是被错误局部点拖住。
+
+原因：
+- 避障退出曾只看 point_margin。
+- 当当前位置已离开危险区，但当前速度预测仍不安全时，也会退出。
+- 退出后继续信任 EGO 局部点，导致进入局部停滞。
+
+解决：
+- 避障退出改为同时满足：
+  elapsed >= obstacleEscapeMinTime
+  point_margin >= obstacleEscapeReleaseMargin
+  velocity_margin >= obstacleEscapeReleaseMargin
+- EGO progress fallback 改为：只要长期没有接近最终目标，就直接收敛到最终目标，
+  不再要求已经接近终点。
+- 远离终点时直接收敛仍启用 obstacle guard。
+
+
+13. 避障频繁切换，导致轨迹不平滑
+--------------------------------
+现象：
+- 最新 5 次统计中，成功率为 4/5，但平滑度没有整体提升。
+- rms_jerk、max_jerk 比上一组更差。
+- 失败样本 uav4 的 path_length、rms_jerk 和 control_delta 明显异常。
+- 日志中可见同一架无人机在 static:11、moving:2、static:12 之间反复切换。
+
+原因：
+- 切向避障每次都选择“当前最近障碍物”。
+- 当多个障碍物距离接近时，最近障碍会来回变化。
+- 最近障碍变化会导致切向方向变化，造成控制指令跳变和轨迹抖动。
+
+解决：
+- 新增障碍锁定和切换滞回。
+- 进入避障后优先继续跟踪原障碍物。
+- 只有满足以下条件才允许切换：
+  1. 已超过 obstacleEscapeSwitchMinTime。
+  2. 距上次切换超过 obstacleEscapeSwitchCooldown。
+  3. 新障碍物在危险区内。
+  4. 新障碍物比当前跟踪障碍明显更危险，或当前障碍已经安全。
+- platform.json 增加：
+  obstacleEscapeSwitchMinTime
+  obstacleEscapeSwitchCooldown
+  obstacleEscapeSwitchMargin
+- 将 obstacleEscapeCooldown 从 0.2 s 提高到 0.8 s，减少刚退出又重进。
+
+
+14. 最近统计结论
+----------------
+最新一次完整读取的最近 5 次运行：
+- batch_platform_20260610_165304_001
+- batch_platform_20260610_165439_002
+- batch_platform_20260610_165619_003
+- batch_platform_20260610_165755_004
+- batch_platform_20260610_170007_005
+
+结果：
+- run 成功率：4/5 = 80%
+- 单机成功率：24/25 = 96%
+- 失败样本：batch_platform_20260610_165755_004 的 uav4
+
+平滑度与上一组 5 次对比：
+- rms_jerk_mps3: 3.7425 -> 4.4295，变差约 18.4%
+- max_jerk_mps3: 44.687 -> 50.882，变差约 13.9%
+- mean_control_delta: 0.0136 -> 0.0132，略好约 3.3%
+- max_control_delta: 0.7677 -> 0.6392，改善约 16.7%
+
+结论：
+- 控制指令平均变化略平滑。
+- 真实轨迹平滑度没有整体提升。
+- 主要原因仍是局部避障切换和个别失败样本造成的 jerk 峰值。
+

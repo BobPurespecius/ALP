@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="config" default="$(find target_tracking)/config/rao_2025_protocol.yaml"/>
+  <arg name="profile" default="simulation"/>
+  <arg name="manifest_path" default="/tmp/rao_2025_manifest.json"/>
+  <arg name="frame_id" default="world"/>
+  <arg name="duration" default="0.0"/>
+  <arg name="rviz" default="false"/>
+
+  <group ns="rao_2025">
+    <node pkg="target_tracking" type="rao_2025_protocol.py" name="protocol"
+          args="--config $(arg config) --profile $(arg profile) --manifest $(arg manifest_path)"
+          output="screen" required="true"/>
+    <node pkg="target_tracking" type="rao_scene_node.py" name="scene"
+          args="--frame-id $(arg frame_id)"
+          output="screen" required="true"/>
+    <node pkg="target_tracking" type="rao_target_node.py" name="target"
+          args="--frame-id $(arg frame_id) --duration $(arg duration)"
+          output="screen" required="true"/>
+  </group>
+
+  <node if="$(arg rviz)" pkg="rviz" type="rviz" name="rao_2025_stage2_rviz"
+        args="-d $(find target_tracking)/rviz/rao_2025_stage2.rviz" output="screen"/>
+</launch>
